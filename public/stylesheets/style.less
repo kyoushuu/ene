@@ -6,3 +6,34 @@ body {
 a {
   color: #00B7FF;
 }
+
+header {
+  nav {
+    background-color: #004EFF;
+    padding: 0 50px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  
+    > ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+  
+    li {
+      > a {
+        color: #00CDFF;
+        text-decoration: none;
+        float: left;
+        padding: 20px;
+  
+        &:hover {
+          color: #004EFF;
+          background-color: #00CDFF;
+        }
+      }
+    }
+  }
+}
