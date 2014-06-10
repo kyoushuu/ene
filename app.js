@@ -55,6 +55,7 @@ if ('development' === app.get('env')) {
 app.get('/', routes.index);
 
 app.get('/user/new', user.create);
+app.post('/user/new', user.doCreate);
 
 http.createServer(app).listen(app.get('port'), function() {
   console.log('Express server listening on port ' + app.get('port'));

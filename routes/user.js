@@ -17,6 +17,24 @@
  */
 
 
+var User = require('../models/user');
+
+
 exports.create = function(req, res) {
   res.render('signup', {title: 'Sign Up'});
+};
+
+
+exports.doCreate = function(req, res) {
+  User.create({
+    username: req.body.username,
+    password: req.body.password,
+    email: req.body.email,
+  }, function(error, user) {
+    if (!error) {
+      res.redirect('/user/welcome');
+    } else {
+      res.render('signup', {title: 'Sign Up'});
+    }
+  });
 };
