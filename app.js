@@ -22,6 +22,7 @@
  */
 
 var express = require('express');
+var db = require('./models/db');
 var routes = require('./routes');
 var user = require('./routes/user');
 var http = require('http');
