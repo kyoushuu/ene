@@ -9,7 +9,8 @@
     "express": "3.5.2",
     "jade": "*",
     "less-middleware": "~0.1.15",
-    "mongoose": "~3.8.12"
+    "mongoose": "~3.8.12",
+    "nodemailer": "~0.6.5"
   },
   "author": {
     "name": "Arnel Borja",
