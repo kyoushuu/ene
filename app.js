@@ -28,6 +28,8 @@ var user = require('./routes/user');
 var http = require('http');
 var path = require('path');
 
+var secret = process.env.OPENSHIFT_SECRET_TOKEN || 'your secret here';
+
 var app = express();
 
 // all environments
@@ -39,7 +41,7 @@ app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
 app.use(express.methodOverride());
-app.use(express.cookieParser('your secret here'));
+app.use(express.cookieParser(secret));
 app.use(express.session());
 app.use(app.router);
 app.use(require('less-middleware')({src: path.join(__dirname, 'public')}));
