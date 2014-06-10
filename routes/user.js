@@ -34,7 +34,12 @@ exports.doCreate = function(req, res) {
     if (!error) {
       res.redirect('/user/welcome');
     } else {
-      res.render('signup', {title: 'Sign Up'});
+      res.render('signup', {
+        title: 'Sign Up',
+        error: error,
+        username: req.body.username,
+        email: req.body.email,
+      });
     }
   });
 };
