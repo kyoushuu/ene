@@ -18,12 +18,32 @@
 
 
 var mongoose = require('mongoose');
+var crypto = require('crypto');
+
+
+function hash(password, salt) {
+  if (password === '') {
+    return null;
+  }
+
+  return crypto.createHmac('sha512', salt).update(password).digest('base64');
+}
+
+function setPassword(value) {
+  this.salt = crypto.randomBytes(64).toString('base64');
+  return hash(value, this.salt);
+}
 
 var userSchema = new mongoose.Schema({
   username: {type: String, required: true, unique: true},
-  password: {type: String, required: true},
+  password: {type: String, required: true, set: setPassword},
+  salt: {type: String, required: true},
   email: {type: String, required: true, unique: true, lowercase: true},
 });
+
+userSchema.methods.isValidPassword = function(password) {
+  return this.password === hash(password, this.salt);
+};
 
 /* jshint -W003 */
 var User = mongoose.model('User', userSchema);
