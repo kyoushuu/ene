@@ -34,11 +34,16 @@ function setPassword(value) {
   return hash(value, this.salt);
 }
 
+function createConfirmCode() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
 var userSchema = new mongoose.Schema({
   username: {type: String, required: true, unique: true},
   password: {type: String, required: true, set: setPassword},
   salt: {type: String, required: true},
   email: {type: String, required: true, unique: true, lowercase: true},
+  confirmCode: {type: String, default: createConfirmCode},
 });
 
 userSchema.methods.isValidPassword = function(password) {

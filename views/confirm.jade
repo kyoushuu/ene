@@ -1,0 +1,9 @@
+extends layout
+
+block content
+  h1= title
+
+  if success
+    p Your account has been confirmed. You can now login.
+  else
+    p Failed to confirm your account. The confirmation code seems invalid.

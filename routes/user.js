@@ -18,6 +18,7 @@
 
 
 var User = require('../models/user');
+var nodemailer = require('nodemailer');
 
 
 exports.create = function(req, res) {
@@ -32,7 +33,12 @@ exports.doCreate = function(req, res) {
     email: req.body.email,
   }, function(error, user) {
     if (!error) {
-      res.redirect('/user/welcome');
+      sendConfirmEmail(user, function(error) {
+        if (error) {
+          console.log('Failed to send confirmation email: ' + error);
+        }
+        res.render('welcome', {title: 'Welcome'});
+      });
     } else {
       res.render('signup', {
         title: 'Sign Up',
@@ -43,3 +49,63 @@ exports.doCreate = function(req, res) {
     }
   });
 };
+
+function sendConfirmEmail(user, callback) {
+  var dns = process.env.OPENSHIFT_APP_DNS || 'localhost';
+  var domain = process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
+  var transport = nodemailer.createTransport('SMTP', {
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT || 465,
+    secureConnection: true,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  transport.sendMail({
+    from: 'Ene Project <no-reply@' + dns + '>',
+    to: user.username + ' <' + user.email + '>',
+    subject: 'New account confirmation',
+    text: 'Welcome ' + user.username + ',\n\n' +
+        'You can confirm your account through this link:\n' +
+        'http://' + domain + '/user/confirm/' + user.confirmCode,
+  }, function(error, response) {
+    if (!error) {
+      callback(null);
+    } else {
+      callback(error);
+    }
+    transport.close();
+  });
+}
+
+
+exports.confirm = function(req, res) {
+  User.findOne({
+    confirmCode: req.params.confirmCode,
+  }, function(error, user) {
+    if (!error && user) {
+      user.confirmCode = null;
+      user.save(function(error) {
+        if (!error) {
+          res.render('confirm', {
+            title: 'Account confirmed',
+            success: true,
+          });
+        } else {
+          confirmFailed(res);
+        }
+      });
+    } else {
+      confirmFailed(res);
+    }
+  });
+};
+
+function confirmFailed(res) {
+  res.render('confirm', {
+    title: 'Account confirmation failed',
+    success: false,
+  });
+}
