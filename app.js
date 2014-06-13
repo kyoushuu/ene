@@ -33,8 +33,10 @@ var secret = process.env.OPENSHIFT_SECRET_TOKEN || 'your secret here';
 var app = express();
 
 // all environments
-app.set('port', process.env.PORT || 3000);
-app.set('ipadress', process.env.IP || '127.0.0.1');
+app.set('port',
+        process.env.OPENSHIFT_NODEJS_PORT || process.env.PORT || 3000);
+app.set('ipaddress',
+        process.env.OPENSHIFT_NODEJS_IP || process.env.IP || '127.0.0.1');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.use(express.favicon());
