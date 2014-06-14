@@ -19,8 +19,10 @@
 
 var mongoose = require('mongoose');
 
-mongoose.connect(
-    process.env.OPENSHIFT_MONGODB_DB_URL || 'mongodb://localhost/ene');
+var dburl = process.env.OPENSHIFT_MONGODB_DB_URL || 'mongodb://localhost/';
+var dbname = process.env.OPENSHIFT_APP_NAME || 'ene';
+
+mongoose.connect(dburl + dbname);
 
 mongoose.connection.on('connected', function() {
   console.log('Mongoose connected');
