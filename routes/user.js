@@ -82,6 +82,38 @@ function sendConfirmEmail(user, callback) {
 
 
 exports.confirm = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  res.render('confirm', {
+    title: 'Confirm your account',
+    user: req.user,
+  });
+};
+
+
+exports.doConfirm = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  sendConfirmEmail(req.user, function(error) {
+    if (error) {
+      console.log('Failed to send confirmation email: ' + error);
+    }
+    res.render('confirm', {
+      title: 'Email Resent',
+      user: req.user,
+      resent: true,
+    });
+  });
+};
+
+
+exports.confirmCode = function(req, res) {
   User.findOne({
     confirmCode: req.params.confirmCode,
   }, function(error, user) {
@@ -91,7 +123,7 @@ exports.confirm = function(req, res) {
         if (!error) {
           res.render('confirm', {
             title: 'Account confirmed',
-            success: true,
+            user: user,
           });
         } else {
           confirmFailed(res);
@@ -106,7 +138,6 @@ exports.confirm = function(req, res) {
 function confirmFailed(res) {
   res.render('confirm', {
     title: 'Account confirmation failed',
-    success: false,
   });
 }
 

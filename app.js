@@ -97,7 +97,9 @@ app.get('/', routes.index);
 
 app.get('/user/new', user.create);
 app.post('/user/new', user.doCreate);
-app.get('/user/confirm/:confirmCode', user.confirm);
+app.get('/user/confirm', user.confirm);
+app.post('/user/confirm', user.doConfirm);
+app.get('/user/confirm/:confirmCode', user.confirmCode);
 app.get('/user/signin', user.signIn);
 app.post('/user/signin', passport.authenticate('local', {
   successRedirect: '/',
