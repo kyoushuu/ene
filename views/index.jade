@@ -2,8 +2,14 @@ extends layout
 
 block content
   p Welcome to #{title}
-    ul
-      li
-        a(href='/user/new') Create an account
-      li
-        a(href='/user/signin') Sign in
+    if !user
+      ul
+        li
+          a(href='/user/new') Create an account
+        li
+          a(href='/user/signin') Sign in
+    else if user && user.confirmCode
+      div.info
+        | Your account is not yet confirmed. Click
+        a(href='/user/confirm') here
+        | to resend the confirmation email.

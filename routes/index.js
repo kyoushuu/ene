@@ -22,5 +22,5 @@
  */
 
 exports.index = function(req, res) {
-  res.render('index', {title: 'Ene Project'});
+  res.render('index', {title: 'Ene Project', user: req.user});
 };
