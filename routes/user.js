@@ -112,5 +112,8 @@ function confirmFailed(res) {
 
 
 exports.signIn = function(req, res) {
-  res.render('signin', {title: 'Sign In'});
+  res.render('signin', {
+    title: 'Sign In',
+    error: req.flash('error'),
+  });
 };

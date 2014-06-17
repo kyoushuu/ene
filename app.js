@@ -22,13 +22,48 @@
  */
 
 var express = require('express');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+var flash = require('connect-flash');
+
 var db = require('./models/db');
+var User = require('./models/user');
+
 var routes = require('./routes');
 var user = require('./routes/user');
+
 var http = require('http');
 var path = require('path');
 
 var secret = process.env.OPENSHIFT_SECRET_TOKEN || 'your secret here';
+
+
+passport.use(new LocalStrategy(function(username, password, done) {
+  User.findOne({username: username}, function(error, user) {
+    if (error) {
+      return done(error);
+    }
+
+    if (!user || !user.isValidPassword(password)) {
+      return done(null, false, {
+        message: 'Incorrect username or password.',
+      });
+    }
+
+    return done(null, user);
+  });
+}));
+
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  User.findById(id, function(err, user) {
+    done(err, user);
+  });
+});
+
 
 var app = express();
 
@@ -46,6 +81,9 @@ app.use(express.urlencoded());
 app.use(express.methodOverride());
 app.use(express.cookieParser(secret));
 app.use(express.session());
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(app.router);
 app.use(require('less-middleware')({src: path.join(__dirname, 'public')}));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -61,6 +99,11 @@ app.get('/user/new', user.create);
 app.post('/user/new', user.doCreate);
 app.get('/user/confirm/:confirmCode', user.confirm);
 app.get('/user/signin', user.signIn);
+app.post('/user/signin', passport.authenticate('local', {
+  successRedirect: '/',
+  failureRedirect: '/user/signin',
+  failureFlash: true,
+}));
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {
