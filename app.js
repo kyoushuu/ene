@@ -60,6 +60,7 @@ app.get('/', routes.index);
 app.get('/user/new', user.create);
 app.post('/user/new', user.doCreate);
 app.get('/user/confirm/:confirmCode', user.confirm);
+app.get('/user/signin', user.signIn);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {
