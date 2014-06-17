@@ -68,6 +68,24 @@ userSchema.path('username').validate(function(value, respond) {
   });
 }, 'Username already exists');
 
+userSchema.path('email').validate(function(value, respond) {
+  User.find({
+    _id: {$ne: this._id},
+    email: value,
+  }, function(error, users) {
+    if (error) {
+      console.log(error);
+      return respond(false);
+    }
+
+    if (users.length) {
+      respond(false);
+    } else {
+      respond(true);
+    }
+  });
+}, 'E-mail is already registered');
+
 /* jshint -W003 */
 var User = mongoose.model('User', userSchema);
 /* jshint +W003 */
