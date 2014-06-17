@@ -50,6 +50,24 @@ userSchema.methods.isValidPassword = function(password) {
   return this.password === hash(password, this.salt);
 };
 
+userSchema.path('username').validate(function(value, respond) {
+  User.find({
+    _id: {$ne: this._id},
+    username: value,
+  }, function(error, users) {
+    if (error) {
+      console.log(error);
+      return respond(false);
+    }
+
+    if (users.length) {
+      respond(false);
+    } else {
+      respond(true);
+    }
+  });
+}, 'Username already exists');
+
 /* jshint -W003 */
 var User = mongoose.model('User', userSchema);
 /* jshint +W003 */
