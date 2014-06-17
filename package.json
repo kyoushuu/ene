@@ -10,7 +10,10 @@
     "jade": "*",
     "less-middleware": "~0.1.15",
     "mongoose": "~3.8.12",
-    "nodemailer": "~0.6.5"
+    "nodemailer": "~0.6.5",
+    "passport": "~0.2.0",
+    "passport-local": "~1.0.0",
+    "connect-flash": "~0.1.1"
   },
   "author": {
     "name": "Arnel Borja",
