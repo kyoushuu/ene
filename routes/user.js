@@ -51,8 +51,10 @@ exports.doCreate = function(req, res) {
 };
 
 function sendConfirmEmail(user, callback) {
-  var dns = process.env.OPENSHIFT_APP_DNS || 'localhost';
-  var domain = process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
+  var domain = process.env.DOMAIN ||
+      process.env.OPENSHIFT_APP_DNS || 'localhost';
+  var address = process.env.ADDRESS || process.env.DOMAIN ||
+      process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
   var transport = nodemailer.createTransport('SMTP', {
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT || 465,
@@ -64,12 +66,12 @@ function sendConfirmEmail(user, callback) {
   });
 
   transport.sendMail({
-    from: 'Ene Project <no-reply@' + dns + '>',
+    from: 'Ene Project <no-reply@' + domain + '>',
     to: user.username + ' <' + user.email + '>',
     subject: 'New account confirmation',
     text: 'Welcome ' + user.username + ',\n\n' +
         'You can confirm your account through this link:\n' +
-        'http://' + domain + '/user/confirm/' + user.confirmCode,
+        'http://' + address + '/user/confirm/' + user.confirmCode,
   }, function(error, response) {
     if (!error) {
       callback(null);
