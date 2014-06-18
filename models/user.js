@@ -42,7 +42,13 @@ var userSchema = new mongoose.Schema({
   username: {type: String, required: true, unique: true},
   password: {type: String, required: true, set: setPassword},
   salt: {type: String, required: true},
-  email: {type: String, required: true, unique: true, lowercase: true},
+  email: {
+    type: String, required: true, unique: true, lowercase: true,
+    validate: {
+      validator: /^[A-Z0-9._%+-]+@(?:[A-Z0-9-]+\.)+[A-Z]{2,4}$/i,
+      msg: 'E-mail is invalid',
+    },
+  },
   confirmCode: {type: String, default: createConfirmCode},
 });
 
