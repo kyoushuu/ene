@@ -17,6 +17,9 @@
  */
 
 
+var Server = require('../models/server');
+
+
 exports.create = function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
@@ -29,4 +32,35 @@ exports.create = function(req, res) {
   }
 
   res.render('server-create', {title: 'Create Server'});
+};
+
+
+exports.doCreate = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  if (req.user.accessLevel < 6) {
+    res.send(403);
+    return;
+  }
+
+  Server.create({
+    name: req.body.name,
+    shortname: req.body.shortname,
+  }, function(error, server) {
+    if (error) {
+      res.render('server-create', {
+        title: 'Create Server',
+        error: error,
+        name: req.body.name,
+        shortname: req.body.shortname,
+      });
+      return;
+    }
+
+    req.flash('info', 'Server successfully created');
+    res.redirect('/server/' + server.id);
+  });
 };

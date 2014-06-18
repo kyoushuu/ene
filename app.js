@@ -109,6 +109,7 @@ app.post('/user/signin', passport.authenticate('local', {
 }));
 
 app.get('/server/new', server.create);
+app.post('/server/new', server.doCreate);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {
