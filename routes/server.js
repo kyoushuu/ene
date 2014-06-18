@@ -110,3 +110,40 @@ exports.edit = function(req, res) {
     });
   });
 };
+
+
+exports.doEdit = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  if (req.user.accessLevel < 6) {
+    res.send(403);
+    return;
+  }
+
+  Server.findById(req.params.serverId, function(error, server) {
+    if (error || !server) {
+      res.send(404);
+      return;
+    }
+
+    server.name = req.body.name;
+    server.shortname = req.body.shortname;
+
+    server.save(function(error) {
+      if (error) {
+        res.render('server-edit', {
+          title: 'Edit Server',
+          error: error,
+          server: server,
+        });
+        return;
+      }
+
+      req.flash('info', 'Server successfully saved');
+      res.redirect('/server/' + server.id);
+    });
+  });
+};

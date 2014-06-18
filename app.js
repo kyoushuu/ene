@@ -112,6 +112,7 @@ app.get('/server/new', server.create);
 app.post('/server/new', server.doCreate);
 app.get('/server/:serverId', server.display);
 app.get('/server/edit/:serverId', server.edit);
+app.post('/server/edit/:serverId', server.doEdit);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {
