@@ -64,3 +64,24 @@ exports.doCreate = function(req, res) {
     res.redirect('/server/' + server.id);
   });
 };
+
+
+exports.display = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  Server.findById(req.params.serverId, function(error, server) {
+    if (error || !server) {
+      res.send(404);
+      return;
+    }
+
+    res.render('server', {
+      title: 'Server Information',
+      server: server,
+      info: req.flash('info'),
+    });
+  });
+};
