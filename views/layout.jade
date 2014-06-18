@@ -12,6 +12,8 @@ html
             a(href='/about') About
             a(href='/contact') Contact
     h1= title
+    if info && info != ''
+      div.info #{info}
     if error && error != ''
       div.error Error: #{error}
     block content
