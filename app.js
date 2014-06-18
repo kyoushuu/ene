@@ -31,6 +31,7 @@ var User = require('./models/user');
 
 var routes = require('./routes');
 var user = require('./routes/user');
+var server = require('./routes/server');
 
 var http = require('http');
 var path = require('path');
@@ -106,6 +107,8 @@ app.post('/user/signin', passport.authenticate('local', {
   failureRedirect: '/user/signin',
   failureFlash: true,
 }));
+
+app.get('/server/new', server.create);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {

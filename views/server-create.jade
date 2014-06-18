@@ -1,0 +1,12 @@
+extends layout
+
+block content
+  form(method='post')
+    div.form-item
+      label(for='name') Name:
+      input#name(type='text', name='name', value=name, required)
+    div.form-item
+      label(for='shortname') Short Name:
+      input#shortname(type='text', name='shortname', value=shortname, required)
+    div.form-item
+      input#submit(type='submit', value='Create')
