@@ -124,6 +124,7 @@ app.get('/country/new', country.create);
 app.post('/country/new', country.doCreate);
 app.get('/country/:countryId', country.display);
 app.get('/country/:countryId/access/new', country.addAccess);
+app.post('/country/:countryId/access/new', country.doAddAccess);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {

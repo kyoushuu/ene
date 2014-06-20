@@ -19,6 +19,7 @@
 
 var Server = require('../models/server');
 var Country = require('../models/country');
+var User = require('../models/user');
 
 
 exports.create = function(req, res) {
@@ -172,3 +173,84 @@ exports.addAccess = function(req, res) {
     });
   });
 };
+
+
+exports.doAddAccess = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  User.findOne({username: req.body.username}, function(error, user) {
+    if (error || !user) {
+      doAddAccessFailed(req, res, 'Username not found');
+      return;
+    }
+
+    Country.findById(req.params.countryId, function(error, country) {
+      if (error || !country) {
+        res.send(404);
+        return;
+      }
+
+      var access = null;
+      var accessLevel = 0;
+      var l = country.accessList.length;
+      for (var i = 0; i < l; i++) {
+        if (country.accessList[i].account.equals(req.user._id)) {
+          accessLevel = country.accessList[i].accessLevel;
+        }
+
+        if (country.accessList[i].account.equals(user._id)) {
+          access = country.accessList[i];
+        }
+      }
+
+      /* Only site and country admins could change access */
+      if (req.user.accessLevel < 6 && accessLevel < 3) {
+        res.send(403);
+        return;
+      }
+
+      /* Only site admins could add country admins */
+      if (req.user.accessLevel < 6 && req.body.accessLevel >= 3) {
+        res.send(403);
+        return;
+      }
+
+      if (access) {
+        /* Prevent country admins to remove another country admin */
+        if (req.user.accessLevel < 6 && access.accessLevel >= 3) {
+          res.send(403);
+          return;
+        }
+
+        access.accessLevel = req.body.accessLevel;
+      } else {
+        country.accessList.push({
+          account: user._id,
+          accessLevel: req.body.accessLevel,
+        });
+      }
+
+      country.save(function(error) {
+        if (error) {
+          doAddAccessFailed(req, res, error);
+          return;
+        }
+
+        req.flash('info', 'Access successfully added');
+        res.redirect('/country/' + country.id);
+      });
+    });
+  });
+};
+
+function doAddAccessFailed(req, res, err) {
+  res.render('country-access-add', {
+    title: 'New Country Access',
+    error: err,
+    username: req.body.username,
+    accessLevel: req.body.accessLevel,
+  });
+}
