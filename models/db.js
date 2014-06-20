@@ -41,3 +41,6 @@ process.on('SIGINT', function() {
     console.log('Mongoose disconnected because of app termination');
   });
 });
+
+exports.url = dburl;
+exports.name = dbname;
