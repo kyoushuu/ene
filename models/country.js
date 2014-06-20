@@ -30,6 +30,10 @@ var countrySchema = new mongoose.Schema({
       msg: 'Short name should be two letters',
     },
   },
+  accessList: [{
+    account: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+    accessLevel: {type: Number, default: 1, min: 1, max: 3},
+  }],
 });
 
 countrySchema.path('name').validate(function(value, respond) {
