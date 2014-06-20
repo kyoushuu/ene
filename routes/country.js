@@ -108,3 +108,25 @@ function doCreateFailed(req, res, err) {
     });
   });
 }
+
+
+exports.display = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  var query = Country.findById(req.params.countryId).populate('server');
+  query.exec(function(error, country) {
+    if (error || !country) {
+      res.send(404);
+      return;
+    }
+
+    res.render('country', {
+      title: 'Country Information',
+      country: country,
+      info: req.flash('info'),
+    });
+  });
+};
