@@ -116,6 +116,7 @@ app.get('/server/edit/:serverId', server.edit);
 app.post('/server/edit/:serverId', server.doEdit);
 
 app.get('/country/new', country.create);
+app.post('/country/new', country.doCreate);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {

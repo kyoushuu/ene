@@ -18,6 +18,7 @@
 
 
 var Server = require('../models/server');
+var Country = require('../models/country');
 
 
 exports.create = function(req, res) {
@@ -47,3 +48,63 @@ exports.create = function(req, res) {
     });
   });
 };
+
+
+exports.doCreate = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  if (req.user.accessLevel < 6) {
+    res.send(403);
+    return;
+  }
+
+  Server.findById(req.body.server, function(error, server) {
+    if (error) {
+      console.log(error);
+      res.send(500);
+      return;
+    } else if (!server) {
+      res.send('Server Not Found', 404);
+      return;
+    }
+
+    Country.create({
+      name: req.body.name,
+      shortname: req.body.shortname,
+      server: server._id,
+    }, function(error, country) {
+      if (error) {
+        doCreateFailed(req, res, error);
+        return;
+      }
+
+      req.flash('info', 'Country successfully created');
+      res.redirect('/country/' + country.id);
+    });
+  });
+};
+
+function doCreateFailed(req, res, err) {
+  Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
+    if (error) {
+      console.log(error);
+      res.send(500);
+      return;
+    } else if (!servers || servers.length < 1) {
+      res.send('No Servers Found', 404);
+      return;
+    }
+
+    res.render('country-create', {
+      title: 'Create Country',
+      servers: servers,
+      error: err,
+      name: req.body.name,
+      shortname: req.body.shortname,
+      server: req.body.server,
+    });
+  });
+}
