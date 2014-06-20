@@ -81,8 +81,16 @@ exports.doCreate = function(req, res) {
         return;
       }
 
-      req.flash('info', 'Country successfully created');
-      res.redirect('/country/' + country.id);
+      server.countries.push(country);
+      server.save(function(error) {
+        if (error) {
+          doCreateFailed(req, res, error);
+          return;
+        }
+
+        req.flash('info', 'Country successfully created');
+        res.redirect('/country/' + country.id);
+      });
     });
   });
 };
