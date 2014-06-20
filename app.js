@@ -34,6 +34,7 @@ var routes = require('./routes');
 var user = require('./routes/user');
 var server = require('./routes/server');
 var country = require('./routes/country');
+var organization = require('./routes/organization');
 
 var http = require('http');
 var path = require('path');
@@ -125,6 +126,8 @@ app.post('/country/new', country.doCreate);
 app.get('/country/:countryId', country.display);
 app.get('/country/:countryId/access/new', country.addAccess);
 app.post('/country/:countryId/access/new', country.doAddAccess);
+
+app.get('/organization/new', organization.create);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {

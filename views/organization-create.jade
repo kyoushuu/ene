@@ -1,0 +1,27 @@
+extends layout
+
+block content
+  form(method='post')
+    div.form-item
+      label(for='username') Username:
+      input#username(type='text', name='username', value=username, required)
+    div.form-item
+      label(for='password') Password:
+      input#password(type='password', name='password', required)
+    div.form-item
+      label(for='shortname') Short Name:
+      input#shortname(type='text', name='shortname', value=shortname, required)
+    div.form-item
+      label(for='country') Country:
+      select#country(name='country' required)
+        if servers
+          each server in servers
+            if server.countries && server.countries.length
+              optgroup(label=server.name)
+                each _country in server.countries
+                  if _country.id == country
+                    option(value=_country.id, selected) #{_country.name}
+                  else
+                    option(value=_country.id) #{_country.name}
+    div.form-item
+      input#submit(type='submit', value='Create')
