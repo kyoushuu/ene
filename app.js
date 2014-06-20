@@ -22,6 +22,7 @@
  */
 
 var express = require('express');
+var MongoStore = require('connect-mongo')(express);
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var flash = require('connect-flash');
@@ -82,7 +83,11 @@ app.use(express.json());
 app.use(express.urlencoded());
 app.use(express.methodOverride());
 app.use(express.cookieParser(secret));
-app.use(express.session());
+app.use(express.session({
+  store: new MongoStore({
+    url: db.url + db.name,
+  }),
+}));
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
