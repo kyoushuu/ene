@@ -123,6 +123,7 @@ app.post('/server/edit/:serverId', server.doEdit);
 app.get('/country/new', country.create);
 app.post('/country/new', country.doCreate);
 app.get('/country/:countryId', country.display);
+app.get('/country/:countryId/access/new', country.addAccess);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {

@@ -138,3 +138,37 @@ exports.display = function(req, res) {
     });
   });
 };
+
+
+exports.addAccess = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  Country.findById(req.params.countryId, function(error, country) {
+    if (error || !country) {
+      res.send(404);
+      return;
+    }
+
+    var accessLevel = 0;
+    var l = country.accessList.length;
+    for (var i = 0; i < l; i++) {
+      if (country.accessList[i].account.equals(req.user._id)) {
+        accessLevel = country.accessList[i].accessLevel;
+        break;
+      }
+    }
+
+    /* Only site and country admins could change access */
+    if (req.user.accessLevel < 6 && accessLevel < 3) {
+      res.send(403);
+      return;
+    }
+
+    res.render('country-access-add', {
+      title: 'New Country Access',
+    });
+  });
+};
