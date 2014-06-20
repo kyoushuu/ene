@@ -29,6 +29,7 @@ var serverSchema = new mongoose.Schema({
       msg: 'Short name should be a single letter',
     },
   },
+  countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
 });
 
 serverSchema.path('name').validate(function(value, respond) {
