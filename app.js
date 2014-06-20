@@ -32,6 +32,7 @@ var User = require('./models/user');
 var routes = require('./routes');
 var user = require('./routes/user');
 var server = require('./routes/server');
+var country = require('./routes/country');
 
 var http = require('http');
 var path = require('path');
@@ -113,6 +114,8 @@ app.post('/server/new', server.doCreate);
 app.get('/server/:serverId', server.display);
 app.get('/server/edit/:serverId', server.edit);
 app.post('/server/edit/:serverId', server.doEdit);
+
+app.get('/country/new', country.create);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {
