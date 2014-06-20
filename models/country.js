@@ -34,6 +34,10 @@ var countrySchema = new mongoose.Schema({
     account: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     accessLevel: {type: Number, default: 1, min: 1, max: 3},
   }],
+  organizations: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Organization',
+  }],
 });
 
 countrySchema.path('name').validate(function(value, respond) {
