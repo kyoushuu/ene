@@ -1,0 +1,13 @@
+extends layout
+
+block content
+  table
+    tr
+      td Username:
+      td #{organization.username}
+    tr
+      td Short Name:
+      td #{organization.shortname}
+    tr
+      td Country:
+      td #{organization.country.name} (#{organization.country.server.name})

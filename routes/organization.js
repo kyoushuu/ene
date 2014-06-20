@@ -126,3 +126,43 @@ function doCreateFailed(req, res, err) {
     });
   });
 }
+
+
+exports.display = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  var query = Organization.findById(req.params.organizationId);
+  query.populate('country');
+  query.exec(function(error, organization) {
+    if (error || !organization) {
+      res.send(404);
+      return;
+    } else if (!organization.country || !organization.country._id) {
+      res.send('Country Not Found', 404);
+      return;
+    }
+
+    Server.populate(organization, {
+      path: 'country.server',
+    }, function(error, organization) {
+      if (error) {
+        console.log(error);
+        res.send(500);
+        return;
+      } else if (!organization.country.server ||
+          !organization.country.server._id) {
+        res.status('Server Not Found', 404);
+        return;
+      }
+
+      res.render('organization', {
+        title: 'Organization Information',
+        organization: organization,
+        info: req.flash('info'),
+      });
+    });
+  });
+};
