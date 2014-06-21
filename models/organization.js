@@ -23,20 +23,32 @@ var crypto = require('crypto');
 
 var secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
 
+function cipherValue(value) {
+  if (!value) {
+    return null;
+  }
+
+  var cipher = crypto.createCipher('aes-256-cbc', secret);
+  return cipher.update(value, 'binary', 'base64') + cipher.final('base64');
+}
+
+function decipherValue(value) {
+  if (!value) {
+    return null;
+  }
+
+  var decipher = crypto.createDecipher('aes-256-cbc', secret);
+  return decipher.update(value, 'base64', 'binary') + decipher.final('binary');
+}
+
 var organizationSchema = new mongoose.Schema({
   country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country'},
   username: {type: String, required: true},
   password: {
     type: String,
     required: true,
-    get: function(value) {
-      var decipher = crypto.createDecipher('aes-256-cbc', secret);
-      return decipher.update(value, 'hex', 'binary') + decipher.final('binary');
-    },
-    set: function(value) {
-      var cipher = crypto.createCipher('aes-256-cbc', secret);
-      return cipher.update(value, 'binary', 'hex') + cipher.final('hex');
-    },
+    get: decipherValue,
+    set: cipherValue,
   },
   shortname: {
     type: String, required: true, lowercase: true,
@@ -44,6 +56,11 @@ var organizationSchema = new mongoose.Schema({
       validator: /^[a-z]{2,3}$/i,
       msg: 'Short username should be two or three letters',
     },
+  },
+  cookies: {
+    type: String,
+    get: decipherValue,
+    set: cipherValue,
   },
 });
 
