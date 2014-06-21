@@ -215,6 +215,30 @@ organizationSchema.methods.login = function(callback) {
         } else {
           login(request, jar, 3);
         }
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  });
+};
+
+organizationSchema.methods.logout = function(callback) {
+  var self = this;
+
+  this.createRequest(function(error, request, jar) {
+    if (error) {
+      callback(error);
+    }
+
+    var url = self.country.server.address + '/logout.html';
+    request(url, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var $ = cheerio.load(body);
+        if ($('div#loginContainer').length) {
+          callback(null);
+        } else {
+          callback('Failed to logout');
+        }
       } else if (error) {
         callback(error);
       } else {
