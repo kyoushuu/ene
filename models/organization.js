@@ -21,6 +21,7 @@ var mongoose = require('mongoose');
 var crypto = require('crypto');
 var request = require('request');
 var cheerio = require('cheerio');
+var zlib = require('zlib');
 
 var Server = require('./server');
 var Country = require('./country');
@@ -140,7 +141,7 @@ organizationSchema.methods.createRequest = function(callback) {
       jar.setCookie(self.cookies, self.country.server.address);
     }
 
-    callback(null, request.defaults({
+    var req = request.defaults({
       jar: jar,
       followAllRedirects: true,
       headers: {
@@ -149,8 +150,45 @@ organizationSchema.methods.createRequest = function(callback) {
         'Accept': 'text/html,application/xhtml+xml,' +
             'application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
       },
-    }), jar);
+    });
+
+    callback(null, function(uri, options, c) {
+      if (typeof c === 'undefined') {
+        c = options;
+        options = {};
+      }
+
+      var r = req(uri, options);
+
+      r.on('response', function(res) {
+        var chunks = [];
+        res.on('data', function(chunk) {
+          chunks.push(chunk);
+        });
+
+        res.on('end', function() {
+          var buffer = Buffer.concat(chunks);
+          var encoding = res.headers['content-encoding'];
+          if (encoding === 'gzip') {
+            zlib.gunzip(buffer, function(error, decoded) {
+              c(error, res, decoded && decoded.toString());
+            });
+          } else if (encoding === 'deflate') {
+            zlib.inflate(buffer, function(error, decoded) {
+              c(error, res, decoded && decoded.toString());
+            });
+          } else {
+            c(null, res, buffer.toString());
+          }
+        });
+      });
+
+      r.on('error', function(error) {
+        c(error);
+      });
+    }, jar);
   }
 
   if (this.country._id && this.country.server._id) {
@@ -172,7 +210,8 @@ organizationSchema.methods.login = function(callback) {
 
   function login(request, jar, retries) {
     var url = self.country.server.address + '/login.html';
-    request.post(url, {
+    request(url, {
+      method: 'POST',
       form: {
         login: self.username,
         password: self.password,
