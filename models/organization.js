@@ -20,6 +20,7 @@
 var mongoose = require('mongoose');
 var crypto = require('crypto');
 var request = require('request');
+var cheerio = require('cheerio');
 
 var Server = require('./server');
 var Country = require('./country');
@@ -164,6 +165,63 @@ organizationSchema.methods.createRequest = function(callback) {
       createRequest();
     });
   }
+};
+
+organizationSchema.methods.login = function(callback) {
+  var self = this;
+
+  function login(request, jar, retries) {
+    var url = self.country.server.address + '/login.html';
+    request.post(url, {
+      form: {
+        login: self.username,
+        password: self.password,
+        remember: 'true',
+        submit: 'Login',
+      },
+    }, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var $ = cheerio.load(body);
+        if ($('a#userName').length) {
+          self.cookies =
+              jar.getCookieString(self.country.server.address);
+          self.save(function(error) {
+            callback(error);
+          });
+        } else if (retries) {
+          login(request, jar, --retries);
+        } else {
+          callback('Failed to login');
+        }
+      } else if (retries) {
+        login(request, jar, --retries);
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  }
+
+  this.createRequest(function(error, request, jar) {
+    if (error) {
+      callback(error);
+    }
+
+    var url = self.country.server.address;
+    request(url, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var $ = cheerio.load(body);
+        if ($('a#userName').length) {
+          callback(null);
+        } else {
+          login(request, jar, 3);
+        }
+      } else if (error) {
+        callback(error);
+      } else {
+        callback('HTTP Error: ' + response.statusCode);
+      }
+    });
+  });
 };
 
 /* jshint -W003 */
