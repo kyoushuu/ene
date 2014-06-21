@@ -32,6 +32,10 @@ var serverSchema = new mongoose.Schema({
   countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
 });
 
+serverSchema.virtual('address').get(function() {
+  return 'http://' + this.name.toLowerCase() + '.e-sim.org';
+});
+
 serverSchema.path('name').validate(function(value, respond) {
   Server.find({
     _id: {$ne: this._id},
