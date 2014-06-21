@@ -14,7 +14,9 @@
     "passport": "~0.2.0",
     "passport-local": "~1.0.0",
     "connect-flash": "~0.1.1",
-    "connect-mongo": "~0.4.1"
+    "connect-mongo": "~0.4.1",
+    "request": "~2.36.0",
+    "cheerio": "~0.17.0"
   },
   "author": {
     "name": "Arnel Borja",
