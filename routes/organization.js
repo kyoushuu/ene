@@ -78,26 +78,35 @@ exports.doCreate = function(req, res) {
       return;
     }
 
-    Organization.create({
+    var organization = new Organization({
       username: req.body.username,
       password: req.body.password,
       shortname: req.body.shortname,
       country: country._id,
-    }, function(error, organization) {
+    });
+
+    organization.login(function(error) {
       if (error) {
         doCreateFailed(req, res, error);
         return;
       }
 
-      country.organizations.push(organization);
-      country.save(function(error) {
+      organization.save(function(error) {
         if (error) {
           doCreateFailed(req, res, error);
           return;
         }
 
-        req.flash('info', 'Organization successfully created');
-        res.redirect('/organization/' + organization.id);
+        country.organizations.push(organization);
+        country.save(function(error) {
+          if (error) {
+            doCreateFailed(req, res, error);
+            return;
+          }
+
+          req.flash('info', 'Organization successfully created');
+          res.redirect('/organization/' + organization.id);
+        });
       });
     });
   });
