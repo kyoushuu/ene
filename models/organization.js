@@ -19,6 +19,10 @@
 
 var mongoose = require('mongoose');
 var crypto = require('crypto');
+var request = require('request');
+
+var Server = require('./server');
+var Country = require('./country');
 
 
 var secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
@@ -101,6 +105,66 @@ organizationSchema.path('shortname').validate(function(value, respond) {
     }
   });
 }, 'Organization short username with the same country already exists');
+
+function populateCountry(self, callback) {
+  Country.populate(self, {
+    path: 'country',
+  }, callback);
+}
+
+function populateServer(self, callback) {
+  if (!self.country._id) {
+    populateCountry(self, function(error) {
+      if (error) {
+        callback(error);
+        return;
+      }
+
+      populateServer(self, callback);
+    });
+    return;
+  }
+
+  Server.populate(self, {
+    path: 'country.server',
+  }, callback);
+}
+
+organizationSchema.methods.createRequest = function(callback) {
+  var self = this;
+
+  function createRequest() {
+    var jar = request.jar();
+    if (self.cookies) {
+      jar.setCookie(self.cookies, self.country.server.address);
+    }
+
+    callback(null, request.defaults({
+      jar: jar,
+      followAllRedirects: true,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:30.0) ' +
+            'Gecko/20100101 Firefox/30.0',
+        'Accept': 'text/html,application/xhtml+xml,' +
+            'application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+    }), jar);
+  }
+
+  if (this.country._id && this.country.server._id) {
+    createRequest();
+  } else {
+    populateServer(self, function(error) {
+      if (error) {
+        callback(error);
+        return;
+      }
+
+      createRequest();
+    });
+  }
+};
 
 /* jshint -W003 */
 var Organization = mongoose.model('Organization', organizationSchema);
