@@ -44,6 +44,7 @@ function decipherValue(value) {
 var channelSchema = new mongoose.Schema({
   name: {type: String, required: true, unique: true},
   keyword: {type: String, get: decipherValue, set: cipherValue},
+  countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
 });
 
 channelSchema.path('name').validate(function(value, respond) {
