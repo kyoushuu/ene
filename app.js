@@ -143,6 +143,7 @@ app.post('/country/new', country.doCreate);
 app.get('/country/:countryId', country.display);
 app.get('/country/:countryId/access/new', country.addAccess);
 app.post('/country/:countryId/access/new', country.doAddAccess);
+app.get('/country/:countryId/channel/new', country.addChannel);
 
 app.get('/organization/new', organization.create);
 app.post('/organization/new', organization.doCreate);

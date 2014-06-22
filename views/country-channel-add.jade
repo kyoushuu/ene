@@ -1,0 +1,25 @@
+extends layout
+
+block content
+  form(method='post')
+    div.form-item
+      label(for='name') Name:
+      input#username(type='text', name='name', value=name, required)
+    div.form-item
+      label(for='general') Type:
+      input#general(type='checkbox', name='general', value='true', checked=general)
+      | General
+    div.form-item
+      label(for='military')
+      input#military(type='checkbox', name='military', value='true', checked=military)
+      | Military
+    div.form-item
+      label(for='political')
+      input#political(type='checkbox', name='political', value='true', checked=political)
+      | Political
+    div.form-item
+      label(for='motivation')
+      input#motivation(type='checkbox', name='motivation', value='true', checked=motivation)
+      | Motivation
+    div.form-item
+      input#submit(type='submit', value='Create')

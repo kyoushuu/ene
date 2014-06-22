@@ -254,3 +254,27 @@ function doAddAccessFailed(req, res, err) {
     accessLevel: req.body.accessLevel,
   });
 }
+
+
+exports.addChannel = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  if (req.user.accessLevel < 6) {
+    res.send(403);
+    return;
+  }
+
+  Country.findById(req.params.countryId, function(error, country) {
+    if (error || !country) {
+      res.send(404);
+      return;
+    }
+
+    res.render('country-channel-add', {
+      title: 'New Country Channel',
+    });
+  });
+};
