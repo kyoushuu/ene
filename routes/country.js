@@ -346,8 +346,17 @@ exports.doAddChannel = function(req, res) {
           return;
         }
 
-        req.flash('info', 'Channel successfully added');
-        res.redirect('/country/' + country.id);
+        channel.countries.push(country._id);
+
+        channel.save(function(error) {
+          if (error) {
+            doAddChannelFailed(req, res, error);
+            return;
+          }
+
+          req.flash('info', 'Channel successfully added');
+          res.redirect('/country/' + country.id);
+        });
       });
     });
   });
