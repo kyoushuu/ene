@@ -17,6 +17,9 @@
  */
 
 
+var Channel = require('../models/channel');
+
+
 exports.create = function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
@@ -30,5 +33,35 @@ exports.create = function(req, res) {
 
   res.render('channel-create', {
     title: 'Create Channel',
+  });
+};
+
+
+exports.doCreate = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  if (req.user.accessLevel < 6) {
+    res.send(403);
+    return;
+  }
+
+  Channel.create({
+    name: req.body.name,
+    keyword: req.body.keyword,
+  }, function(error, channel) {
+    if (error) {
+      res.render('channel-create', {
+        title: 'Create Channel',
+        error: error,
+        name: req.body.name,
+      });
+      return;
+    }
+
+    req.flash('info', 'Channel successfully created');
+    res.redirect('/channel/' + channel.id);
   });
 };
