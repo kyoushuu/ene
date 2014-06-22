@@ -65,3 +65,24 @@ exports.doCreate = function(req, res) {
     res.redirect('/channel/' + channel.id);
   });
 };
+
+
+exports.display = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  Channel.findById(req.params.channelId, function(error, channel) {
+    if (error || !channel) {
+      res.send(404);
+      return;
+    }
+
+    res.render('channel', {
+      title: 'Channel Information',
+      channel: channel,
+      info: req.flash('info'),
+    });
+  });
+};

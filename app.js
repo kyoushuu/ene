@@ -134,6 +134,7 @@ app.get('/organization/:organizationId', organization.display);
 
 app.get('/channel/new', channel.create);
 app.post('/channel/new', channel.doCreate);
+app.get('/channel/:channelId', channel.display);
 
 http.createServer(app).listen(
     app.get('port'), app.get('ipaddress'), function() {
