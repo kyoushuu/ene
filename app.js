@@ -121,6 +121,7 @@ app.get('/user/confirm', user.confirm);
 app.post('/user/confirm', user.doConfirm);
 app.get('/user/confirm/:confirmCode', user.confirmCode);
 app.get('/user/recover', user.recover);
+app.post('/user/recover', user.doRecover);
 app.get('/user/signin', user.signIn);
 app.post('/user/signin', passport.authenticate('local', {
   successRedirect: '/',

@@ -21,6 +21,31 @@ var User = require('../models/user');
 var nodemailer = require('nodemailer');
 
 
+function sendEmail(user, subject, body, callback) {
+  var domain = process.env.DOMAIN ||
+      process.env.OPENSHIFT_APP_DNS || 'localhost';
+  var transport = nodemailer.createTransport('SMTP', {
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT || 465,
+    secureConnection: true,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  transport.sendMail({
+    from: 'Ene Project <no-reply@' + domain + '>',
+    to: user.username + ' <' + user.email + '>',
+    subject: subject,
+    text: body,
+  }, function(error, response) {
+    callback(error, response);
+    transport.close();
+  });
+}
+
+
 exports.create = function(req, res) {
   res.render('signup', {title: 'Sign Up'});
 };
@@ -51,35 +76,20 @@ exports.doCreate = function(req, res) {
 };
 
 function sendConfirmEmail(user, callback) {
-  var domain = process.env.DOMAIN ||
-      process.env.OPENSHIFT_APP_DNS || 'localhost';
   var address = process.env.ADDRESS || process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
-  var transport = nodemailer.createTransport('SMTP', {
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT || 465,
-    secureConnection: true,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
 
-  transport.sendMail({
-    from: 'Ene Project <no-reply@' + domain + '>',
-    to: user.username + ' <' + user.email + '>',
-    subject: 'New account confirmation',
-    text: 'Welcome ' + user.username + ',\n\n' +
-        'You can confirm your account through this link:\n' +
-        'http://' + address + '/user/confirm/' + user.confirmCode,
-  }, function(error, response) {
-    if (!error) {
-      callback(null);
-    } else {
-      callback(error);
-    }
-    transport.close();
-  });
+  sendEmail(user, 'New account confirmation',
+            'Welcome ' + user.username + ',\n\n' +
+            'You can confirm your account through this link:\n' +
+            'http://' + address + '/user/confirm/' + user.confirmCode,
+            function(error, response) {
+              if (!error) {
+                callback(null);
+              } else {
+                callback(error);
+              }
+            });
 }
 
 
@@ -154,6 +164,69 @@ exports.recover = function(req, res) {
     title: 'Recover your account',
   });
 };
+
+
+exports.doRecover = function(req, res) {
+  if (req.isAuthenticated()) {
+    res.redirect('/');
+    return;
+  }
+
+  User.findOne({
+    email: req.body.email.toLowerCase(),
+  }, function(error, user) {
+    if (error) {
+      res.send(500);
+      return;
+    } else if (!user) {
+      doRecoverFailed(res, user, req.body.email, 'Email not registered');
+      return;
+    }
+
+    user.recover(function(error) {
+      if (error) {
+        doRecoverFailed(res, user, req.body.email, error);
+        return;
+      }
+
+      sendRecoverEmail(user, function(error) {
+        if (error) {
+          console.log('Failed to send recovery email: ' + error);
+        }
+
+        res.render('recover', {
+          title: 'Email Sent',
+          sent: true,
+        });
+      });
+    });
+  });
+};
+
+function doRecoverFailed(res, user, email, error) {
+  res.render('recover', {
+    title: 'Recover your account',
+    user: user,
+    email: email,
+  });
+}
+
+function sendRecoverEmail(user, callback) {
+  var address = process.env.ADDRESS || process.env.DOMAIN ||
+      process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
+
+  sendEmail(user, 'Account Recovery',
+            'Hello ' + user.username + ',\n\n' +
+            'You can recover your account through this link:\n' +
+            'http://' + address + '/user/recover/' + user.recoverCode,
+            function(error, response) {
+              if (!error) {
+                callback(null);
+              } else {
+                callback(error);
+              }
+            });
+}
 
 
 exports.signIn = function(req, res) {
