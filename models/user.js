@@ -58,6 +58,13 @@ userSchema.methods.isValidPassword = function(password) {
   return this.password === hash(password, this.salt);
 };
 
+userSchema.methods.recover = function(callback) {
+  this.recoverCode = createConfirmCode();
+  this.save(function(error) {
+    callback(error);
+  });
+};
+
 userSchema.path('username').validate(function(value, respond) {
   User.find({
     _id: {$ne: this._id},
