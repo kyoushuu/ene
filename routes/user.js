@@ -229,6 +229,30 @@ function sendRecoverEmail(user, callback) {
 }
 
 
+exports.recoverCode = function(req, res) {
+  if (req.isAuthenticated()) {
+    res.redirect('/');
+    return;
+  }
+
+  User.findOne({
+    recoverCode: req.params.recoverCode,
+  }, function(error, user) {
+    if (error) {
+      res.send(500);
+      return;
+    } else if (!user) {
+      doRecoverFailed(res, null, 'Invalid code');
+      return;
+    }
+
+    res.render('recover-code', {
+      title: 'Create new password',
+    });
+  });
+};
+
+
 exports.signIn = function(req, res) {
   res.render('signin', {
     title: 'Sign In',
