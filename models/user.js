@@ -50,6 +50,7 @@ var userSchema = new mongoose.Schema({
     },
   },
   confirmCode: {type: String, default: createConfirmCode},
+  recoverCode: {type: String},
   accessLevel: {type: Number, default: 1, min: 1, max: 7},
 });
 
