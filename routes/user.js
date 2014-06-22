@@ -253,6 +253,47 @@ exports.recoverCode = function(req, res) {
 };
 
 
+exports.doRecoverCode = function(req, res) {
+  if (req.isAuthenticated()) {
+    res.redirect('/');
+    return;
+  }
+
+  User.findOne({
+    recoverCode: req.params.recoverCode,
+  }, function(error, user) {
+    if (error) {
+      res.send(500);
+      return;
+    } else if (!user) {
+      doRecoverCodeFailed(res, null, 'Invalid code');
+      return;
+    }
+
+    user.recoverCode = null;
+    user.password = req.body.password;
+    user.save(function(error) {
+      if (error) {
+        doRecoverCodeFailed(res, user, error);
+        return;
+      }
+
+      req.logIn(user, function(error) {
+        res.redirect('/');
+      });
+    });
+  });
+};
+
+function doRecoverCodeFailed(res, user, error) {
+  res.render('recover-code', {
+    title: 'Account recovery failed',
+    user: user,
+    error: error,
+  });
+}
+
+
 exports.signIn = function(req, res) {
   res.render('signin', {
     title: 'Sign In',
