@@ -144,6 +144,18 @@ function confirmFailed(res) {
 }
 
 
+exports.recover = function(req, res) {
+  if (req.isAuthenticated()) {
+    res.redirect('/');
+    return;
+  }
+
+  res.render('recover', {
+    title: 'Recover your account',
+  });
+};
+
+
 exports.signIn = function(req, res) {
   res.render('signin', {
     title: 'Sign In',
