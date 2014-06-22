@@ -38,6 +38,13 @@ var countrySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Organization',
   }],
+  channels: [{
+    channel: {type: mongoose.Schema.Types.ObjectId, ref: 'Channel'},
+    types: [{
+      type: String,
+      enum: ['general', 'military', 'political', 'motivation'],
+    }],
+  }],
 });
 
 countrySchema.path('name').validate(function(value, respond) {
