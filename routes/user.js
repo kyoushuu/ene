@@ -150,3 +150,9 @@ exports.signIn = function(req, res) {
     error: req.flash('error'),
   });
 };
+
+
+exports.signOut = function(req, res) {
+  req.logOut();
+  res.redirect('/');
+};

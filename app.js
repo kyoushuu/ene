@@ -126,6 +126,7 @@ app.post('/user/signin', passport.authenticate('local', {
   failureRedirect: '/user/signin',
   failureFlash: true,
 }));
+app.get('/user/signout', user.signOut);
 
 app.get('/server/new', server.create);
 app.post('/server/new', server.doCreate);
