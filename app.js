@@ -144,6 +144,7 @@ app.get('/country/:countryId', country.display);
 app.get('/country/:countryId/access/new', country.addAccess);
 app.post('/country/:countryId/access/new', country.doAddAccess);
 app.get('/country/:countryId/channel/new', country.addChannel);
+app.post('/country/:countryId/channel/new', country.doAddChannel);
 
 app.get('/organization/new', organization.create);
 app.post('/organization/new', organization.doCreate);

@@ -20,6 +20,7 @@
 var Server = require('../models/server');
 var Country = require('../models/country');
 var User = require('../models/user');
+var Channel = require('../models/channel');
 
 
 exports.create = function(req, res) {
@@ -278,3 +279,88 @@ exports.addChannel = function(req, res) {
     });
   });
 };
+
+
+exports.doAddChannel = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  Channel.findOne({name: req.body.name}, function(error, channel) {
+    if (error || !channel) {
+      doAddChannelFailed(req, res, 'Channel not found');
+      return;
+    }
+
+    if (req.user.accessLevel < 6) {
+      res.send(403);
+      return;
+    }
+
+    Country.findById(req.params.countryId, function(error, country) {
+      if (error || !country) {
+        res.send(404);
+        return;
+      }
+
+      var l = country.channels.length;
+      for (var i = 0; i < l; i++) {
+        if (country.channels[i].channel.equals(channel._id)) {
+          doAddChannelFailed(req, res, 'Channel already exists');
+          return;
+        }
+      }
+
+      var types = [];
+
+      if (req.body.general) {
+        types.push('general');
+      }
+
+      if (req.body.military) {
+        types.push('military');
+      }
+
+      if (req.body.political) {
+        types.push('political');
+      }
+
+      if (req.body.motivation) {
+        types.push('motivation');
+      }
+
+      if (types.length < 1) {
+        doAddChannelFailed(req, res, 'No type selected');
+        return;
+      }
+
+      country.channels.push({
+        channel: channel._id,
+        types: types,
+      });
+
+      country.save(function(error) {
+        if (error) {
+          doAddChannelFailed(req, res, error);
+          return;
+        }
+
+        req.flash('info', 'Channel successfully added');
+        res.redirect('/country/' + country.id);
+      });
+    });
+  });
+};
+
+function doAddChannelFailed(req, res, error) {
+  res.render('country-channel-add', {
+    title: 'New Country Channel',
+    error: error,
+    name: req.body.name,
+    general: req.body.general,
+    military: req.body.military,
+    political: req.body.political,
+    motivation: req.body.motivation,
+  });
+}
