@@ -324,6 +324,71 @@ exports.addCitizen = function(req, res) {
 };
 
 
+exports.doAddCitizen = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
+    res.send(403);
+    return;
+  }
+
+  Server.findById(req.body.server, function(error, server) {
+    if (error || !server) {
+      res.send('Server Not Found', 404);
+      return;
+    }
+
+    var l = req.user.citizens.length;
+    for (var i = 0; i < l; i++) {
+      if (req.user.citizens[i].name === req.body.name &&
+          req.user.citizens[i].server.equals(server._id)) {
+        doAddCitizenFailed(req, res, 'Citizen already exists');
+        return;
+      }
+    }
+
+    req.user.citizens.push({
+      server: server._id,
+      name: req.body.name,
+    });
+
+    req.user.save(function(error) {
+      if (error) {
+        doAddCitizenFailed(req, res, error);
+        return;
+      }
+
+      req.flash('info', 'Citizen successfully added');
+      res.redirect('/user/' + req.user.id);
+    });
+  });
+};
+
+function doAddCitizenFailed(req, res, err) {
+  Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
+    if (error) {
+      console.log(error);
+      res.send(500);
+      return;
+    } else if (!servers || !servers.length) {
+      res.send('No Servers Found', 404);
+      return;
+    }
+
+    res.render('user-add-citizen', {
+      title: 'New User Citizen',
+      error: err,
+      servers: servers,
+      server: req.body.server,
+      name: req.body.name,
+    });
+  });
+}
+
+
 exports.signIn = function(req, res) {
   res.render('signin', {
     title: 'Sign In',
