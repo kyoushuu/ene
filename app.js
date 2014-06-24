@@ -124,6 +124,7 @@ app.get('/user/recover', user.recover);
 app.post('/user/recover', user.doRecover);
 app.get('/user/recover/:recoverCode', user.recoverCode);
 app.post('/user/recover/:recoverCode', user.doRecoverCode);
+app.get('/user/:userId/citizen/new', user.addCitizen);
 app.get('/user/signin', user.signIn);
 app.post('/user/signin', passport.authenticate('local', {
   successRedirect: '/',

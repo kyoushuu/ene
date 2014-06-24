@@ -18,6 +18,7 @@
 
 
 var User = require('../models/user');
+var Server = require('../models/server');
 var nodemailer = require('nodemailer');
 
 
@@ -292,6 +293,35 @@ function doRecoverCodeFailed(res, user, error) {
     error: error,
   });
 }
+
+
+exports.addCitizen = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
+    res.send(403);
+    return;
+  }
+
+  Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
+    if (error) {
+      console.log(error);
+      res.send(500);
+      return;
+    } else if (!servers || !servers.length) {
+      res.send('No Servers Found', 404);
+      return;
+    }
+
+    res.render('user-add-citizen', {
+      title: 'New User Citizen',
+      servers: servers,
+    });
+  });
+};
 
 
 exports.signIn = function(req, res) {

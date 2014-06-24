@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  form(method='post')
+    div.form-item
+      label(for='server') Server:
+      select#server(name='server' required)
+        if servers
+          each _server in servers
+            option(value=_server.id, selected=_server.id==server) #{_server.name}
+    div.form-item
+      label(for='name') Name:
+      input#username(type='text', name='name', value=name, required)
+    div.form-item
+      input#submit(type='submit', value='Create')
