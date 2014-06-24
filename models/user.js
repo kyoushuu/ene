@@ -52,6 +52,10 @@ var userSchema = new mongoose.Schema({
   confirmCode: {type: String, default: createConfirmCode},
   recoverCode: {type: String},
   accessLevel: {type: Number, default: 1, min: 1, max: 7},
+  citizens: [{
+    server: {type: mongoose.Schema.Types.ObjectId, ref: 'Server'},
+    name: {type: String, required: true},
+  }],
 });
 
 userSchema.methods.isValidPassword = function(password) {
