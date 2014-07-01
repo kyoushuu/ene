@@ -16,7 +16,8 @@
     "connect-flash": "~0.1.1",
     "connect-mongo": "~0.4.1",
     "request": "~2.36.0",
-    "cheerio": "~0.17.0"
+    "cheerio": "~0.17.0",
+    "irc": "~0.3.7"
   },
   "author": {
     "name": "Arnel Borja",
