@@ -18,6 +18,7 @@
 
 
 var cheerio = require('cheerio');
+var cron = require('cron');
 
 var parse = require('./parse');
 
@@ -443,3 +444,16 @@ function motivateCheckNextCitizen_(
     callback(null, found);
   }
 }
+
+var cleanJob = new cron.CronJob('00 00 00 * * *', function() {
+  MotivatedCitizen.remove(function(error) {
+    if (!error) {
+      console.log('Successfully cleared cache with a cron job.');
+    } else {
+      console.log('Failed to clear cache with a cron job: ' + error);
+    }
+  });
+}, function() {
+  console.log('Cron job for clearing motivate cache stops');
+}, false, 'Europe/Warsaw');
+cleanJob.start();
