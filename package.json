@@ -17,7 +17,8 @@
     "connect-mongo": "~0.4.1",
     "request": "~2.36.0",
     "cheerio": "~0.17.0",
-    "irc": "~0.3.7"
+    "irc": "~0.3.7",
+    "node-getopt": "~0.2.3"
   },
   "author": {
     "name": "Arnel Borja",
