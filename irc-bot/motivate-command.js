@@ -22,6 +22,7 @@ var cheerio = require('cheerio');
 var parse = require('./parse');
 
 var Channel = require('../models/channel');
+var MotivatedCitizen = require('../models/motivated-citizen');
 
 var motivateLock = {};
 var motivateDate = {};
@@ -32,6 +33,7 @@ module.exports = function(bot, from, to, argv) {
     ['w', 'weapon', 'Use q1 weapons'],
     ['f', 'food', 'Use q3 foods (default)'],
     ['g', 'gift', 'Use q3 gifts'],
+    ['c', 'no-cache', 'Don\'t use cache'],
     ['m', 'message', 'Send links as private message'],
     ['n', 'notify', 'Send links as notice (default)'],
   ], argv, 0, 1, to, true, function(error, args) {
@@ -160,6 +162,12 @@ function motivateParse_(error, bot, from, to, args, country) {
     return;
   }
 
+  if (opt.options['no-cache']) {
+    bot.say(to,
+        'WARNING: Use of no-cache option without permission is ' +
+                'prohibited.');
+  }
+
   bot.say(to,
       'Looking for new citizens that can be motivated in ' + server.name +
       ' server...');
@@ -179,6 +187,7 @@ function motivateParse_(error, bot, from, to, args, country) {
   motivate(country, country.organizations[0], {
     pack: pack,
     find: find,
+    cache: !opt.options['no-cache'],
   }, function(error, found) {
     if (!error) {
       bot.say(to, 'Done. Found ' + found + ' citizen/s.');
@@ -290,6 +299,59 @@ function motivateCheckPage_(
 function motivateCheckCitizen_(
         country, organization, options, request, found, page, citizens, i,
         callback, pageCallback, foundCallback) {
+  if (options.cache) {
+    motivateCheckCitizenFromCache_(
+        country, organization, options, request,
+        found, page, citizens, i,
+        callback, pageCallback, foundCallback);
+  } else {
+    motivateCheckCitizenFromServer_(
+        country, organization, options, request,
+        found, page, citizens, i, null,
+        callback, pageCallback, foundCallback);
+  }
+}
+
+function motivateCheckCitizenFromCache_(
+        country, organization, options, request, found, page, citizens, i,
+        callback, pageCallback, foundCallback) {
+  MotivatedCitizen.findOne({
+    citizenId: citizens[i],
+    server: country.server,
+  }, function(error, citizen) {
+    if (error) {
+      console.log(error);
+    }
+
+    if (!citizen) {
+      citizen = new MotivatedCitizen({
+        citizenId: citizens[i],
+        server: country.server,
+        weapon: true,
+        food: true,
+        gift: true,
+      });
+    }
+
+    if (citizen[options.pack]) {
+      motivateCheckCitizenFromServer_(
+          country, organization, options, request,
+          found, page, citizens, i, citizen,
+          callback, pageCallback, foundCallback);
+      return;
+    }
+
+    motivateCheckNextCitizen_(
+        country, organization, options, request,
+        found, page, citizens, i,
+        callback, pageCallback, foundCallback);
+  });
+}
+
+function motivateCheckCitizenFromServer_(
+        country, organization, options, request,
+        found, page, citizens, i, citizen,
+        callback, pageCallback, foundCallback) {
   var url = country.server.address +
             '/motivateCitizen.html?id=' + citizens[i];
   request(url, function(error, response, body) {
@@ -299,15 +361,37 @@ function motivateCheckCitizen_(
       if (!$('a#userName').length) {
         organization.login(function(error) {
           if (!error) {
-            motivateCheckCitizen_(
+            motivateCheckCitizenFromServer_(
                 country, organization, options, request,
-                found, page, citizens, i,
+                found, page, citizens, i, citizen,
                 callback, pageCallback, foundCallback);
           } else {
             callback('Failed to check citizen: ' + error);
           }
         });
         return;
+      }
+
+      if (citizen) {
+        if ($('input[value=1]').length === 0 && citizen.weapon) {
+          citizen.weapon = false;
+        }
+
+        if ($('input[value=2]').length === 0 && citizen.food) {
+          citizen.food = false;
+        }
+
+        if ($('input[value=3]').length === 0 && citizen.gift) {
+          citizen.gift = false;
+        }
+
+        if (citizen.isModified()) {
+          citizen.save(function(error) {
+            if (error) {
+              console.log(error);
+            }
+          });
+        }
       }
 
       var pack = 2;
