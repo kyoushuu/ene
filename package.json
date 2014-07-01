@@ -18,7 +18,8 @@
     "request": "~2.36.0",
     "cheerio": "~0.17.0",
     "irc": "~0.3.7",
-    "node-getopt": "~0.2.3"
+    "node-getopt": "~0.2.3",
+    "shell-quote": "~1.4.1"
   },
   "author": {
     "name": "Arnel Borja",
