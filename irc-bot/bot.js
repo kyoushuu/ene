@@ -18,6 +18,9 @@
 
 
 var irc = require('irc');
+var parse = require('shell-quote').parse;
+
+var motivate = require('./motivate-command');
 
 var Channel = require('../models/channel');
 
@@ -28,6 +31,24 @@ var bot = new irc.Client(process.env.IRC_SERVER, process.env.IRC_NICKNAME, {
   channels: [],
   floodProtection: true,
 });
+
+function isNickIdentified(nick, callback) {
+  var identified = false;
+
+  var wrapper = function(message) {
+    if (message.rawCommand === '307' &&
+        message.args[1] === nick &&
+                message.args[2] === 'has identified for this nick') {
+      identified = true;
+    }
+  };
+  bot.addListener('raw', wrapper);
+
+  bot.whois(nick, function(info) {
+    bot.removeListener('raw', wrapper);
+    callback(identified);
+  });
+}
 
 bot.addListener('registered', function(from, to, message) {
   bot.addListener('notice', function join(from, to, message) {
@@ -57,6 +78,19 @@ bot.addListener('registered', function(from, to, message) {
     }
   });
   bot.say('NickServ', 'IDENTIFY ' + process.env.IRC_PASSWORD);
+});
+
+bot.addListener('message#', function(from, to, message) {
+  var argv = parse(message);
+  if (argv[0] === '!motivate') {
+    isNickIdentified(from, function(identified) {
+      if (identified) {
+        motivate(bot, from, to, argv);
+      } else {
+        bot.say(to, 'Identify with NickServ first.');
+      }
+    });
+  }
 });
 
 bot.addListener('error', function(message) {
