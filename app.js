@@ -30,6 +30,8 @@ var flash = require('connect-flash');
 var db = require('./models/db');
 var User = require('./models/user');
 
+var bot = require('./irc-bot/bot');
+
 var routes = require('./routes');
 var user = require('./routes/user');
 var server = require('./routes/server');
