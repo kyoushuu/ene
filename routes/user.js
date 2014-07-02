@@ -25,6 +25,7 @@ var nodemailer = require('nodemailer');
 function sendEmail(user, subject, body, callback) {
   var domain = process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost';
+  var sender = process.env.SMTP_SENDER || 'no-reply@' + domain;
   var transport = nodemailer.createTransport('SMTP', {
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT || 465,
@@ -36,7 +37,7 @@ function sendEmail(user, subject, body, callback) {
   });
 
   transport.sendMail({
-    from: 'Ene Project <no-reply@' + domain + '>',
+    from: 'Ene Project <' + sender + '>',
     to: user.username + ' <' + user.email + '>',
     subject: subject,
     text: body,
