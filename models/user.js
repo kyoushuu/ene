@@ -56,6 +56,7 @@ var userSchema = new mongoose.Schema({
     server: {type: mongoose.Schema.Types.ObjectId, ref: 'Server'},
     name: {type: String, required: true},
   }],
+  nicknames: [String],
 });
 
 userSchema.methods.isValidPassword = function(password) {
@@ -104,6 +105,24 @@ userSchema.path('email').validate(function(value, respond) {
     }
   });
 }, 'E-mail is already registered');
+
+userSchema.path('nicknames').validate(function(value, respond) {
+  User.find({
+    _id: {$ne: this._id},
+    nicknames: value,
+  }, function(error, users) {
+    if (error) {
+      console.log(error);
+      return respond(false);
+    }
+
+    if (users.length) {
+      respond(false);
+    } else {
+      respond(true);
+    }
+  });
+}, 'Nickname is already in use');
 
 /* jshint -W003 */
 var User = mongoose.model('User', userSchema);
