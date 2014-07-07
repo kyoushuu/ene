@@ -22,6 +22,8 @@ var parse = require('shell-quote').parse;
 
 var motivate = require('./motivate-command');
 
+var nickname = require('./nickname-command');
+
 var Channel = require('../models/channel');
 
 
@@ -91,6 +93,19 @@ bot.addListener('message#', function(from, to, message) {
       }
     });
   }
+});
+
+bot.addListener('pm', function(from, message) {
+  var argv = parse(message);
+  isNickIdentified(from, function(identified) {
+    if (identified) {
+      if (argv[0] === 'add-nickname') {
+        nickname.add(bot, from, argv);
+      }
+    } else {
+      bot.say(from, 'Identify with NickServ first.');
+    }
+  });
 });
 
 bot.addListener('error', function(message) {
