@@ -153,6 +153,7 @@ app.post('/country/:countryId/channel/new', country.doAddChannel);
 app.get('/organization/new', organization.create);
 app.post('/organization/new', organization.doCreate);
 app.get('/organization/:organizationId', organization.display);
+app.get('/organization/edit/:organizationId', organization.edit);
 
 app.get('/channel/new', channel.create);
 app.post('/channel/new', channel.doCreate);

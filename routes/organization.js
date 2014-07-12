@@ -175,3 +175,24 @@ exports.display = function(req, res) {
     });
   });
 };
+
+
+exports.edit = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  var query = Organization.findById(req.params.organizationId);
+  query.exec(function(error, organization) {
+    if (error || !organization) {
+      res.send(404);
+      return;
+    }
+
+    res.render('organization-edit', {
+      title: 'Edit Organization',
+      organization: organization,
+    });
+  });
+};
