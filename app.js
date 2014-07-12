@@ -154,6 +154,7 @@ app.get('/organization/new', organization.create);
 app.post('/organization/new', organization.doCreate);
 app.get('/organization/:organizationId', organization.display);
 app.get('/organization/edit/:organizationId', organization.edit);
+app.post('/organization/edit/:organizationId', organization.doEdit);
 
 app.get('/channel/new', channel.create);
 app.post('/channel/new', channel.doCreate);

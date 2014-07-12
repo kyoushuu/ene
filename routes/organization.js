@@ -196,3 +196,67 @@ exports.edit = function(req, res) {
     });
   });
 };
+
+
+exports.doEdit = function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  var query = Organization.findById(req.params.organizationId);
+  query.populate('country');
+  query.exec(function(error, organization) {
+    if (error || !organization) {
+      res.send(404);
+      return;
+    }
+
+    var country = organization.country;
+
+    var accessLevel = 0;
+    var l = country.accessList.length;
+    for (var i = 0; i < l; i++) {
+      if (country.accessList[i].account.equals(req.user._id)) {
+        accessLevel = country.accessList[i].accessLevel;
+      }
+    }
+
+    if (req.user.accessLevel < 6 && accessLevel < 3) {
+      res.send(403);
+      return;
+    }
+
+    organization.username = req.body.username;
+    organization.shortname = req.body.shortname;
+
+    if (req.body.password) {
+      organization.password = req.body.password;
+    }
+
+    organization.login(function(error) {
+      if (error) {
+        doEditFailed(res, error, organization);
+        return;
+      }
+
+      organization.save(function(error) {
+        if (error) {
+          doEditFailed(res, error, organization);
+          return;
+        }
+
+        req.flash('info', 'Organization successfully saved');
+        res.redirect('/organization/' + organization.id);
+      });
+    });
+  });
+};
+
+function doEditFailed(res, error, organization) {
+  res.render('organization-edit', {
+    title: 'Edit Organization',
+    error: error,
+    organization: organization,
+  });
+}
