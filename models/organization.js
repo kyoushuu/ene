@@ -229,6 +229,8 @@ organizationSchema.methods.login = function(callback) {
           });
         } else if (retries) {
           login(request, jar, --retries);
+        } else if ($('div.testDivred').length) {
+          callback($('div.testDivred').text().trim());
         } else {
           callback('Failed to login');
         }
