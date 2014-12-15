@@ -25,6 +25,7 @@ var zlib = require('zlib');
 
 var Server = require('./server');
 var Country = require('./country');
+var ProductDonation = require('./product-donation');
 
 
 var secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
@@ -337,7 +338,16 @@ organizationSchema.methods.donateProducts = function(
                                 callback);
           });
         } else if ($('#citizenMessage div').text().trim() === 'Products sent') {
-          callback(null);
+          ProductDonation.create({
+            organization: self._id,
+            sender: sender._id,
+            recipient: citizenId,
+            product: product,
+            quantity: quantity,
+            reason: reason,
+          }, function(error, donation) {
+            callback(error);
+          });
         } else if ($('#citizenMessage div').length) {
           callback($('#citizenMessage div').text().trim());
         } else {
