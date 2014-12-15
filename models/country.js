@@ -45,6 +45,10 @@ var countrySchema = new mongoose.Schema({
       enum: ['general', 'military', 'political', 'motivation'],
     }],
   }],
+  supplyFormat: {
+    type: String,
+    default: '1-WEAPON/5-FOOD/5-GIFT/1-TICKET/3-FOOD',
+  },
 });
 
 countrySchema.path('name').validate(function(value, respond) {
