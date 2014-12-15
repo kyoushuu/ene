@@ -107,21 +107,32 @@ userSchema.path('email').validate(function(value, respond) {
 }, 'E-mail is already registered');
 
 userSchema.path('nicknames').validate(function(value, respond) {
-  User.find({
-    _id: {$ne: this._id},
-    nicknames: value,
-  }, function(error, users) {
-    if (error) {
-      console.log(error);
-      return respond(false);
+  var self = this;
+  var l = value.length;
+
+  function checkNickname(i) {
+    if (i >= l) {
+      return respond(true);
     }
 
-    if (users.length) {
-      respond(false);
-    } else {
-      respond(true);
-    }
-  });
+    User.find({
+      _id: {$ne: self._id},
+      nicknames: value[i],
+    }, function(error, users) {
+      if (error) {
+        console.log(error);
+        return respond(false);
+      }
+
+      if (users.length) {
+        respond(false);
+      } else {
+        checkNickname(++i);
+      }
+    });
+  }
+
+  checkNickname(0);
 }, 'Nickname is already in use');
 
 /* jshint -W003 */
