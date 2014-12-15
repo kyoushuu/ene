@@ -21,6 +21,7 @@ var irc = require('irc');
 var parse = require('shell-quote').parse;
 
 var motivate = require('./motivate-command');
+var donate = require('./donate-command');
 
 var nickname = require('./nickname-command');
 
@@ -88,6 +89,14 @@ bot.addListener('message#', function(from, to, message) {
     isNickIdentified(from, function(identified) {
       if (identified) {
         motivate(bot, from, to, argv);
+      } else {
+        bot.say(to, 'Identify with NickServ first.');
+      }
+    });
+  } else if (argv[0] === '!donate') {
+    isNickIdentified(from, function(identified) {
+      if (identified) {
+        donate(bot, from, to, argv);
       } else {
         bot.say(to, 'Identify with NickServ first.');
       }
