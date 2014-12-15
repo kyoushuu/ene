@@ -280,6 +280,69 @@ organizationSchema.methods.logout = function(callback) {
         } else {
           callback('Failed to logout');
         }
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  });
+};
+
+organizationSchema.methods.donateProducts = function(
+        sender, citizenId, product, quantity, reason, callback) {
+  var self = this;
+
+  this.createRequest(function(error, request, jar) {
+    if (error) {
+      callback(error);
+    }
+
+    var accessLevel = 0;
+    var l = self.country.accessList.length;
+    for (var i = 0; i < l; i++) {
+      if (self.country.accessList[i].account.equals(sender._id)) {
+        accessLevel = self.country.accessList[i].accessLevel;
+        break;
+      }
+    }
+
+    if (accessLevel < 1) {
+      callback('Permission denied.');
+      return;
+    }
+
+    var url = self.country.server.address + '/donateProducts.html';
+    request(url, {
+      method: 'POST',
+      qs: {
+        id: citizenId,
+      },
+      form: {
+        product: product,
+        quantity: quantity,
+        reason: reason,
+        submit: 'Donate',
+      },
+    }, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var $ = cheerio.load(body);
+        if (!$('a#userName').length) {
+          self.login(function(error) {
+            if (error) {
+              callback(error);
+              return;
+            }
+
+            self.donateProducts(
+                                sender, citizenId, product, quantity, reason,
+                                callback);
+          });
+        } else if ($('#citizenMessage div').text().trim() === 'Products sent') {
+          callback(null);
+        } else if ($('#citizenMessage div').length) {
+          callback($('#citizenMessage div').text().trim());
+        } else {
+          callback('Failed to donate items');
+        }
       } else if (error) {
         callback(error);
       } else {
