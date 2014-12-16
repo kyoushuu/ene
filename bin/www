@@ -22,6 +22,7 @@ var debug = require('debug')('ene');
 var mongoose = require('mongoose');
 
 var app = require('../app');
+var bot = require('../irc-bot/bot');
 
 
 mongoose.connection.on('connected', function() {
@@ -46,9 +47,17 @@ var server = app.listen(app.get('port'), app.get('ipaddress'), function() {
   debug('Express server listening on port ' + server.address().port);
 });
 
+
+bot.connect();
+
+
 function close() {
   mongoose.connection.close(function() {
     debug('Mongoose disconnected because of app termination');
+  });
+
+  bot.disconnect(function() {
+    debug('IRC bot disconnected because of app termination');
   });
 }
 

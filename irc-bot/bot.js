@@ -34,6 +34,7 @@ var bot = new irc.Client(process.env.IRC_SERVER, process.env.IRC_NICKNAME, {
   realName: process.env.IRC_REALNAME,
   channels: [],
   floodProtection: true,
+  autoConnect: false,
 });
 
 function isNickIdentified(nick, callback) {
@@ -130,8 +131,5 @@ bot.addListener('error', function(message) {
   console.log('Bot error: ', message);
 });
 
-process.on('SIGINT', function() {
-  bot.disconnect(function() {
-    console.log('IRC bot disconnected because of app termination');
-  });
-});
+
+module.exports = bot;
