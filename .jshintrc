@@ -11,6 +11,7 @@
   "laxcomma": false,
   "maxdepth": 5,
   "maxstatements": 50,
+  "mocha": true,
   "newcap": true,
   "node": true,
   "noempty": false,
