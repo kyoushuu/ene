@@ -56,6 +56,10 @@ function close() {
     debug('Mongoose disconnected because of app termination');
   });
 
+  server.close(function() {
+    debug('Express server disconnected because of app termination');
+  });
+
   bot.disconnect(function() {
     debug('IRC bot disconnected because of app termination');
   });
