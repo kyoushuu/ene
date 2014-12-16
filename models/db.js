@@ -24,23 +24,5 @@ var dbname = process.env.OPENSHIFT_APP_NAME || 'ene';
 
 mongoose.connect(dburl + dbname);
 
-mongoose.connection.on('connected', function() {
-  console.log('Mongoose connected');
-});
-
-mongoose.connection.on('disconnected', function() {
-  console.log('Mongoose disconnected');
-});
-
-mongoose.connection.on('error', function(error) {
-  console.log('Mongoose connection error: ' + error);
-});
-
-process.on('SIGINT', function() {
-  mongoose.connection.close(function() {
-    console.log('Mongoose disconnected because of app termination');
-  });
-});
-
 exports.url = dburl;
 exports.name = dbname;
