@@ -7,7 +7,7 @@
   "main": "./bin/www",
   "scripts": {
     "start": "node ./bin/www",
-    "test": "jscs . bin/www"
+    "test": "jscs . bin/www && jshint . bin/www"
   },
   "dependencies": {
     "express": "^4.10.6",
@@ -35,6 +35,7 @@
     "moment-timezone": "^0.2.5"
   },
   "devDependencies": {
-    "jscs": "^1.8.1"
+    "jscs": "^1.8.1",
+    "jshint": "^2.5.10"
   }
 }

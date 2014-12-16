@@ -1,0 +1,22 @@
+{
+  "camelcase": true,
+  "curly": true,
+  "devel": true,
+  "eqeqeq": true,
+  "evil": false,
+  "immed": true,
+  "indent": 2,
+  "latedef": "nofunc",
+  "laxbreak": false,
+  "laxcomma": false,
+  "maxdepth": 5,
+  "maxstatements": 50,
+  "newcap": true,
+  "node": true,
+  "noempty": false,
+  "nonew": true,
+  "quotmark": "single",
+  "strict": false,
+  "undef": true,
+  "unused": "vars"
+}
