@@ -17,30 +17,33 @@
  */
 
 
+var express = require('express');
+var router = express.Router();
+
 var Server = require('../models/server');
 var Country = require('../models/country');
 var User = require('../models/user');
 var Channel = require('../models/channel');
 
 
-exports.create = function(req, res) {
+router.route('/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
     if (error) {
       console.log(error);
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!servers || servers.length < 1) {
-      res.send('No Servers Found', 404);
+      res.status(404).send('No Servers Found');
       return;
     }
 
@@ -49,27 +52,24 @@ exports.create = function(req, res) {
       servers: servers,
     });
   });
-};
-
-
-exports.doCreate = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   Server.findById(req.body.server, function(error, server) {
     if (error) {
       console.log(error);
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!server) {
-      res.send('Server Not Found', 404);
+      res.status(404).send('Server Not Found');
       return;
     }
 
@@ -95,16 +95,16 @@ exports.doCreate = function(req, res) {
       });
     });
   });
-};
+});
 
 function doCreateFailed(req, res, err) {
   Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
     if (error) {
       console.log(error);
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!servers || servers.length < 1) {
-      res.send('No Servers Found', 404);
+      res.status(404).send('No Servers Found');
       return;
     }
 
@@ -120,7 +120,7 @@ function doCreateFailed(req, res, err) {
 }
 
 
-exports.display = function(req, res) {
+router.get('/:countryId', function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -129,7 +129,7 @@ exports.display = function(req, res) {
   var query = Country.findById(req.params.countryId).populate('server');
   query.exec(function(error, country) {
     if (error || !country) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -139,10 +139,10 @@ exports.display = function(req, res) {
       info: req.flash('info'),
     });
   });
-};
+});
 
 
-exports.addAccess = function(req, res) {
+router.route('/:countryId/access/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -150,7 +150,7 @@ exports.addAccess = function(req, res) {
 
   Country.findById(req.params.countryId, function(error, country) {
     if (error || !country) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -165,7 +165,7 @@ exports.addAccess = function(req, res) {
 
     /* Only site and country admins could change access */
     if (req.user.accessLevel < 6 && accessLevel < 3) {
-      res.send(403);
+      res.sendStatus(403);
       return;
     }
 
@@ -173,10 +173,7 @@ exports.addAccess = function(req, res) {
       title: 'New Country Access',
     });
   });
-};
-
-
-exports.doAddAccess = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -190,7 +187,7 @@ exports.doAddAccess = function(req, res) {
 
     Country.findById(req.params.countryId, function(error, country) {
       if (error || !country) {
-        res.send(404);
+        res.sendStatus(404);
         return;
       }
 
@@ -209,20 +206,20 @@ exports.doAddAccess = function(req, res) {
 
       /* Only site and country admins could change access */
       if (req.user.accessLevel < 6 && accessLevel < 3) {
-        res.send(403);
+        res.sendStatus(403);
         return;
       }
 
       /* Only site admins could add country admins */
       if (req.user.accessLevel < 6 && req.body.accessLevel >= 3) {
-        res.send(403);
+        res.sendStatus(403);
         return;
       }
 
       if (access) {
         /* Prevent country admins to remove another country admin */
         if (req.user.accessLevel < 6 && access.accessLevel >= 3) {
-          res.send(403);
+          res.sendStatus(403);
           return;
         }
 
@@ -245,7 +242,7 @@ exports.doAddAccess = function(req, res) {
       });
     });
   });
-};
+});
 
 function doAddAccessFailed(req, res, err) {
   res.render('country-access-add', {
@@ -257,20 +254,20 @@ function doAddAccessFailed(req, res, err) {
 }
 
 
-exports.addChannel = function(req, res) {
+router.route('/:countryId/channel/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   Country.findById(req.params.countryId, function(error, country) {
     if (error || !country) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -278,10 +275,7 @@ exports.addChannel = function(req, res) {
       title: 'New Country Channel',
     });
   });
-};
-
-
-exports.doAddChannel = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -294,13 +288,13 @@ exports.doAddChannel = function(req, res) {
     }
 
     if (req.user.accessLevel < 6) {
-      res.send(403);
+      res.sendStatus(403);
       return;
     }
 
     Country.findById(req.params.countryId, function(error, country) {
       if (error || !country) {
-        res.send(404);
+        res.sendStatus(404);
         return;
       }
 
@@ -360,7 +354,7 @@ exports.doAddChannel = function(req, res) {
       });
     });
   });
-};
+});
 
 function doAddChannelFailed(req, res, error) {
   res.render('country-channel-add', {
@@ -373,3 +367,6 @@ function doAddChannelFailed(req, res, error) {
     motivation: req.body.motivation,
   });
 }
+
+
+module.exports = router;

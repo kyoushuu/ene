@@ -17,9 +17,13 @@
  */
 
 
+var express = require('express');
+var router = express.Router();
+var nodemailer = require('nodemailer');
+var passport = require('passport');
+
 var User = require('../models/user');
 var Server = require('../models/server');
-var nodemailer = require('nodemailer');
 
 
 function sendEmail(user, subject, body, callback) {
@@ -48,12 +52,9 @@ function sendEmail(user, subject, body, callback) {
 }
 
 
-exports.create = function(req, res) {
+router.route('/new').get(function(req, res) {
   res.render('signup', {title: 'Sign Up'});
-};
-
-
-exports.doCreate = function(req, res) {
+}).post(function(req, res) {
   User.create({
     username: req.body.username,
     password: req.body.password,
@@ -75,7 +76,7 @@ exports.doCreate = function(req, res) {
       });
     }
   });
-};
+});
 
 function sendConfirmEmail(user, callback) {
   var address = process.env.ADDRESS || process.env.DOMAIN ||
@@ -95,7 +96,7 @@ function sendConfirmEmail(user, callback) {
 }
 
 
-exports.confirm = function(req, res) {
+router.route('/confirm').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -105,10 +106,7 @@ exports.confirm = function(req, res) {
     title: 'Confirm your account',
     user: req.user,
   });
-};
-
-
-exports.doConfirm = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -124,10 +122,10 @@ exports.doConfirm = function(req, res) {
       resent: true,
     });
   });
-};
+});
 
 
-exports.confirmCode = function(req, res) {
+router.get('/confirm/:confirmCode', function(req, res) {
   User.findOne({
     confirmCode: req.params.confirmCode,
   }, function(error, user) {
@@ -147,7 +145,7 @@ exports.confirmCode = function(req, res) {
       confirmFailed(res);
     }
   });
-};
+});
 
 function confirmFailed(res) {
   res.render('confirm', {
@@ -156,7 +154,7 @@ function confirmFailed(res) {
 }
 
 
-exports.recover = function(req, res) {
+router.route('/recover').get(function(req, res) {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
@@ -165,10 +163,7 @@ exports.recover = function(req, res) {
   res.render('recover', {
     title: 'Recover your account',
   });
-};
-
-
-exports.doRecover = function(req, res) {
+}).post(function(req, res) {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
@@ -178,7 +173,7 @@ exports.doRecover = function(req, res) {
     email: req.body.email.toLowerCase(),
   }, function(error, user) {
     if (error) {
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!user) {
       doRecoverFailed(res, user, req.body.email, 'Email not registered');
@@ -203,7 +198,7 @@ exports.doRecover = function(req, res) {
       });
     });
   });
-};
+});
 
 function doRecoverFailed(res, user, email, error) {
   res.render('recover', {
@@ -231,7 +226,7 @@ function sendRecoverEmail(user, callback) {
 }
 
 
-exports.recoverCode = function(req, res) {
+router.route('/recover/:recoverCode').get(function(req, res) {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
@@ -241,7 +236,7 @@ exports.recoverCode = function(req, res) {
     recoverCode: req.params.recoverCode,
   }, function(error, user) {
     if (error) {
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!user) {
       doRecoverFailed(res, null, 'Invalid code');
@@ -252,10 +247,7 @@ exports.recoverCode = function(req, res) {
       title: 'Create new password',
     });
   });
-};
-
-
-exports.doRecoverCode = function(req, res) {
+}).post(function(req, res) {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
@@ -265,7 +257,7 @@ exports.doRecoverCode = function(req, res) {
     recoverCode: req.params.recoverCode,
   }, function(error, user) {
     if (error) {
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!user) {
       doRecoverCodeFailed(res, null, 'Invalid code');
@@ -285,7 +277,7 @@ exports.doRecoverCode = function(req, res) {
       });
     });
   });
-};
+});
 
 function doRecoverCodeFailed(res, user, error) {
   res.render('recover-code', {
@@ -296,24 +288,24 @@ function doRecoverCodeFailed(res, user, error) {
 }
 
 
-exports.addCitizen = function(req, res) {
+router.route('/:userId/citizen/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
     if (error) {
       console.log(error);
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!servers || !servers.length) {
-      res.send('No Servers Found', 404);
+      res.status(404).send('No Servers Found');
       return;
     }
 
@@ -322,23 +314,20 @@ exports.addCitizen = function(req, res) {
       servers: servers,
     });
   });
-};
-
-
-exports.doAddCitizen = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   Server.findById(req.body.server, function(error, server) {
     if (error || !server) {
-      res.send('Server Not Found', 404);
+      res.status(404).send('Server Not Found');
       return;
     }
 
@@ -366,16 +355,16 @@ exports.doAddCitizen = function(req, res) {
       res.redirect('/user/' + req.user.id);
     });
   });
-};
+});
 
 function doAddCitizenFailed(req, res, err) {
   Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
     if (error) {
       console.log(error);
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!servers || !servers.length) {
-      res.send('No Servers Found', 404);
+      res.status(404).send('No Servers Found');
       return;
     }
 
@@ -390,15 +379,22 @@ function doAddCitizenFailed(req, res, err) {
 }
 
 
-exports.signIn = function(req, res) {
+router.route('/signin').get(function(req, res) {
   res.render('signin', {
     title: 'Sign In',
     error: req.flash('error'),
   });
-};
+}).post(passport.authenticate('local', {
+  successRedirect: '/',
+  failureRedirect: '/user/signin',
+  failureFlash: true,
+}));
 
 
-exports.signOut = function(req, res) {
+router.get('/signout', function(req, res) {
   req.logOut();
   res.redirect('/');
-};
+});
+
+
+module.exports = router;

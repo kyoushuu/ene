@@ -17,34 +17,34 @@
  */
 
 
+var express = require('express');
+var router = express.Router();
+
 var Channel = require('../models/channel');
 
 
-exports.create = function(req, res) {
+router.route('/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   res.render('channel-create', {
     title: 'Create Channel',
   });
-};
-
-
-exports.doCreate = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
@@ -64,10 +64,10 @@ exports.doCreate = function(req, res) {
     req.flash('info', 'Channel successfully created');
     res.redirect('/channel/' + channel.id);
   });
-};
+});
 
 
-exports.display = function(req, res) {
+router.get('/:channelId', function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -75,7 +75,7 @@ exports.display = function(req, res) {
 
   Channel.findById(req.params.channelId, function(error, channel) {
     if (error || !channel) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -85,4 +85,7 @@ exports.display = function(req, res) {
       info: req.flash('info'),
     });
   });
-};
+});
+
+
+module.exports = router;

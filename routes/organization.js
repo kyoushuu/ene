@@ -17,12 +17,15 @@
  */
 
 
+var express = require('express');
+var router = express.Router();
+
 var Organization = require('../models/organization');
 var Country = require('../models/country');
 var Server = require('../models/server');
 
 
-exports.create = function(req, res) {
+router.route('/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -33,10 +36,10 @@ exports.create = function(req, res) {
   query.exec(function(error, servers) {
     if (error) {
       console.log(error);
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!servers || !servers.length) {
-      res.send('No Servers Found', 404);
+      res.status(404).send('No Servers Found');
       return;
     }
 
@@ -45,10 +48,7 @@ exports.create = function(req, res) {
       servers: servers,
     });
   });
-};
-
-
-exports.doCreate = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -58,10 +58,10 @@ exports.doCreate = function(req, res) {
   query.exec(function(error, country) {
     if (error) {
       console.log(error);
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!country) {
-      res.send('Country Not Found', 404);
+      res.status(404).send('Country Not Found');
       return;
     }
 
@@ -74,7 +74,7 @@ exports.doCreate = function(req, res) {
     }
 
     if (req.user.accessLevel < 6 && accessLevel < 3) {
-      res.send(403);
+      res.sendStatus(403);
       return;
     }
 
@@ -110,7 +110,7 @@ exports.doCreate = function(req, res) {
       });
     });
   });
-};
+});
 
 function doCreateFailed(req, res, err) {
   var query = Server.find({}, null, {sort: {_id: 1}});
@@ -118,10 +118,10 @@ function doCreateFailed(req, res, err) {
   query.exec(function(error, servers) {
     if (error) {
       console.log(error);
-      res.send(500);
+      res.sendStatus(500);
       return;
     } else if (!servers || !servers.length) {
-      res.send('No Servers Found', 404);
+      res.status(404).send('No Servers Found');
       return;
     }
 
@@ -137,7 +137,7 @@ function doCreateFailed(req, res, err) {
 }
 
 
-exports.display = function(req, res) {
+router.get('/:organizationId', function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -147,10 +147,10 @@ exports.display = function(req, res) {
   query.populate('country');
   query.exec(function(error, organization) {
     if (error || !organization) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     } else if (!organization.country || !organization.country._id) {
-      res.send('Country Not Found', 404);
+      res.status(404).send('Country Not Found');
       return;
     }
 
@@ -159,7 +159,7 @@ exports.display = function(req, res) {
     }, function(error, organization) {
       if (error) {
         console.log(error);
-        res.send(500);
+        res.sendStatus(500);
         return;
       } else if (!organization.country.server ||
           !organization.country.server._id) {
@@ -174,10 +174,10 @@ exports.display = function(req, res) {
       });
     });
   });
-};
+});
 
 
-exports.edit = function(req, res) {
+router.route('/edit/:organizationId').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -186,7 +186,7 @@ exports.edit = function(req, res) {
   var query = Organization.findById(req.params.organizationId);
   query.exec(function(error, organization) {
     if (error || !organization) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -195,10 +195,7 @@ exports.edit = function(req, res) {
       organization: organization,
     });
   });
-};
-
-
-exports.doEdit = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -208,7 +205,7 @@ exports.doEdit = function(req, res) {
   query.populate('country');
   query.exec(function(error, organization) {
     if (error || !organization) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -223,7 +220,7 @@ exports.doEdit = function(req, res) {
     }
 
     if (req.user.accessLevel < 6 && accessLevel < 3) {
-      res.send(403);
+      res.sendStatus(403);
       return;
     }
 
@@ -251,7 +248,7 @@ exports.doEdit = function(req, res) {
       });
     });
   });
-};
+});
 
 function doEditFailed(res, error, organization) {
   res.render('organization-edit', {
@@ -260,3 +257,6 @@ function doEditFailed(res, error, organization) {
     organization: organization,
   });
 }
+
+
+module.exports = router;

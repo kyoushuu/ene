@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
  * ene - IRC bot for e-Sim
  * Copyright (C) 2014  Arnel A. Borja <kyoushuu@yahoo.com>
@@ -17,12 +18,15 @@
  */
 
 
-var express = require('express');
-var router = express.Router();
+var debug = require('debug')('ene');
+var app = require('../app');
 
-/* GET home page. */
-router.get('/', function(req, res) {
-  res.render('index', {title: 'Ene Project', user: req.user});
+app.set('port',
+        process.env.OPENSHIFT_NODEJS_PORT || process.env.PORT || 3000);
+app.set('ipaddress',
+        process.env.OPENSHIFT_NODEJS_IP || process.env.IP || '127.0.0.1');
+
+var server = app.listen(app.get('port'), app.get('ipaddress'), function() {
+  debug('Express server listening on port ' + server.address().port);
 });
 
-module.exports = router;

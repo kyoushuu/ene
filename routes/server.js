@@ -17,32 +17,32 @@
  */
 
 
+var express = require('express');
+var router = express.Router();
+
 var Server = require('../models/server');
 
 
-exports.create = function(req, res) {
+router.route('/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   res.render('server-create', {title: 'Create Server'});
-};
-
-
-exports.doCreate = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
@@ -63,10 +63,10 @@ exports.doCreate = function(req, res) {
     req.flash('info', 'Server successfully created');
     res.redirect('/server/' + server.id);
   });
-};
+});
 
 
-exports.display = function(req, res) {
+router.get('/:serverId', function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
@@ -74,7 +74,7 @@ exports.display = function(req, res) {
 
   Server.findById(req.params.serverId, function(error, server) {
     if (error || !server) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -84,23 +84,23 @@ exports.display = function(req, res) {
       info: req.flash('info'),
     });
   });
-};
+});
 
 
-exports.edit = function(req, res) {
+router.route('/edit/:serverId').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   Server.findById(req.params.serverId, function(error, server) {
     if (error || !server) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -109,23 +109,20 @@ exports.edit = function(req, res) {
       server: server,
     });
   });
-};
-
-
-exports.doEdit = function(req, res) {
+}).post(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
     return;
   }
 
   if (req.user.accessLevel < 6) {
-    res.send(403);
+    res.sendStatus(403);
     return;
   }
 
   Server.findById(req.params.serverId, function(error, server) {
     if (error || !server) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
@@ -146,4 +143,7 @@ exports.doEdit = function(req, res) {
       res.redirect('/server/' + server.id);
     });
   });
-};
+});
+
+
+module.exports = router;
