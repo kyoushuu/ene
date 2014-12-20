@@ -37,6 +37,8 @@
   "devDependencies": {
     "jscs": "^1.8.1",
     "jshint": "^2.5.10",
-    "mocha": "^2.0.1"
+    "mocha": "^2.0.1",
+    "mockgoose": "^1.10.7",
+    "should": "^4.4.1"
   }
 }
