@@ -32,8 +32,8 @@ function sendEmail(user, subject, body, callback) {
   var sender = process.env.SMTP_SENDER || 'no-reply@' + domain;
   var transport = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT || 465,
-    secure: true,
+    port: process.env.SMTP_PORT || 587,
+    secure: false,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
