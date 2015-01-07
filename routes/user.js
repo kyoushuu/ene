@@ -30,10 +30,10 @@ function sendEmail(user, subject, body, callback) {
   var domain = process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost';
   var sender = process.env.SMTP_SENDER || 'no-reply@' + domain;
-  var transport = nodemailer.createTransport('SMTP', {
+  var transport = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT || 465,
-    secureConnection: true,
+    secure: true,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -41,8 +41,8 @@ function sendEmail(user, subject, body, callback) {
   });
 
   transport.sendMail({
-    from: 'Ene Project <' + sender + '>',
-    to: user.username + ' <' + user.email + '>',
+    from: {name: 'Ene Project', address: sender},
+    to: {name: user.username, address: user.email},
     subject: subject,
     text: body,
   }, function(error, response) {
