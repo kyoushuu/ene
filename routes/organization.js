@@ -87,20 +87,20 @@ router.route('/new').get(function(req, res) {
 
     organization.login(function(error) {
       if (error) {
-        doCreateFailed(req, res, error);
+        doCreateFailed(req, res, 'Failed to login: ' + error);
         return;
       }
 
       organization.save(function(error) {
         if (error) {
-          doCreateFailed(req, res, error);
+          doCreateFailed(req, res, 'Failed to save organization: ' + error);
           return;
         }
 
         country.organizations.push(organization);
         country.save(function(error) {
           if (error) {
-            doCreateFailed(req, res, error);
+            doCreateFailed(req, res, 'Failed to save country: ' + error);
             return;
           }
 
