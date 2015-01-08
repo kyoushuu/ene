@@ -29,11 +29,13 @@ var serverSchema = new mongoose.Schema({
       msg: 'Short name should be a single letter',
     },
   },
+  port: {type: Number, default: 80},
   countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
 });
 
 serverSchema.virtual('address').get(function() {
-  return 'http://' + this.name.toLowerCase() + '.e-sim.org';
+  return 'http://' + this.name.toLowerCase() + '.e-sim.org' +
+    (this.port !== 80 ? ':' + this.port : '');
 });
 
 serverSchema.path('name').validate(function(value, respond) {
