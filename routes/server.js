@@ -49,6 +49,7 @@ router.route('/new').get(function(req, res) {
   Server.create({
     name: req.body.name,
     shortname: req.body.shortname,
+    port: req.body.port,
   }, function(error, server) {
     if (error) {
       res.render('server-create', {
@@ -56,6 +57,7 @@ router.route('/new').get(function(req, res) {
         error: error,
         name: req.body.name,
         shortname: req.body.shortname,
+        port: req.body.port,
       });
       return;
     }
@@ -128,6 +130,7 @@ router.route('/edit/:serverId').get(function(req, res) {
 
     server.name = req.body.name;
     server.shortname = req.body.shortname;
+    server.port = req.body.port;
 
     server.save(function(error) {
       if (error) {
