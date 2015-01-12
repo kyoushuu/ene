@@ -65,15 +65,7 @@ router.route('/new').get(function(req, res) {
       return;
     }
 
-    var accessLevel = 0;
-    var l = country.accessList.length;
-    for (var i = 0; i < l; i++) {
-      if (country.accessList[i].account.equals(req.user._id)) {
-        accessLevel = country.accessList[i].accessLevel;
-      }
-    }
-
-    if (req.user.accessLevel < 6 && accessLevel < 3) {
+    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
       res.sendStatus(403);
       return;
     }
@@ -211,15 +203,7 @@ router.route('/edit/:organizationId').get(function(req, res) {
 
     var country = organization.country;
 
-    var accessLevel = 0;
-    var l = country.accessList.length;
-    for (var i = 0; i < l; i++) {
-      if (country.accessList[i].account.equals(req.user._id)) {
-        accessLevel = country.accessList[i].accessLevel;
-      }
-    }
-
-    if (req.user.accessLevel < 6 && accessLevel < 3) {
+    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
       res.sendStatus(403);
       return;
     }

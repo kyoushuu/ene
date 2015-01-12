@@ -89,6 +89,24 @@ countrySchema.path('shortname').validate(function(value, respond) {
   });
 }, 'Country short name with the same server already exists');
 
+countrySchema.methods.getUserAccessLevel = function(user) {
+  var self = this;
+
+  var accessLevel = 0;
+  var l = self.accessList.length;
+  for (var i = 0; i < l; i++) {
+    var accountId = self.accessList[i].account._id ||
+      self.accessList[i].account;
+
+    if (accountId.equals(user._id)) {
+      accessLevel = self.accessList[i].accessLevel;
+      break;
+    }
+  }
+
+  return accessLevel;
+};
+
 /* jshint -W003 */
 var Country = mongoose.model('Country', countrySchema);
 /* jshint +W003 */

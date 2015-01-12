@@ -297,16 +297,7 @@ organizationSchema.methods.donateProducts = function(
       callback(error);
     }
 
-    var accessLevel = 0;
-    var l = self.country.accessList.length;
-    for (var i = 0; i < l; i++) {
-      if (self.country.accessList[i].account.equals(sender._id)) {
-        accessLevel = self.country.accessList[i].accessLevel;
-        break;
-      }
-    }
-
-    if (accessLevel < 1) {
+    if (self.country.getUserAccessLevel(sender) < 1) {
       callback('Permission denied.');
       return;
     }
