@@ -22,6 +22,7 @@ var crypto = require('crypto');
 var request = require('request');
 var cheerio = require('cheerio');
 var zlib = require('zlib');
+var numeral = require('numeral');
 
 var Server = require('./server');
 var Country = require('./country');
@@ -343,6 +344,100 @@ organizationSchema.methods.donateProducts = function(
           callback($('#citizenMessage div').text().trim());
         } else {
           callback('Failed to donate items');
+        }
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  });
+};
+
+organizationSchema.methods.getBattleInfo = function(battleId, callback) {
+  var self = this;
+
+  this.createRequest(function(error, request, jar) {
+    if (error) {
+      callback(error);
+    }
+
+    var url = self.country.server.address + '/battle.html';
+    request(url, {
+      method: 'GET',
+      qs: {
+        id: battleId,
+      },
+    }, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var $ = cheerio.load(body);
+
+        if ($('div#mainFight div#fightName span').length) {
+          var type = null;
+          var label = null;
+          var id = 0;
+          var defender = $('div#mainFight div.alliesList').eq(0).clone()
+                .children().remove().end().text().trim();
+          var attacker = $('div#mainFight div.alliesList').eq(1).clone()
+                .children().remove().end().text().trim();
+          if ($('div#mainFight div#fightName span a[href*="region"]').text()
+              .trim() !== '') {
+            label = $('div#mainFight div#fightName span a[href*="region"]')
+              .text().trim();
+            id = parseInt(
+              $('div#mainFight div#fightName span a[href*="region.html"]')
+              .attr('href').split('=')[1]);
+
+            if ($('div#mainFight div#fightName span div').text().trim()
+                .indexOf('Resistance war') < 0) {
+              type = 'direct';
+            } else {
+              type = 'resistance';
+            }
+          } else if ($('div#mainFight div#fightName span a[href*="tournament"]')
+                     .text().trim() !== '') {
+            label = $('div#mainFight div#fightName span a[href*="tournament"]')
+              .text().trim() + ' (' + defender + ' vs. ' + attacker + ')';
+            id = parseInt(
+              $('div#mainFight div#fightName span a[href*="tournament"]')
+              .attr('href').split('=')[1]);
+            type = 'tournament';
+          } else if ($('div#mainFight div#fightName span a[href*="civilWar"]')
+                     .text().trim() !== '') {
+            label = 'Civil War (' + defender + ')';
+            id = parseInt(
+              $('div#mainFight div#fightName span a[href*="civilWar"]')
+              .attr('href').split('=')[1]);
+            type = 'civil';
+            defender = 'Loyalists';
+          } else {
+            label = 'Practice Battle';
+            type = 'practice';
+          }
+
+          callback(null, {
+            label: label,
+            type: type,
+            id: id,
+            round: numeral().unformat($('div#mainFight > div').eq(2).text()
+              .trim()),
+            roundId: parseInt($('input#battleRoundId').attr('value')),
+            defender: defender,
+            defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
+            attacker: attacker,
+            attackerWins: $('div.fightRounds img[src$="red_ball.png"]').length,
+          });
+        } else if (!$('a#userName').length) {
+          self.login(function(error) {
+            if (error) {
+              callback(error);
+              return;
+            }
+
+            self.getBattleInfo(battleId, callback);
+          });
+        } else if ($('div.testDivwhite h3').length) {
+          callback($('div.testDivwhite h3').text().trim());
+        } else {
+          callback('Failed to get battle information');
         }
       } else if (error) {
         callback(error);
