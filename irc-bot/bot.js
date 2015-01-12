@@ -23,6 +23,7 @@ var parse = require('shell-quote').parse;
 var motivate = require('./motivate-command');
 var donate = require('./donate-command');
 var supply = require('./supply-command');
+var battle = require('./battle-command');
 
 var nickname = require('./nickname-command');
 
@@ -107,6 +108,14 @@ bot.addListener('message#', function(from, to, message) {
     isNickIdentified(from, function(identified) {
       if (identified) {
         supply(bot, from, to, argv);
+      } else {
+        bot.say(to, 'Identify with NickServ first.');
+      }
+    });
+  } else if (argv[0] === '!battle') {
+    isNickIdentified(from, function(identified) {
+      if (identified) {
+        battle(bot, from, to, argv);
       } else {
         bot.say(to, 'Identify with NickServ first.');
       }
