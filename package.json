@@ -32,7 +32,8 @@
     "shell-quote": "^1.4.2",
     "cron": "^1.0.5",
     "time": "^0.11.0",
-    "moment-timezone": "^0.2.5"
+    "moment-timezone": "^0.2.5",
+    "numeral": "^1.5.3"
   },
   "devDependencies": {
     "jscs": "^1.8.1",
