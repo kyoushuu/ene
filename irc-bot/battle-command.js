@@ -136,7 +136,7 @@ function battleShow(country, organization, options, callback) {
       return;
     }
 
-    battleGetRoundInfo(organization, battleInfo.roundId,
+    organization.getBattleRoundInfo(battleInfo.roundId,
       function(error, battleRoundInfo) {
         if (error) {
           callback(error);
@@ -199,30 +199,5 @@ function battleShow(country, organization, options, callback) {
         /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
         /* jshint camelcase: true */
       });
-  });
-}
-
-function battleGetRoundInfo(organization, battleRoundId, callback) {
-  organization.createRequest(function(error, request, jar) {
-    var url = organization.country.server.address + '/battleScore.html';
-    request(url, {
-      method: 'GET',
-      qs: {
-        id: battleRoundId,
-        at: 0,
-        ci: 0,
-      },
-    }, function(error, response, body) {
-      if (!error && response.statusCode === 200) {
-        var battleRoundInfo = JSON.parse(body);
-
-        callback(null, battleRoundInfo);
-      } else if (error) {
-        callback('Failed to get battle round info: ' + error);
-      } else {
-        callback('Failed to get battle round info: HTTP Error: ' +
-            response.statusCode);
-      }
-    });
   });
 }
