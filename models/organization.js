@@ -439,6 +439,46 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
         } else {
           callback('Failed to get battle information');
         }
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  });
+};
+
+organizationSchema.methods.getBattleRoundInfo =
+function(battleRoundId, callback) {
+  var self = this;
+
+  this.createRequest(function(error, request, jar) {
+    if (error) {
+      callback(error);
+    }
+
+    var url = self.country.server.address + '/battleScore.html';
+    request(url, {
+      method: 'GET',
+      qs: {
+        id: battleRoundId,
+        at: 0,
+        ci: 0,
+      },
+    }, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        try {
+          var battleRoundInfo = JSON.parse(body);
+
+          callback(null, battleRoundInfo);
+          return;
+        } catch (e) {
+          var $ = cheerio.load(body);
+
+          if ($('div.testDivwhite h3').length) {
+            callback($('div.testDivwhite h3').text().trim());
+          } else {
+            callback('Failed to get battle round information');
+          }
+        }
       } else if (error) {
         callback(error);
       } else {
