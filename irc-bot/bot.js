@@ -29,6 +29,7 @@ var watch = require('./watch-command');
 var nickname = require('./nickname-command');
 
 var Channel = require('../models/channel');
+var Battle = require('../models/battle');
 
 
 var bot = new irc.Client(process.env.IRC_SERVER, process.env.IRC_NICKNAME, {
@@ -72,6 +73,40 @@ bot.addListener('registered', function(from, to, message) {
           return;
         }
 
+        function makeJoinCallback(i) {
+          return function() {
+            Battle.find({
+              channel: channels[i],
+            }).populate('country channel').exec(function(error, battles) {
+              if (error) {
+                bot.say(channels[i].name,
+                  'Failed to watch battles of this channel: ' + error);
+                return;
+              }
+
+              function makePopulateCallback(j) {
+                return function(error, country) {
+                  watch.watchBattle(
+                    bot, battles[j].country.organizations[0], battles[j],
+                    function(error) {
+                      if (error) {
+                        bot.say(channels[i].name,
+                          'Failed to watch battle #' + battles[j].battleId +
+                          ': ' + error);
+                      }
+                    });
+                };
+              }
+
+              var l = battles.length;
+              for (var j = 0; j < l; j++) {
+                var query = battles[j].country;
+                query.populate('organizations', makePopulateCallback(j));
+              }
+            });
+          };
+        }
+
         var l = channels.length;
         for (var i = 0; i < l; i++) {
           var joinArgs = channels[i].name;
@@ -79,7 +114,7 @@ bot.addListener('registered', function(from, to, message) {
             joinArgs += ' ' + channels[i].keyword;
           }
 
-          bot.join(joinArgs);
+          bot.join(joinArgs, makeJoinCallback(i));
         }
       });
     }
