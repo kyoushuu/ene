@@ -25,6 +25,7 @@ var donate = require('./donate-command');
 var supply = require('./supply-command');
 var battle = require('./battle-command');
 var watch = require('./watch-command');
+var call = require('./call-command');
 
 var nickname = require('./nickname-command');
 
@@ -160,6 +161,14 @@ bot.addListener('message#', function(from, to, message) {
     isNickIdentified(from, function(identified) {
       if (identified) {
         watch(bot, from, to, argv);
+      } else {
+        bot.say(to, 'Identify with NickServ first.');
+      }
+    });
+  } else if (argv[0] === '!call') {
+    isNickIdentified(from, function(identified) {
+      if (identified) {
+        call(bot, from, to, argv);
       } else {
         bot.say(to, 'Identify with NickServ first.');
       }
