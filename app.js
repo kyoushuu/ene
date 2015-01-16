@@ -39,6 +39,7 @@ var server = require('./routes/server');
 var country = require('./routes/country');
 var organization = require('./routes/organization');
 var channel = require('./routes/channel');
+var api = require('./routes/api');
 
 var secret = process.env.OPENSHIFT_SECRET_TOKEN || 'your secret here';
 
@@ -101,6 +102,7 @@ app.use('/server', server);
 app.use('/country', country);
 app.use('/organization', organization);
 app.use('/channel', channel);
+app.use('/api', api);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

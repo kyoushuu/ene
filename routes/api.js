@@ -21,10 +21,11 @@ var express = require('express');
 var router = express.Router();
 
 var Server = require('../models/server');
+var Organization = require('../models/organization');
 
 
-router.get('/battle/:server/:battleId', function(req, res) {
-  Server.find({
+router.get('/:server/battle/:battleId', function(req, res) {
+  Server.findOne({
     name: {$regex: new RegExp(req.params.server, 'i')},
   }).populate('countries').exec(function(error, server) {
     if (error) {
@@ -34,8 +35,16 @@ router.get('/battle/:server/:battleId', function(req, res) {
       return;
     }
 
-    var query = server.countries[0].populate('organizations');
-    query.exec(function(error, country) {
+    if (!server) {
+      res.end(JSON.stringify({
+        'error': 'Server not found',
+      }));
+      return;
+    }
+
+    Organization.populate(server, {
+      path: 'countries.organizations',
+    }, function(error, server) {
       if (error) {
         res.end(JSON.stringify({
           'error': error,
@@ -51,7 +60,7 @@ router.get('/battle/:server/:battleId', function(req, res) {
         return;
       }
 
-      country.organizations[0].getBattleInfo(battleId,
+      server.countries[0].organizations[0].getBattleInfo(battleId,
         function(error, battleInfo) {
           if (error) {
             res.end(JSON.stringify({
