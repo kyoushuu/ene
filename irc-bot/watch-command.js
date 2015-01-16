@@ -27,6 +27,8 @@ var Channel = require('../models/channel');
 var User = require('../models/user');
 var Battle = require('../models/battle');
 
+var call = require('./call-command');
+
 var watchpoints = [
   6000, 4800, 3600,
   3000, 2400, 1800,
@@ -282,13 +284,45 @@ function showBattleRound(
 function watchBattleRound(
   bot, organization, battle, battleInfo, battleRoundInfo, callback
 ) {
-  var timeout = function() {
+  var timeout = function(watchpoint) {
     watchlist[battle.id] = null;
     organization.getBattleRoundInfo(battleInfo.roundId,
       function(error, battleRoundInfo) {
         if (error) {
           callback(error);
           return;
+        }
+
+        if (watchpoint === 600) {
+          call.call(
+            bot, battle.channel.name,
+            'T-10 --- Get ready to fight!!!');
+        } else if (watchpoint === 300) {
+          call.call(
+            bot, battle.channel.name,
+            'T-5 --- Standby --- hit at T-2 if bar is below 52%!!!');
+        } else if (watchpoint === 120) {
+          var defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
+          var attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
+          var totalScore = defenderScore + attackerScore;
+
+          var percentage = 0;
+
+          if (battle.side === 'defender') {
+            percentage = defenderScore / totalScore;
+          } else if (battle.side === 'attacker') {
+            percentage = attackerScore / totalScore;
+          }
+
+          if (!isFinite(percentage)) {
+            percentage = 0;
+          }
+
+          call.call(
+            bot, battle.channel.name, 'T-2 --- ' +
+            (percentage < 0.52 ?
+              'Start hitting!!!' :
+              'Hold your hits --- Only hit when bar drops below 52%!!!'));
         }
 
         showBattleRound(
@@ -304,7 +338,8 @@ function watchBattleRound(
     if (battleRoundInfo.remainingTimeInSeconds > watchpoints[i]) {
       watchlist[battle.id] = setTimeout(
           timeout,
-          (battleRoundInfo.remainingTimeInSeconds - watchpoints[i]) * 1000);
+          (battleRoundInfo.remainingTimeInSeconds - watchpoints[i]) * 1000,
+          watchpoints[i]);
 
       return;
     }
