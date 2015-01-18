@@ -477,12 +477,12 @@ function(battleRoundId, callback) {
             callback($('div.testDivwhite h3').text().trim());
           } else {
             callback('Failed to get battle round information');
+            console.log('Error: ' + e);
+            console.log('Stack: ' + e.stack);
           }
         }
-      } else if (error) {
-        callback(error);
       } else {
-        callback('HTTP Error: ' + response.statusCode);
+        callback(error || 'HTTP Error: ' + response.statusCode);
       }
     });
   });
