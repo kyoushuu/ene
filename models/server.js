@@ -31,6 +31,7 @@ var serverSchema = new mongoose.Schema({
   },
   port: {type: Number, default: 80},
   countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
+  disabled: {type: Boolean, default: false},
 });
 
 serverSchema.virtual('address').get(function() {
