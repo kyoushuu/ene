@@ -283,7 +283,7 @@ function showBattleRound(
 }
 
 function watchBattleRound(
-  bot, organization, battle, battleInfo, battleRoundInfo, callback
+  bot, organization, battle, battleInfo, battleRoundInfo, time, callback
 ) {
   var timeout = function(watchpoint) {
     watchlist[battle.id] = null;
@@ -294,7 +294,11 @@ function watchBattleRound(
           return;
         }
 
-        if (watchpoint === 600) {
+        var frozen = false;
+
+        if (battleRoundInfo.remainingTimeInSeconds === time && time > 0) {
+          frozen = true;
+        } else if (watchpoint === 600) {
           call.call(
             bot, battle.channel.name,
             'T-10 --- Get ready to fight!!!');
@@ -326,11 +330,13 @@ function watchBattleRound(
               'Hold your hits --- Only hit when bar drops below 52%!!!'));
         }
 
-        showBattleRound(
-          bot, organization, battle, battleInfo, battleRoundInfo);
+        if (!frozen) {
+          showBattleRound(
+            bot, organization, battle, battleInfo, battleRoundInfo);
+        }
         watchBattleRound(
           bot, organization, battle, battleInfo, battleRoundInfo,
-          callback);
+          battleRoundInfo.remainingTimeInSeconds, callback);
       });
   };
 
@@ -404,6 +410,7 @@ function watchBattle(bot, organization, battle, callback) {
           bot, organization, battle, battleInfo, battleRoundInfo);
         watchBattleRound(
           bot, organization, battle, battleInfo, battleRoundInfo,
+          battleRoundInfo.remainingTimeInSeconds,
           function(error) {
             if (error) {
               callback(error);
