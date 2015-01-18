@@ -42,6 +42,13 @@ router.get('/:server/battle/:battleId', function(req, res) {
       return;
     }
 
+    if (server.disabled) {
+      res.end(JSON.stringify({
+        'error': 'Server is disabled',
+      }));
+      return;
+    }
+
     Organization.populate(server, {
       path: 'countries.organizations',
     }, function(error, server) {
