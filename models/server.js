@@ -119,6 +119,48 @@ serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
   }
 };
 
+serverSchema.methods.getRegionInfo = function(regionId, callback) {
+  var self = this;
+
+  if (!self.regionsList) {
+    getRegionsList(function(error) {
+      if (error) {
+        callback(error);
+        return;
+      }
+
+      getRegionInfo();
+    });
+    return;
+  }
+
+  getRegionInfo();
+
+  function getRegionInfo() {
+    var l = self.regionsList.length;
+    for (var i = 0; i < l; i++) {
+      if (self.regionsList[i].id === regionId) {
+        callback(null, self.regionsList[i]);
+        return;
+      }
+    }
+
+    callback('Region not found');
+  }
+
+  function getRegionsList(callback) {
+    var address = self.address + '/apiRegions.html';
+    request(address, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        self.regionsList = JSON.parse(body);
+        callback(null);
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  }
+};
+
 /* jshint -W003 */
 var Server = mongoose.model('Server', serverSchema);
 /* jshint +W003 */
