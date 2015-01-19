@@ -422,8 +422,12 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
             roundId: parseInt($('input#battleRoundId').attr('value')),
             defender: defender,
             defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
+            defenderAllies: $('div#mainFight div.alliesPopup').eq(0).text()
+              .trim().split(/\s{2,}/g),
             attacker: attacker,
             attackerWins: $('div.fightRounds img[src$="red_ball.png"]').length,
+            attackerAllies: $('div#mainFight div.alliesPopup').eq(1).text()
+              .trim().split(/\s{2,}/g),
           });
         } else if (!$('a#userName').length) {
           self.login(function(error) {
