@@ -232,6 +232,7 @@ function showBattleRound(
   var side = battle.side;
   var wall = 0;
   var percentage = 0;
+  var bonusRegion = null;
 
   if (side === 'defender') {
     wall = defenderScore - attackerScore;
@@ -250,36 +251,61 @@ function showBattleRound(
     time = 0;
   }
 
-  /* jshint camelcase: false */
-  /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
-  bot.say(battle.channel.name,
-      server.address + '/battle.html?id=' + battle.battleId +
-      ' | ' +
-      codes.underline + codes.bold + battleInfo.label + codes.reset +
-      ' (' +
-      (side === 'defender' ? battleInfo.defender : battleInfo.attacker) +
-      ') - ' +
-      codes.bold + 'R' + battleInfo.round + codes.reset +
-      ' (' +
-      (side === 'defender' ? codes.dark_green : codes.dark_red) +
-      codes.bold + battleInfo.defenderWins +
-      codes.reset + ':' +
-      (side === 'defender' ? codes.dark_red : codes.dark_green) +
-      codes.bold + battleInfo.attackerWins +
-      codes.reset + ') | ' +
-      codes.bold +
-      (percentage > 0.5 ?
-        codes.dark_green + 'Winning' :
-        codes.dark_red + 'Losing') +
-      codes.reset + ': ' + numeral(percentage).format('0.00%') + ' | ' +
-      codes.bold + 'Wall: ' +
-      (percentage > 0.5 ? codes.dark_green : codes.dark_red) +
-      numeral(wall).format('+0,0') +
-      codes.reset + ' | ' +
-      codes.bold + 'Time: ' + codes.reset + '0' +
-      numeral(time).format('00:00:00'));
-  /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
-  /* jshint camelcase: true */
+  if (battleInfo.type === 'resistance' ||
+      (battleInfo.type === 'direct' && side === 'defender')) {
+    bonusRegion = battleInfo.label + ', ' + battleInfo.defender;
+  } else if (battleInfo.type === 'direct' && side === 'attacker') {
+    var allies = battleInfo.attackerAllies.slice();
+    allies.unshift(battleInfo.attacker);
+
+    server.getAttackerBonusRegion(battleInfo.id, allies,
+    function(error, region) {
+      if (error) {
+        console.log('Error: ' + error);
+      }
+
+      bonusRegion = (error ? null : region);
+      show();
+    });
+    return;
+  }
+
+  show();
+
+  function show() {
+    /* jshint camelcase: false */
+    /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
+    bot.say(battle.channel.name,
+        server.address + '/battle.html?id=' + battle.battleId +
+        ' | ' +
+        codes.underline + codes.bold + battleInfo.label + codes.reset +
+        ' (' +
+        (side === 'defender' ? battleInfo.defender : battleInfo.attacker) +
+        ') - ' +
+        codes.bold + 'R' + battleInfo.round + codes.reset +
+        ' (' +
+        (side === 'defender' ? codes.dark_green : codes.dark_red) +
+        codes.bold + battleInfo.defenderWins +
+        codes.reset + ':' +
+        (side === 'defender' ? codes.dark_red : codes.dark_green) +
+        codes.bold + battleInfo.attackerWins +
+        codes.reset + ') | ' +
+        (bonusRegion ?
+          codes.bold + 'Bonus: ' + codes.reset + bonusRegion + ' | ' : '') +
+        codes.bold +
+        (percentage > 0.5 ?
+          codes.dark_green + 'Winning' :
+          codes.dark_red + 'Losing') +
+        codes.reset + ': ' + numeral(percentage).format('0.00%') + ' | ' +
+        codes.bold + 'Wall: ' +
+        (percentage > 0.5 ? codes.dark_green : codes.dark_red) +
+        numeral(wall).format('+0,0') +
+        codes.reset + ' | ' +
+        codes.bold + 'Time: ' + codes.reset + '0' +
+        numeral(time).format('00:00:00'));
+    /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
+    /* jshint camelcase: true */
+  }
 }
 
 function watchBattleRound(
