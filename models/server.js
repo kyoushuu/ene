@@ -18,6 +18,7 @@
 
 
 var mongoose = require('mongoose');
+var request = require('request');
 
 
 var serverSchema = new mongoose.Schema({
@@ -74,6 +75,49 @@ serverSchema.path('shortname').validate(function(value, respond) {
     }
   });
 }, 'Server short name already exists');
+
+serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
+  var self = this;
+
+  if (!self.countriesList) {
+    getCountriesList(function(error) {
+      if (error) {
+        callback(error);
+        return;
+      }
+
+      getCountryInfoByName();
+    });
+    return;
+  }
+
+  getCountryInfoByName();
+
+  function getCountryInfoByName() {
+    var l = self.countriesList.length;
+    for (var i = 0; i < l; i++) {
+      if (self.countriesList[i].name.toLowerCase() ===
+          countryName.toLowerCase()) {
+        callback(null, self.countriesList[i]);
+        return;
+      }
+    }
+
+    callback('Country not found');
+  }
+
+  function getCountriesList(callback) {
+    var address = self.address + '/apiCountries.html';
+    request(address, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        self.countriesList = JSON.parse(body);
+        callback(null);
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  }
+};
 
 /* jshint -W003 */
 var Server = mongoose.model('Server', serverSchema);
