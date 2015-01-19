@@ -184,6 +184,79 @@ serverSchema.methods.getRegionStatus = function(regionId, callback) {
   });
 };
 
+serverSchema.methods.getAttackerBonusRegion =
+function(regionId, countries, callback) {
+  var self = this;
+
+  var bonusRegions = [];
+  var countriesId = [];
+
+  getCountriesId(0);
+
+  function getCountriesId(i) {
+    if (i >= countries.length) {
+      self.getRegionInfo(regionId, function(error, region) {
+        if (error) {
+          callback('Failed to lookup region information: ' + error);
+          return;
+        }
+
+        checkBonusRegion(region.neighbours, 0);
+      });
+
+      return;
+    }
+
+    self.getCountryInfoByName(countries[i], function(error, country) {
+      countriesId.push(error ? 0 : country.id);
+      getCountriesId(++i);
+    });
+  }
+
+  function checkBonusRegion(neighbours, i) {
+    if (i >= neighbours.length) {
+      if (bonusRegions.length) {
+        getFullName(bonusRegions[0],
+                    countries[countriesId.indexOf(bonusRegions[0].occupantId)]);
+      } else {
+        callback(null, null);
+      }
+
+      return;
+    }
+
+    self.getRegionStatus(neighbours[i], function(error, status) {
+      if (error) {
+        callback('Failed to lookup region status: ' + error);
+        return;
+      }
+
+      if (countriesId.indexOf(status.occupantId) > -1) {
+        if (status.battle === true) {
+          getFullName(status,
+                      countries[countriesId.indexOf(status.occupantId)]);
+          return;
+        }
+
+        bonusRegions.push(status);
+      }
+
+      checkBonusRegion(neighbours, ++i);
+    });
+  }
+
+  function getFullName(regionStatus, country) {
+    self.getRegionInfo(regionStatus.regionId, function(error, region) {
+      if (error) {
+        callback('Failed to lookup region information: ' + error);
+        return;
+      }
+
+      callback(null, region.name + ', ' + country);
+    });
+  }
+};
+
 /* jshint -W003 */
 var Server = mongoose.model('Server', serverSchema);
 /* jshint +W003 */
