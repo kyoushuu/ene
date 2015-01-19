@@ -161,6 +161,29 @@ serverSchema.methods.getRegionInfo = function(regionId, callback) {
   }
 };
 
+serverSchema.methods.getRegionStatus = function(regionId, callback) {
+  var self = this;
+
+  var address = self.address + '/apiMap.html';
+  request(address, function(error, response, body) {
+    if (!error && response.statusCode === 200) {
+      var regionsStatusList = JSON.parse(body);
+
+      var l = regionsStatusList.length;
+      for (var i = 0; i < l; i++) {
+        if (regionsStatusList[i].regionId === regionId) {
+          callback(null, regionsStatusList[i]);
+          return;
+        }
+      }
+
+      callback('Region not found');
+    } else {
+      callback(error || 'HTTP Error: ' + response.statusCode);
+    }
+  });
+};
+
 /* jshint -W003 */
 var Server = mongoose.model('Server', serverSchema);
 /* jshint +W003 */
