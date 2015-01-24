@@ -167,17 +167,24 @@ serverSchema.methods.getRegionStatus = function(regionId, callback) {
   var address = self.address + '/apiMap.html';
   request(address, function(error, response, body) {
     if (!error && response.statusCode === 200) {
-      var regionsStatusList = JSON.parse(body);
+      try {
+        var regionsStatusList = JSON.parse(body);
 
-      var l = regionsStatusList.length;
-      for (var i = 0; i < l; i++) {
-        if (regionsStatusList[i].regionId === regionId) {
-          callback(null, regionsStatusList[i]);
-          return;
+        var l = regionsStatusList.length;
+        for (var i = 0; i < l; i++) {
+          if (regionsStatusList[i].regionId === regionId) {
+            callback(null, regionsStatusList[i]);
+            return;
+          }
         }
-      }
 
-      callback('Region not found');
+        callback('Region not found');
+      } catch (e) {
+        console.log('Error: ' + e);
+        console.log('Stack: ' + e.stack);
+        console.log('Address: ' + address);
+        callback('Internal Error Occured');
+      }
     } else {
       callback(error || 'HTTP Error: ' + response.statusCode);
     }
