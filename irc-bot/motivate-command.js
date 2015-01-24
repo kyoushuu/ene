@@ -79,6 +79,11 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
+        if (country.server.disabled) {
+          bot.say(to, 'Server has been disabled.');
+          return;
+        }
+
         motivateParse_(error, bot, from, to, args, country);
       });
     });
