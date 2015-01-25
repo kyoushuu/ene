@@ -142,6 +142,35 @@ router.get('/:countryId', function(req, res) {
 });
 
 
+router.get('/:countryId/access', function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  var query = Country.findById(req.params.countryId);
+  query.populate('accessList.account').exec(function(error, country) {
+    if (error || !country) {
+      res.sendStatus(404);
+      return;
+    }
+
+    /* Only site and country admins could get access list */
+    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+      res.sendStatus(403);
+      return;
+    }
+
+    res.render('country-access', {
+      title: 'Country Access List',
+      country: country,
+      info: req.flash('info'),
+      error: req.flash('error'),
+    });
+  });
+});
+
+
 router.route('/:countryId/access/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
