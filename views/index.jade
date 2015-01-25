@@ -16,6 +16,15 @@ block content
           | Your account is not yet confirmed. Click
           a(href='/user/confirm') here
           | to resend the confirmation email.
+
       ul
         li
           a(href='/user/signout') Sign out
+
+      if !user.confirmCode
+        if countries.length
+          h2 Countries with Access
+          ul
+            each country in countries
+              li
+                a(href='/country/' + country.id) #{country.name} (#{country.server.name})

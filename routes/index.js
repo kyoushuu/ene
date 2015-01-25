@@ -20,9 +20,24 @@
 var express = require('express');
 var router = express.Router();
 
+var Country = require('../models/country');
+
 /* GET home page. */
 router.get('/', function(req, res) {
-  res.render('index', {title: 'Ene Project', user: req.user});
+  if (!req.user) {
+    res.render('index', {title: 'Ene Project'});
+    return;
+  }
+
+  Country.find((req.user.accessLevel < 4 ? {
+    'accessList.account': req.user,
+  } : {})).populate('server').exec(function(error, countries) {
+    res.render('index', {
+      title: 'Ene Project',
+      user: req.user,
+      countries: countries,
+    });
+  });
 });
 
 module.exports = router;
