@@ -274,6 +274,52 @@ function doAddAccessFailed(req, res, err) {
 }
 
 
+router.get('/:countryId/access/remove/:accessId', function(req, res) {
+  if (!req.isAuthenticated()) {
+    res.redirect('/user/signin');
+    return;
+  }
+
+  Country.findById(req.params.countryId, function(error, country) {
+    if (error || !country) {
+      res.sendStatus(404);
+      return;
+    }
+
+    var access = country.accessList.id(req.params.accessId);
+    if (!access) {
+      req.flash('error', 'Access not found');
+      res.redirect('/country/' + country.id + '/access');
+      return;
+    }
+
+    /* Only site and country admins could remove access */
+    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+      res.sendStatus(403);
+      return;
+    }
+
+    /* Only site admins could remove country admins */
+    if (req.user.accessLevel < 6 && access.accessLevel >= 3) {
+      res.sendStatus(403);
+      return;
+    }
+
+    access.remove();
+
+    country.save(function(error) {
+      if (error) {
+        doAddAccessFailed(req, res, error);
+        return;
+      }
+
+      req.flash('info', 'Access successfully removed');
+      res.redirect('/country/' + country.id + '/access');
+    });
+  });
+});
+
+
 router.route('/:countryId/channel/new').get(function(req, res) {
   if (!req.isAuthenticated()) {
     res.redirect('/user/signin');
