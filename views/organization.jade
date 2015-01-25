@@ -10,7 +10,11 @@ block content
       td #{organization.shortname}
     tr
       td Country:
-      td #{organization.country.name} (#{organization.country.server.name})
+      - var cLink = '/country/' + organization.country.id;
+      - var cName = organization.country.name;
+      - var sLink = '/server/' + organization.country.server.id;
+      - var sName = organization.country.server.name;
+      td #[a(href=cLink) #{cName}] (#[a(href=sLink) #{sName}])
 
   h2 Actions
   ul
