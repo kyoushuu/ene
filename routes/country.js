@@ -258,7 +258,7 @@ router.route('/:countryId/access/new').get(function(req, res) {
         }
 
         req.flash('info', 'Access successfully added');
-        res.redirect('/country/' + country.id);
+        res.redirect('/country/' + country.id + '/access');
       });
     });
   });
