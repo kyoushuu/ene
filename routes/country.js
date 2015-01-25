@@ -126,8 +126,8 @@ router.get('/:countryId', function(req, res) {
     return;
   }
 
-  var query = Country.findById(req.params.countryId).populate('server');
-  query.exec(function(error, country) {
+  var query = Country.findById(req.params.countryId);
+  query.populate('server organizations').exec(function(error, country) {
     if (error || !country) {
       res.sendStatus(404);
       return;
