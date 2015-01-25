@@ -18,3 +18,8 @@ block content
       each organization in country.organizations
         li
           a(href='/organization/' + organization.id) #{organization.username}
+
+  h2 Actions
+  ul
+    li
+      a(href='/country/' + country.id + '/access') View access list
