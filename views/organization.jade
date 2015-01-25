@@ -11,3 +11,8 @@ block content
     tr
       td Country:
       td #{organization.country.name} (#{organization.country.server.name})
+
+  h2 Actions
+  ul
+    li
+      a(href='/organization/edit/' + organization.id) Edit
