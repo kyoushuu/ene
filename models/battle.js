@@ -26,6 +26,7 @@ var battleSchema = new mongoose.Schema({
   country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country'},
   channel: {type: mongoose.Schema.Types.ObjectId, ref: 'Channel'},
   side: {type: String},
+  mode: {type: String, default: 'full'},
 });
 
 /* jshint -W003 */
