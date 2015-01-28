@@ -211,8 +211,15 @@ function watchParse_(error, bot, from, to, args, country, channel) {
       }
 
       if (battle) {
-        bot.say(to, 'Already watching battle');
-        return;
+        if (watchlist[battle.id] !== null) {
+          clearTimeout(watchlist[battle.id]);
+          battle.remove(function(error, battle) {
+            delete watchlist[battle.id];
+          });
+        } else {
+          bot.say(to, 'Failed to delete previous watch. Please try again.');
+          return;
+        }
       }
 
       Battle.create({
