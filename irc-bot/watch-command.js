@@ -29,16 +29,21 @@ var Battle = require('../models/battle');
 
 var call = require('./call-command');
 
-var watchpoints = [
-  6000, 4800, 3600,
-  3000, 2400, 1800,
-  1500, 1200, 900, 600, 300,
-  270, 240, 210, 180, 150, 120,
-  105, 90, 75, 60,
-  50, 40, 30,
-  24, 18, 12, 6, 0,
-  -6, -12,
-];
+var watchpoints = {
+  full: [
+    6000, 4800, 3600,
+    3000, 2400, 1800,
+    1500, 1200, 900, 600, 300,
+    270, 240, 210, 180, 150, 120,
+    105, 90, 75, 60,
+    50, 40, 30,
+    24, 18, 12, 6, 0,
+    -6, -12,
+  ],
+  light: [
+    600, 300, 120, -12,
+  ],
+};
 var watchlist = {};
 
 
@@ -46,8 +51,10 @@ module.exports = function(bot, from, to, argv) {
   parse(bot, '!watch [battle id]', [
     ['d', 'defender', 'Defender side (default)'],
     ['a', 'attacker', 'Attacker side'],
-    ['l', 'list', 'List battles in watchlist (default)'],
+    ['L', 'list', 'List battles in watchlist (default)'],
     ['w', 'watch', 'Add battle to watchlist (default if battle id is given)'],
+    ['l', 'light', 'Show status on T-10, T-5 and T-2 only'],
+    ['f', 'full', 'Show status on all intervals (default)'],
     ['r', 'remove', 'Remove battle from watchlist (battle id required)'],
   ], argv, 0, 1, to, true, function(error, args) {
     if (error) {
@@ -129,6 +136,13 @@ function watchParse_(error, bot, from, to, args, country, channel) {
     side = 'attacker';
   }
 
+  var mode = 'full';
+  if (opt.options.light) {
+    mode = 'light';
+  } else if (opt.options.full) {
+    mode = 'full';
+  }
+
   var battleId = 0;
   if (!opt.options.list && opt.argv.length > 0) {
     battleId = parseInt(opt.argv[0]);
@@ -206,6 +220,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
         country: country,
         channel: channel,
         side: side,
+        mode: mode,
       }, function(error, battle) {
         battle.populate('channel', function(error, battle) {
           watchBattle(bot, country.organizations[0], battle,
@@ -366,13 +381,14 @@ function watchBattleRound(
       });
   };
 
-  var l = watchpoints.length;
+  var l = watchpoints[battle.mode].length;
   for (var i = 0; i < l; i++) {
-    if (battleRoundInfo.remainingTimeInSeconds > watchpoints[i]) {
+    if (battleRoundInfo.remainingTimeInSeconds > watchpoints[battle.mode][i]) {
       watchlist[battle.id] = setTimeout(
           timeout,
-          (battleRoundInfo.remainingTimeInSeconds - watchpoints[i]) * 1000,
-          watchpoints[i]);
+          (battleRoundInfo.remainingTimeInSeconds -
+            watchpoints[battle.mode][i]) * 1000,
+          watchpoints[battle.mode][i]);
 
       return;
     }
