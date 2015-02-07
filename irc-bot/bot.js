@@ -41,6 +41,7 @@ var commands = {
     'join': require('./join-command'),
     'part': require('./part-command'),
     'say': require('./say-command'),
+    'act': require('./act-command'),
   },
 };
 
