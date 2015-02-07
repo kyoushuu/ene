@@ -20,27 +20,19 @@
 var express = require('express');
 var router = express.Router();
 
+var common = require('./common');
+
 var Server = require('../models/server');
 
 
-router.route('/new').get(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.route('/new').get(common.ensureSignedIn, function(req, res) {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
   res.render('server-create', {title: 'Create Server'});
-}).post(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+}).post(common.ensureSignedIn, function(req, res) {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
@@ -68,12 +60,7 @@ router.route('/new').get(function(req, res) {
 });
 
 
-router.get('/:serverId', function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.get('/:serverId', common.ensureSignedIn, function(req, res) {
   Server.findById(req.params.serverId, function(error, server) {
     if (error || !server) {
       res.sendStatus(404);
@@ -89,12 +76,7 @@ router.get('/:serverId', function(req, res) {
 });
 
 
-router.route('/edit/:serverId').get(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.route('/edit/:serverId').get(common.ensureSignedIn, function(req, res) {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
@@ -111,12 +93,7 @@ router.route('/edit/:serverId').get(function(req, res) {
       server: server,
     });
   });
-}).post(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+}).post(common.ensureSignedIn, function(req, res) {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
