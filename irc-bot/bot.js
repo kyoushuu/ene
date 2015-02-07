@@ -147,7 +147,7 @@ bot.addListener('message#', function(from, to, message) {
   if (commands.channel.hasOwnProperty(argv[0])) {
     isNickIdentified(from, function(identified) {
       if (identified) {
-        commands.channel[argv[0]](bot, from, to, argv);
+        commands.channel[argv[0]](bot, from, to, argv, message);
       } else {
         bot.say(from, 'Identify with NickServ first.');
       }
@@ -161,7 +161,7 @@ bot.addListener('pm', function(from, message) {
   if (commands.pm.hasOwnProperty(argv[0])) {
     isNickIdentified(from, function(identified) {
       if (identified) {
-        commands.pm[argv[0]](bot, from, argv);
+        commands.pm[argv[0]](bot, from, argv, message);
       } else {
         bot.say(from, 'Identify with NickServ first.');
       }
