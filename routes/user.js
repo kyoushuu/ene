@@ -22,6 +22,8 @@ var router = express.Router();
 var nodemailer = require('nodemailer');
 var passport = require('passport');
 
+var common = require('./common');
+
 var User = require('../models/user');
 var Server = require('../models/server');
 
@@ -96,22 +98,12 @@ function sendConfirmEmail(user, callback) {
 }
 
 
-router.route('/confirm').get(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.route('/confirm').get(common.ensureSignedIn, function(req, res) {
   res.render('confirm', {
     title: 'Confirm your account',
     user: req.user,
   });
-}).post(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+}).post(common.ensureSignedIn, function(req, res) {
   sendConfirmEmail(req.user, function(error) {
     if (error) {
       console.log('Failed to send confirmation email: ' + error);
@@ -288,12 +280,8 @@ function doRecoverCodeFailed(res, user, error) {
 }
 
 
-router.route('/:userId/citizen/new').get(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.route('/:userId/citizen/new').get(common.ensureSignedIn,
+function(req, res) {
   if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
     res.sendStatus(403);
     return;
@@ -314,12 +302,7 @@ router.route('/:userId/citizen/new').get(function(req, res) {
       servers: servers,
     });
   });
-}).post(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+}).post(common.ensureSignedIn, function(req, res) {
   if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
     res.sendStatus(403);
     return;
