@@ -31,6 +31,7 @@ var commands = {
     '!motivate': require('./motivate-command'),
     '!donate': require('./donate-command'),
     '!supply': require('./supply-command'),
+    '!supply-commune': require('./supply-commune-command'),
     '!battle': require('./battle-command'),
     '!watch': require('./watch-command'),
     '!call': require('./call-command'),
