@@ -20,17 +20,14 @@
 var express = require('express');
 var router = express.Router();
 
+var common = require('./common');
+
 var Organization = require('../models/organization');
 var Country = require('../models/country');
 var Server = require('../models/server');
 
 
-router.route('/new').get(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.route('/new').get(common.ensureSignedIn, function(req, res) {
   var query = Server.find({}, null, {sort: {_id: 1}});
   query.populate('countries', null, null, {sort: {_id: 1}});
   query.exec(function(error, servers) {
@@ -48,12 +45,7 @@ router.route('/new').get(function(req, res) {
       servers: servers,
     });
   });
-}).post(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+}).post(common.ensureSignedIn, function(req, res) {
   var query = Country.findById(req.body.country).populate('server');
   query.exec(function(error, country) {
     if (error) {
@@ -129,12 +121,7 @@ function doCreateFailed(req, res, err) {
 }
 
 
-router.get('/:organizationId', function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.get('/:organizationId', common.ensureSignedIn, function(req, res) {
   var query = Organization.findById(req.params.organizationId);
   query.populate('country');
   query.exec(function(error, organization) {
@@ -169,12 +156,8 @@ router.get('/:organizationId', function(req, res) {
 });
 
 
-router.route('/edit/:organizationId').get(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.route('/edit/:organizationId').get(common.ensureSignedIn,
+function(req, res) {
   var query = Organization.findById(req.params.organizationId);
   query.exec(function(error, organization) {
     if (error || !organization) {
@@ -187,12 +170,7 @@ router.route('/edit/:organizationId').get(function(req, res) {
       organization: organization,
     });
   });
-}).post(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+}).post(common.ensureSignedIn, function(req, res) {
   var query = Organization.findById(req.params.organizationId);
   query.populate('country');
   query.exec(function(error, organization) {
