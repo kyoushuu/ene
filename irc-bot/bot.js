@@ -29,6 +29,7 @@ var call = require('./call-command');
 
 var nickname = require('./nickname-command');
 var announce = require('./announce-command');
+var join = require('./join-command');
 
 var Channel = require('../models/channel');
 var Battle = require('../models/battle');
@@ -191,6 +192,8 @@ bot.addListener('pm', function(from, message) {
         nickname.add(bot, from, argv);
       } else if (argv[0] === 'announce') {
         announce(bot, from, argv);
+      } else if (argv[0] === 'join') {
+        join(bot, from, argv);
       }
     } else {
       bot.say(from, 'Identify with NickServ first.');
