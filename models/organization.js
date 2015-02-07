@@ -374,10 +374,17 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
           var type = null;
           var label = null;
           var id = 0;
+          var frozen = false;
           var defender = $('div#mainFight div.alliesList').eq(0).clone()
                 .children().remove().end().text().trim();
           var attacker = $('div#mainFight div.alliesList').eq(1).clone()
                 .children().remove().end().text().trim();
+
+          if ($('div#newFightView div.testDivred').text().trim()
+              .indexOf('frozen') > -1) {
+            frozen = true;
+          }
+
           if ($('div#mainFight div#fightName span a[href*="region"]').text()
               .trim() !== '') {
             label = $('div#mainFight div#fightName span a[href*="region"]')
@@ -417,6 +424,7 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
             label: label,
             type: type,
             id: id,
+            frozen: frozen,
             round: numeral().unformat($('div#mainFight > div').eq(2).text()
               .trim()),
             roundId: parseInt($('input#battleRoundId').attr('value')),
