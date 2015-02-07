@@ -20,25 +20,30 @@
 var irc = require('irc');
 var codes = irc.colors.codes;
 
-var parse = require('./parse');
-
 var Channel = require('../models/channel');
 var User = require('../models/user');
 
 
-module.exports = function(bot, from, to, argv) {
-  parse(bot, '!call [message]', [
-  ], argv, 0, 1, to, true, function(error, args) {
+module.exports = function(bot, from, to, argv, raw) {
+  User.findOne({
+    nicknames: from,
+  }, function(error, user) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to,
+          'Failed to find user via nickname: ' + error);
       return;
-    } else if (!args) {
+    }
+
+    if (!user) {
+      bot.say(to, 'Nickname is not registered.');
       return;
     }
 
     var query = Channel.findOne({name: to}).populate({
       path: 'countries',
-      match: {server: args.server._id},
+      match: {
+        'accessList.account': user._id,
+      },
     });
     query.exec(function(error, channel) {
       if (error) {
@@ -47,62 +52,16 @@ module.exports = function(bot, from, to, argv) {
       } else if (!channel) {
         bot.say(to, 'Channel not registered in database.');
         return;
-      } else if (!channel.countries.length) {
-        bot.say(to, 'Channel not registered for given server.');
+      } else if (!channel.countries.length && user.accessLevel < 4) {
+        bot.say(to, 'Permission denied.');
         return;
       }
 
-      var query = channel.countries[0].populate('server');
-      query.populate('organizations', function(error, country) {
-        var j = -1;
-        var l = country.channels.length;
-        for (var i = 0; i < l; i++) {
-          if (country.channels[i].channel.equals(channel.id)) {
-            j = i;
-          }
-        }
-
-        if (j < 0 ||
-            country.channels[j].types.indexOf('military') < 0) {
-          bot.say(to,
-              'Battle command not allowed for server in this ' +
-              'channel.');
-          return;
-        }
-
-        User.findOne({
-          nicknames: from,
-        }, function(error, user) {
-          if (error) {
-            bot.say(to,
-                'Failed to find user via nickname: ' + error);
-            return;
-          }
-
-          if (user) {
-            if (user.accessLevel < 4 && country.getUserAccessLevel(user) < 1) {
-              bot.say(to, 'Permission denied.');
-            } else {
-              callParse_(error, bot, from, to, args, country, user);
-            }
-          } else {
-            bot.say(to, 'Nickname is not registered.');
-          }
-        });
-      });
+      var message = raw.trimLeft();
+      call(bot, to, message.substring(message.indexOf(' ') + 1));
     });
   });
 };
-
-function callParse_(error, bot, from, to, args, country, user) {
-  if (error || !args) {
-    return;
-  }
-
-  var opt = args.opt;
-
-  call(bot, to, (opt.argv.length > 0 ? opt.argv[0] : null));
-}
 
 function call(bot, to, message) {
   bot.once('names' + to, function(nicks) {
