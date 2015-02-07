@@ -20,15 +20,12 @@
 var express = require('express');
 var router = express.Router();
 
+var common = require('./common');
+
 var Channel = require('../models/channel');
 
 
-router.route('/new').get(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.route('/new').get(common.ensureSignedIn, function(req, res) {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
@@ -37,12 +34,7 @@ router.route('/new').get(function(req, res) {
   res.render('channel-create', {
     title: 'Create Channel',
   });
-}).post(function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+}).post(common.ensureSignedIn, function(req, res) {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
@@ -67,12 +59,7 @@ router.route('/new').get(function(req, res) {
 });
 
 
-router.get('/:channelId', function(req, res) {
-  if (!req.isAuthenticated()) {
-    res.redirect('/user/signin');
-    return;
-  }
-
+router.get('/:channelId', common.ensureSignedIn, function(req, res) {
   Channel.findById(req.params.channelId, function(error, channel) {
     if (error || !channel) {
       res.sendStatus(404);
