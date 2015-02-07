@@ -55,42 +55,56 @@ module.exports = function(bot, from, to, argv) {
         return;
       }
 
-      var query = channel.countries[0].populate('server');
-      query.populate('organizations', function(error, country) {
-        var j = -1;
-        var l = country.channels.length;
-        for (var i = 0; i < l; i++) {
-          if (country.channels[i].channel.equals(channel.id)) {
-            j = i;
-          }
-        }
-
-        if (j < 0 ||
-            country.channels[j].types.indexOf('military') < 0) {
+      User.findOne({
+        nicknames: from,
+      }, function(error, user) {
+        if (error) {
           bot.say(to,
-              'Military commands are not allowed for the given server in ' +
-              'this channel.');
+              'Failed to find user via nickname: ' + error);
           return;
         }
 
-        User.findOne({
-          nicknames: from,
-        }, function(error, user) {
-          if (error) {
+        if (!user) {
+          bot.say(to, 'Nickname is not registered.');
+          return;
+        }
+
+        var countries = [];
+
+        var l = channel.countries.length;
+        for (var i = 0; i < l; i++) {
+          if (channel.countries[i].getUserAccessLevel(user) > 0) {
+            countries.push(channel.countries[i]);
+          }
+        }
+
+        if (!countries.length) {
+          bot.say(to, 'Permission denied.');
+          return;
+        } else if (countries.length > 1) {
+          bot.say(to, 'Failed, you have access on multiple countries.');
+          return;
+        }
+
+        var query = countries[0].populate('server');
+        query.populate('organizations', function(error, country) {
+          var j = -1;
+          var l = country.channels.length;
+          for (var i = 0; i < l; i++) {
+            if (country.channels[i].channel.equals(channel.id)) {
+              j = i;
+            }
+          }
+
+          if (j < 0 ||
+              country.channels[j].types.indexOf('military') < 0) {
             bot.say(to,
-                'Failed to find user via nickname: ' + error);
+                'Military commands are not allowed for the given server in ' +
+                'this channel.');
             return;
           }
 
-          if (user) {
-            if (user.accessLevel < 4 && country.getUserAccessLevel(user) < 2) {
-              bot.say(to, 'Permission denied.');
-            } else {
-              battleParse_(error, bot, from, to, args, country, user);
-            }
-          } else {
-            bot.say(to, 'Nickname is not registered.');
-          }
+          battleParse_(error, bot, from, to, args, country, user);
         });
       });
     });
