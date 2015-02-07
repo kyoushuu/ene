@@ -269,3 +269,5 @@ function supplyDonate(organization, user, options, i, callback) {
         supplyDonate(organization, user, options, ++i, callback);
       });
 }
+
+module.exports.supply = supply;
