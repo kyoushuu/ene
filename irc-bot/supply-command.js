@@ -30,6 +30,7 @@ var ProductDonation = require('../models/productDonation');
 module.exports = function(bot, from, to, argv) {
   parse(bot, '!supply (citizen) (supply quantity) [reason]', [
     ['i', 'id', 'Given citizen is a citizen id'],
+    ['d', 'dry-run', 'Dry run - do not actually send items'],
   ], argv, 2, 3, to, true, function(error, args) {
     if (error) {
       bot.say(to, 'Error: ' + error);
@@ -117,6 +118,7 @@ function supplyParse_(error, bot, from, to, args, country, user) {
     supplyFormat: supplyFormat,
     reason: reason,
     id: opt.options.id,
+    dryRun: opt.options['dry-run'],
   }, function(error) {
     if (!error) {
       bot.say(to,
@@ -223,7 +225,7 @@ function supplyCheckMax(
 }
 
 function supplyDonate(organization, user, options, i, callback) {
-  if (i >= options.supplyQuantity.length) {
+  if (i >= options.supplyQuantity.length || options.dryRun) {
     callback(null);
     return;
   }
