@@ -20,21 +20,29 @@
 var irc = require('irc');
 var parse = require('shell-quote').parse;
 
-var motivate = require('./motivate-command');
-var donate = require('./donate-command');
-var supply = require('./supply-command');
-var battle = require('./battle-command');
-var watch = require('./watch-command');
-var call = require('./call-command');
-
-var nickname = require('./nickname-command');
-var announce = require('./announce-command');
-var join = require('./join-command');
-var part = require('./part-command');
-var say = require('./say-command');
-
 var Channel = require('../models/channel');
 var Battle = require('../models/battle');
+
+var watchBattle = require('./watch-command').watchBattle;
+
+
+var commands = {
+  channel: {
+    '!motivate': require('./motivate-command'),
+    '!donate': require('./donate-command'),
+    '!supply': require('./supply-command'),
+    '!battle': require('./battle-command'),
+    '!watch': require('./watch-command'),
+    '!call': require('./call-command'),
+  },
+  pm: {
+    'add-nickname': require('./nickname-command').add,
+    'announce': require('./announce-command'),
+    'join': require('./join-command'),
+    'part': require('./part-command'),
+    'say': require('./say-command'),
+  },
+};
 
 
 var bot = new irc.Client(process.env.IRC_SERVER, process.env.IRC_NICKNAME, {
@@ -91,7 +99,7 @@ bot.addListener('registered', function(from, to, message) {
 
               function makePopulateCallback(j) {
                 return function(error, country) {
-                  watch.watchBattle(
+                  watchBattle(
                     bot, battles[j].country.organizations[0], battles[j],
                     function(error) {
                       if (error) {
@@ -135,52 +143,12 @@ bot.addListener('message#', function(from, to, message) {
 
   var argv = parse(message);
 
-  if (argv[0] === '!motivate') {
+  if (commands.channel.hasOwnProperty(argv[0])) {
     isNickIdentified(from, function(identified) {
       if (identified) {
-        motivate(bot, from, to, argv);
+        commands.channel[argv[0]](bot, from, to, argv);
       } else {
-        bot.say(to, 'Identify with NickServ first.');
-      }
-    });
-  } else if (argv[0] === '!donate') {
-    isNickIdentified(from, function(identified) {
-      if (identified) {
-        donate(bot, from, to, argv);
-      } else {
-        bot.say(to, 'Identify with NickServ first.');
-      }
-    });
-  } else if (argv[0] === '!supply') {
-    isNickIdentified(from, function(identified) {
-      if (identified) {
-        supply(bot, from, to, argv);
-      } else {
-        bot.say(to, 'Identify with NickServ first.');
-      }
-    });
-  } else if (argv[0] === '!battle') {
-    isNickIdentified(from, function(identified) {
-      if (identified) {
-        battle(bot, from, to, argv);
-      } else {
-        bot.say(to, 'Identify with NickServ first.');
-      }
-    });
-  } else if (argv[0] === '!watch') {
-    isNickIdentified(from, function(identified) {
-      if (identified) {
-        watch(bot, from, to, argv);
-      } else {
-        bot.say(to, 'Identify with NickServ first.');
-      }
-    });
-  } else if (argv[0] === '!call') {
-    isNickIdentified(from, function(identified) {
-      if (identified) {
-        call(bot, from, to, argv);
-      } else {
-        bot.say(to, 'Identify with NickServ first.');
+        bot.say(from, 'Identify with NickServ first.');
       }
     });
   }
@@ -188,23 +156,16 @@ bot.addListener('message#', function(from, to, message) {
 
 bot.addListener('pm', function(from, message) {
   var argv = parse(message);
-  isNickIdentified(from, function(identified) {
-    if (identified) {
-      if (argv[0] === 'add-nickname') {
-        nickname.add(bot, from, argv);
-      } else if (argv[0] === 'announce') {
-        announce(bot, from, argv);
-      } else if (argv[0] === 'join') {
-        join(bot, from, argv);
-      } else if (argv[0] === 'part') {
-        part(bot, from, argv);
-      } else if (argv[0] === 'say') {
-        say(bot, from, argv);
+
+  if (commands.pm.hasOwnProperty(argv[0])) {
+    isNickIdentified(from, function(identified) {
+      if (identified) {
+        commands.pm[argv[0]](bot, from, argv);
+      } else {
+        bot.say(from, 'Identify with NickServ first.');
       }
-    } else {
-      bot.say(from, 'Identify with NickServ first.');
-    }
-  });
+    });
+  }
 });
 
 bot.addListener('error', function(message) {
