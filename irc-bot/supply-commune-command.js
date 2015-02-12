@@ -30,6 +30,8 @@ var User = require('../models/user');
 module.exports = function(bot, from, to, argv) {
   parse(bot, '!supply-commune (organization) (supply quantity) [reason]', [
     ['d', 'dry-run', 'Dry run - do not actually send items'],
+    ['j', 'jump=WORKER', 'Jump to WORKER, skipping previous workers'],
+    ['S', 'skip=WORKER+', 'Skip WORKER, could be used multiple times'],
   ], argv, 2, 3, to, true, function(error, args) {
     if (error) {
       bot.say(to, 'Error: ' + error);
@@ -143,6 +145,8 @@ function supplyCommuneParse_(
       supplyFormat: supplyFormat,
       reason: reason,
       dryRun: opt.options['dry-run'],
+      jump: opt.options.jump,
+      skip: opt.options.skip,
     }, bot, to);
   });
 }
@@ -218,6 +222,7 @@ function getCompanies_(country, organization, user, options, bot, to) {
         }
 
         options.membersWorked = [];
+        options.jumpPos = -1;
 
         getWorkResults_(0, country, organization, user, options, bot, to);
         return;
@@ -228,6 +233,35 @@ function getCompanies_(country, organization, user, options, bot, to) {
 
 function getWorkResults_(i, country, organization, user, options, bot, to) {
   if (i >= options.companiesId.length) {
+    if (options.jump && options.jumpPos < 0) {
+      bot.say(to, 'Citizen ' + options.jump + ' not found in list.');
+      return;
+    }
+
+    if (options.skip) {
+      options.skipIds = [];
+
+      var l = options.skip.length;
+      for (var j = 0; j < l; j++) {
+        var m = options.membersWorked.length;
+        var citizenId = -1;
+        for (var k = 0; k < m; k++) {
+          if (options.skip[j].toUpperCase() ===
+              options.membersWorked[k].toUpperCase()) {
+            citizenId = k;
+            break;
+          }
+        }
+
+        if (citizenId < 0) {
+          bot.say(to, 'Citizen ' + options.skip[j] + ' not found in list.');
+          return;
+        }
+
+        options.skipIds.push(citizenId);
+      }
+    }
+
     sendSupplies_(0, country, organization, user, options, bot, to);
     return;
   }
@@ -261,6 +295,12 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
           }
 
           var name = worker.clone().children().remove().end().text().trim();
+
+          if (options.jump &&
+              options.jump.toUpperCase() === name.toUpperCase()) {
+            options.jumpPos = options.membersWorked.length;
+          }
+
           options.membersWorked.push({
             id: citizenId,
             name: name,
@@ -279,13 +319,20 @@ function sendSupplies_(i, country, organization, user, options, bot, to) {
     return;
   }
 
+  if ((options.jump && options.jumpPos > i) ||
+      (options.skip && options.skipIds.indexOf(i) > -1)) {
+    sendSupplies_(++i, country, organization, user, options, bot, to);
+    return;
+  }
+
+  var name = options.membersWorked[i].name;
   options.citizen = options.membersWorked[i].id;
   options.id = true;
 
-  bot.say(to, 'Sending supplies to ' + options.membersWorked[i].name + '...');
+  bot.say(to, 'Sending supplies to ' + name + '...');
   supply.supply(country, organization, user, options, function(error) {
     if (error) {
-      bot.say(to, 'Failed to supply: ' + error);
+      bot.say(to, 'Failed to supply ' + name + ': ' + error);
       return;
     }
 
