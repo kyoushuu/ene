@@ -31,6 +31,7 @@ module.exports = function(bot, from, to, argv) {
   parse(bot, '!supply (citizen) (supply quantity) [reason]', [
     ['i', 'id', 'Given citizen is a citizen id'],
     ['d', 'dry-run', 'Dry run - do not actually send items'],
+    ['f', 'from=ORGANIZATION', 'Get supplies from ORGANIZATION'],
   ], argv, 2, 3, to, true, function(error, args) {
     if (error) {
       bot.say(to, 'Error: ' + error);
@@ -86,32 +87,13 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var query = countries[0].populate('server');
-        query.populate('organizations', function(error, country) {
-          var j = -1;
-          var l = country.channels.length;
-          for (var i = 0; i < l; i++) {
-            if (country.channels[i].channel.equals(channel.id)) {
-              j = i;
-            }
-          }
-
-          if (j < 0 ||
-              country.channels[j].types.indexOf('military') < 0) {
-            bot.say(to,
-                'Military commands are not allowed for the given server in ' +
-                'this channel.');
-            return;
-          }
-
-          supplyParse_(error, bot, from, to, args, country, user);
-        });
+        supplyParse_(error, bot, from, to, args, channel, countries[0], user);
       });
     });
   });
 };
 
-function supplyParse_(error, bot, from, to, args, country, user) {
+function supplyParse_(error, bot, from, to, args, channel, country, user) {
   if (error || !args) {
     return;
   }
@@ -130,21 +112,59 @@ function supplyParse_(error, bot, from, to, args, country, user) {
     return;
   }
 
-  supply(country, country.organizations[0], user, {
-    citizen: opt.argv[0],
-    supplyQuantity: supplyQuantity,
-    supplyFormat: supplyFormat,
-    reason: reason,
-    id: opt.options.id,
-    dryRun: opt.options['dry-run'],
-  }, function(error) {
-    if (!error) {
-      bot.say(to,
-          'Supplies successfully donated to citizen ' +
-          (opt.options.id ? '#' : '') + opt.argv[0] + '.');
-    } else {
-      bot.say(to, 'Failed to supply: ' + error);
+  var query = null;
+  if (opt.options.from) {
+    if (country.getUserAccessLevel(user) < 3) {
+      bot.say(to, 'Permission denied.');
+      return;
     }
+
+    query = country.populate({
+      path: 'organizations',
+      match: {shortname: opt.options.from},
+    });
+  } else {
+    query = country.populate('organizations');
+  }
+
+  query.populate('server', function(error, country) {
+    if (country.organizations.length < 1) {
+      bot.say(to, 'Organization not found.');
+      return;
+    }
+
+    var j = -1;
+    var l = country.channels.length;
+    for (var i = 0; i < l; i++) {
+      if (country.channels[i].channel.equals(channel.id)) {
+        j = i;
+      }
+    }
+
+    if (j < 0 ||
+        country.channels[j].types.indexOf('military') < 0) {
+      bot.say(to,
+          'Military commands are not allowed for the given server in ' +
+          'this channel.');
+      return;
+    }
+
+    supply(country, country.organizations[0], user, {
+      citizen: opt.argv[0],
+      supplyQuantity: supplyQuantity,
+      supplyFormat: supplyFormat,
+      reason: reason,
+      id: opt.options.id,
+      dryRun: opt.options['dry-run'],
+    }, function(error) {
+      if (!error) {
+        bot.say(to,
+            'Supplies successfully donated to citizen ' +
+            (opt.options.id ? '#' : '') + opt.argv[0] + '.');
+      } else {
+        bot.say(to, 'Failed to supply: ' + error);
+      }
+    });
   });
 }
 
