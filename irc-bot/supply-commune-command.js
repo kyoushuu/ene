@@ -30,6 +30,7 @@ var User = require('../models/user');
 module.exports = function(bot, from, to, argv) {
   parse(bot, '!supply-commune (organization) (supply quantity) [reason]', [
     ['d', 'dry-run', 'Dry run - do not actually send items'],
+    ['c', 'use-org-companies', 'Use companies of the organization'],
     ['j', 'jump=WORKER', 'Jump to WORKER, skipping previous workers'],
     ['S', 'skip=WORKER+', 'Skip WORKER, could be used multiple times'],
   ], argv, 2, 3, to, true, function(error, args) {
@@ -145,6 +146,7 @@ function supplyCommuneParse_(
       supplyFormat: supplyFormat,
       reason: reason,
       dryRun: opt.options['dry-run'],
+      useOrgCompanies: opt.options['use-org-companies'],
       jump: opt.options.jump,
       skip: opt.options.skip,
     }, bot, to);
@@ -201,11 +203,14 @@ function getMembers_(country, organization, user, options, bot, to) {
 
 function getCompanies_(country, organization, user, options, bot, to) {
   organization.createRequest(function(error, request, jar) {
-    var url = country.server.address + '/militaryUnitCompanies.html';
+    var url = country.server.address +
+      (options.useOrgCompanies ?
+        '/companies.html' :
+        '/militaryUnitCompanies.html');
     request(url, {
       method: 'GET',
       qs: {
-        id: options.unitId,
+        id: options.useOrgCompanies ? undefined : options.unitId,
       },
     }, function(error, response, body) {
       if (!error && response.statusCode === 200) {
