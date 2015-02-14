@@ -421,6 +421,87 @@ organizationSchema.methods.batchDonateProducts = function(
   });
 };
 
+organizationSchema.methods.getInventory = function(callback) {
+  var self = this;
+
+  this.createRequest(function(error, request, jar) {
+    if (error) {
+      callback(error);
+    }
+
+    var url = self.country.server.address + '/militaryUnitStorage.html';
+    request(url, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var $ = cheerio.load(body);
+        if (!$('a#userName').length) {
+          self.login(function(error) {
+            if (error) {
+              callback(error);
+              return;
+            }
+
+            self.getInventory(callback);
+          });
+        }
+
+        var i = 0;
+        var l = 0;
+        var images = null;
+        var product = null;
+        var quality = null;
+
+        var inventoryOrg = {};
+        var storageOrg = $('div.storageMini');
+        l = storageOrg.length;
+        for (i = 0; i < l; i++) {
+          images = storageOrg.eq(i).find('img');
+
+          product = images.eq(0).attr('src');
+          product = product.substring(
+            product.lastIndexOf('/') + 1,
+            product.lastIndexOf('.'));
+
+          quality = images.eq(1).attr('src');
+          if (quality) {
+            quality = parseInt(quality.substring(
+              quality.lastIndexOf('/') + 2,
+              quality.lastIndexOf('.')));
+          }
+
+          inventoryOrg[product + (quality ? '-' + quality : '')] =
+            parseInt(storageOrg.eq(i).find('div').eq(0).text());
+        }
+
+        var inventoryMu = {};
+        var storageMu = $('div.storage');
+        l = storageMu.length;
+        for (i = 0; i < l; i++) {
+          images = storageMu.eq(i).find('img');
+
+          product = images.eq(0).attr('src');
+          product = product.substring(
+            product.lastIndexOf('/') + 1,
+            product.lastIndexOf('.'));
+
+          quality = images.eq(1).attr('src');
+          if (quality) {
+            quality = parseInt(quality.substring(
+              quality.lastIndexOf('/') + 2,
+              quality.lastIndexOf('.')));
+          }
+
+          inventoryMu[product + (quality ? '-' + quality : '')] =
+            parseInt(storageMu.eq(i).find('div').eq(0).text());
+        }
+
+        callback(null, inventoryOrg, inventoryMu);
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  });
+};
+
 organizationSchema.methods.getBattleInfo = function(battleId, callback) {
   var self = this;
 
