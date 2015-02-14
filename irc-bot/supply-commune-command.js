@@ -218,12 +218,16 @@ function getCompanies_(country, organization, user, options, bot, to) {
       if (!error && response.statusCode === 200) {
         var $ = cheerio.load(body);
 
-        var companiesList = $('#myCompaniesToSortTable a[href*="company"]');
+        var companiesList = $('#myCompaniesToSortTable tr[class]');
         options.companiesId = [];
 
         var l = companiesList.length;
         for (var i = 0; i < l; i++) {
-          var company = companiesList.eq(i);
+          if (!parseInt(companiesList.eq(i).find('td').eq(-1).text())) {
+            continue;
+          }
+
+          var company = companiesList.eq(i).find('a[href*="company"]');
           var companyId = parseInt(company.attr('href').split('=')[1]);
           options.companiesId.push(companyId);
         }
