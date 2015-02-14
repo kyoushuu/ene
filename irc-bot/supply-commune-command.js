@@ -31,6 +31,7 @@ module.exports = function(bot, from, to, argv) {
   parse(bot, '!supply-commune (organization) (supply quantity) [reason]', [
     ['d', 'dry-run', 'Dry run - do not actually send items'],
     ['c', 'use-org-companies', 'Use companies of the organization'],
+    ['i', 'use-org-inventory', 'Get supplies from organization\'s inventory'],
     ['j', 'jump=WORKER', 'Jump to WORKER, skipping previous workers'],
     ['S', 'skip=WORKER+', 'Skip WORKER, could be used multiple times'],
   ], argv, 2, 3, to, true, function(error, args) {
@@ -147,6 +148,7 @@ function supplyCommuneParse_(
       reason: reason,
       dryRun: opt.options['dry-run'],
       useOrgCompanies: opt.options['use-org-companies'],
+      useOrgInventory: opt.options['use-org-inventory'],
       jump: opt.options.jump,
       skip: opt.options.skip,
     }, bot, to);
@@ -252,7 +254,7 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
         var citizenId = -1;
         for (var k = 0; k < m; k++) {
           if (options.skip[j].toUpperCase() ===
-              options.membersWorked[k].toUpperCase()) {
+              options.membersWorked[k].name.toUpperCase()) {
             citizenId = k;
             break;
           }
@@ -267,7 +269,29 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
       }
     }
 
-    sendSupplies_(0, country, organization, user, options, bot, to);
+    if (options.useOrgInventory) {
+      sendSupplies_(0, country, organization, user, options, bot, to);
+      return;
+    }
+
+    options.recipients = [];
+    var n = options.membersWorked.length;
+    for (var o = (options.jump ? options.jumpPos : 0); o < n; o++) {
+      if (options.skip && options.skipIds.indexOf(o) > -1) {
+        continue;
+      }
+
+      bot.say(to,
+        'Sending supplies to ' + options.membersWorked[o].name + '...');
+      options.recipients.push(options.membersWorked[o].id);
+    }
+
+    if (options.dryRun) {
+      bot.say(to, 'Done.');
+      return;
+    }
+
+    sendSuppliesBatch_(0, country, organization, user, options, bot, to);
     return;
   }
 
@@ -343,4 +367,32 @@ function sendSupplies_(i, country, organization, user, options, bot, to) {
 
     sendSupplies_(++i, country, organization, user, options, bot, to);
   });
+}
+
+function sendSuppliesBatch_(i, country, organization, user, options, bot, to) {
+  if (i >= options.supplyQuantity.length) {
+    bot.say(to, 'Done.');
+    return;
+  }
+
+  if (options.supplyQuantity[i] < 1) {
+    sendSuppliesBatch_(++i, country, organization, user, options, bot, to);
+    return;
+  }
+
+  var product = options.supplyFormat[i].split(':')[0];
+  var quantity = parseInt(options.supplyQuantity[i]);
+  organization.batchDonateProducts(
+      user, options.recipients, product,
+      quantity, options.reason,
+      function(error) {
+        if (error) {
+          bot.say(to,
+              'Failed to send ' + quantity + ' items of ' +
+              product + ': ' + error);
+          return;
+        }
+
+        sendSuppliesBatch_(++i, country, organization, user, options, bot, to);
+      });
 }
