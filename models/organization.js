@@ -27,6 +27,7 @@ var numeral = require('numeral');
 var Server = require('./server');
 var Country = require('./country');
 var ProductDonation = require('./product-donation');
+var BatchProductDonation = require('./batch-product-donation');
 
 
 var secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
@@ -334,6 +335,74 @@ organizationSchema.methods.donateProducts = function(
             organization: self._id,
             sender: sender._id,
             recipient: citizenId,
+            product: product,
+            quantity: quantity,
+            reason: reason,
+          }, function(error, donation) {
+            callback(error);
+          });
+        } else if ($('#citizenMessage div').length) {
+          callback($('#citizenMessage div').text().trim());
+        } else {
+          callback('Failed to donate items');
+        }
+      } else {
+        callback(error || 'HTTP Error: ' + response.statusCode);
+      }
+    });
+  });
+};
+
+organizationSchema.methods.batchDonateProducts = function(
+        sender, citizenIds, product, quantity, reason, callback) {
+  var self = this;
+
+  this.createRequest(function(error, request, jar) {
+    if (error) {
+      callback(error);
+    }
+
+    if (self.country.getUserAccessLevel(sender) < 1) {
+      callback('Permission denied.');
+      return;
+    }
+
+    var form = {
+      product: product,
+      quantity: quantity,
+      reason: reason,
+      submit: 'Donate',
+    };
+
+    var l = citizenIds.length;
+    for (var i = 0; i < l; i++) {
+      form['citizen' + (i + 1)] = citizenIds[i];
+    }
+
+    var url = self.country.server.address + '/militaryUnitStorage.html';
+    request(url, {
+      method: 'POST',
+      form: form,
+    }, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var $ = cheerio.load(body);
+        if (!$('a#userName').length) {
+          self.login(function(error) {
+            if (error) {
+              callback(error);
+              return;
+            }
+
+            self.batchDonateProducts(
+              sender, citizenIds, product, quantity, reason,
+              callback);
+          });
+        } else if ($('#citizenMessage div').text().trim() ===
+                   'Products donated') {
+          BatchProductDonation.create({
+            organization: self._id,
+            sender: sender._id,
+            recipients: citizenIds,
             product: product,
             quantity: quantity,
             reason: reason,
