@@ -244,6 +244,11 @@ function watchParse_(error, bot, from, to, args, country, channel) {
         mode: mode,
       }, function(error, battle) {
         battle.populate('channel', function(error, battle) {
+          if (!country.organizations.length) {
+            bot.say(to, 'Failed to watch battle: Organization not found.');
+            return;
+          }
+
           watchBattle(bot, country.organizations[0], battle,
           function(error, result) {
             if (error) {
