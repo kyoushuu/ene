@@ -101,6 +101,12 @@ bot.addListener('registered', function(from, to, message) {
 
               function makePopulateCallback(j) {
                 return function(error, country) {
+                  if (!country.organizations.length) {
+                    bot.say(channels[i].name,
+                      'Failed to watch battle: Organization not found.');
+                    return;
+                  }
+
                   watchBattle(
                     bot, battles[j].country.organizations[0], battles[j],
                     function(error) {
