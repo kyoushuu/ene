@@ -79,11 +79,12 @@ module.exports = function(bot, from, to, argv) {
           }
         }
 
-        if (!countries.length) {
-          bot.say(to, 'Permission denied.');
-          return;
-        } else if (countries.length > 1) {
+        if (countries.length > 1) {
           bot.say(to, 'Failed, you have access on multiple countries.');
+          return;
+        } else if (!countries.length ||
+            countries[0].getUserAccessLevel(user) < 2) {
+          bot.say(to, 'Permission denied.');
           return;
         }
 
