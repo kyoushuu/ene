@@ -67,7 +67,22 @@ router.get('/:server/battle/:battleId', function(req, res) {
         return;
       }
 
-      server.countries[0].organizations[0].getBattleInfo(battleId,
+      if (!server.countries.length) {
+        return;
+      }
+
+      var l = server.countries.length;
+      for (var i = 0; i < l; i++) {
+        if (server.countries[i].organizations.length) {
+          break;
+        }
+      }
+
+      if (i === l) {
+        return;
+      }
+
+      server.countries[i].organizations[0].getBattleInfo(battleId,
         function(error, battleInfo) {
           if (error) {
             res.end(JSON.stringify({
