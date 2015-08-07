@@ -85,7 +85,7 @@ app.use(cookieParser(secret));
 app.use(session({
   secret: secret,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   store: new MongoStore({
     url: db.url + db.name,
   }),
