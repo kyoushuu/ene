@@ -188,6 +188,7 @@ function(req, res) {
 
     organization.username = req.body.username;
     organization.shortname = req.body.shortname;
+    organization.lock = null;
 
     if (req.body.password) {
       organization.password = req.body.password;
