@@ -23,6 +23,7 @@ var request = require('request');
 var cheerio = require('cheerio');
 var zlib = require('zlib');
 var numeral = require('numeral');
+var moment = require('moment-timezone');
 
 var Server = require('./server');
 var Country = require('./country');
@@ -70,6 +71,10 @@ var organizationSchema = new mongoose.Schema({
     type: String,
     get: decipherValue,
     set: cipherValue,
+  },
+  lock: {
+    type: Date,
+    default: null,
   },
 });
 
@@ -233,7 +238,18 @@ organizationSchema.methods.login = function(callback) {
         } else if (retries) {
           login(request, jar, --retries);
         } else if ($('div.testDivred').length) {
-          callback($('div.testDivred').text().trim());
+          var msg = $('div.testDivred').text().trim();
+
+          if (msg ===
+              'Wrong password. Please pay attention to upper and lower case!') {
+            self.lock = moment().add(1, 'days').toDate();
+            self.save(function(error) {
+              callback('Failed to login, locked');
+            });
+            return;
+          }
+
+          callback(msg);
         } else {
           callback('Failed to login');
         }
@@ -243,6 +259,11 @@ organizationSchema.methods.login = function(callback) {
         callback(error || 'HTTP Error: ' + response.statusCode);
       }
     });
+  }
+
+  if (self.lock && moment().isBefore(self.lock)) {
+    callback('Locked, try again after ' + moment(self.lock).toNow(true));
+    return;
   }
 
   this.createRequest(function(error, request, jar) {
