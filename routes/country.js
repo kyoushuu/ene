@@ -289,6 +289,30 @@ function(req, res) {
 });
 
 
+router.get('/:countryId/channel', common.ensureSignedIn, function(req, res) {
+  var query = Country.findById(req.params.countryId);
+  query.populate('channels.channel').exec(function(error, country) {
+    if (error || !country) {
+      res.sendStatus(404);
+      return;
+    }
+
+    /* Only site and country admins could get channel list */
+    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+      res.sendStatus(403);
+      return;
+    }
+
+    res.render('country-channel', {
+      title: 'Country Channels',
+      country: country,
+      info: req.flash('info'),
+      error: req.flash('error'),
+    });
+  });
+});
+
+
 router.route('/:countryId/channel/new').get(common.ensureSignedIn,
 function(req, res) {
   if (req.user.accessLevel < 6) {

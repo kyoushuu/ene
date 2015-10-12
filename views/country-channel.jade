@@ -1,0 +1,21 @@
+extends layout
+
+block content
+  table
+    if country.channels.length
+      each channel in country.channels
+        tr
+          td #{channel.channel.name}
+          td
+            form(method='get', action='/country/' + country.id + '/channel/remove/' + channel.id)
+              input#submit(type='submit', value='Delete')
+    else
+      tr
+        td Channel list is empty
+
+  h2 Actions
+  ul
+    li
+      a(href='/country/' + country.id) Go back to country page
+    li
+      a(href='/country/' + country.id + '/channel/new') Add channel
