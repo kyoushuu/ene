@@ -419,4 +419,63 @@ function doAddChannelFailed(req, res, error) {
 }
 
 
+router.get('/:countryId/channel/remove/:channelId', common.ensureSignedIn,
+function(req, res) {
+  Country.findById(req.params.countryId, function(error, country) {
+    if (error || !country) {
+      res.sendStatus(404);
+      return;
+    }
+
+    var _channel = country.channels.id(req.params.channelId);
+    if (!_channel) {
+      req.flash('error', 'Channel not found in country');
+      res.redirect('/country/' + country.id + '/channel');
+      return;
+    }
+
+    Channel.findById(_channel.channel, function(error, channel) {
+      if (error || !channel) {
+        res.sendStatus(404);
+        return;
+      }
+
+      var countryId = channel.countries.indexOf(country.id);
+      if (countryId < 0) {
+        req.flash('error', 'Country not found in channel');
+        res.redirect('/country/' + country.id + '/channel');
+        return;
+      }
+
+      /* Only site and country admins could remove channels */
+      if (req.user.accessLevel < 6 &&
+          country.getUserAccessLevel(req.user) < 3) {
+        res.sendStatus(403);
+        return;
+      }
+
+      _channel.remove();
+      channel.countries.splice(countryId, 1);
+
+      country.save(function(error) {
+        if (error) {
+          doAddAccessFailed(req, res, error);
+          return;
+        }
+
+        channel.save(function(error) {
+          if (error) {
+            doAddAccessFailed(req, res, error);
+            return;
+          }
+
+          req.flash('info', 'Channel successfully removed');
+          res.redirect('/country/' + country.id + '/channel');
+        });
+      });
+    });
+  });
+});
+
+
 module.exports = router;
