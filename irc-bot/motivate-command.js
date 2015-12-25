@@ -245,7 +245,7 @@ function motivate(
           return;
         }
 
-        var page = $('ul#pagination-digg li:nth-last-child(2) a');
+        var page = $('ul#pagination li:nth-last-child(2) a');
         if (page.length) {
           page = parseInt(page.text());
           motivateCheckPage_(
