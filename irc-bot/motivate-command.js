@@ -288,7 +288,7 @@ function motivateCheckPage_(
       }
 
       var citizens = [];
-      $('table.dataTable tr td:first-child a').each(function(i, elem) {
+      $('table.sortedTable tbody tr td:first-child a').each(function(i, elem) {
         citizens.push(parseInt($(this).attr('href').split('=')[1]));
       });
       motivateCheckCitizen_(
