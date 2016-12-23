@@ -32,15 +32,7 @@ function sendEmail(user, subject, body, callback) {
   var domain = process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost';
   var sender = process.env.SMTP_SENDER || 'no-reply@' + domain;
-  var transport = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT || 587,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  var transport = nodemailer.createTransport(process.env.SMTP_URL);
 
   transport.sendMail({
     from: {name: 'Ene Project', address: sender},
