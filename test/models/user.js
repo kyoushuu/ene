@@ -21,11 +21,24 @@ var should = require('should');
 var mongoose = require('mongoose');
 var mockgoose = require('mockgoose');
 
-mockgoose(mongoose);
-
 var User = require('../../models/user');
 
 describe('User model', function() {
+  before(function(done) {
+    mongoose.Promise = global.Promise;
+    mockgoose(mongoose).then(function() {
+      mongoose.connect('mongodb://localhost/TestingDB', function(err) {
+        done(err);
+      });
+    });
+  });
+
+  after(function(done) {
+    mongoose.connection.close(function(err) {
+      done(err);
+    });
+  });
+
   afterEach(function() {
     mockgoose.reset();
   });
