@@ -37,7 +37,7 @@ describe('User model', function() {
         password: 'secret',
         email: 'test@example.com',
       }, function(error, user) {
-        user.confirmCode.should.not.be.empty.and.have.lengthOf(
+        user.confirmCode.should.not.be.empty().and.have.lengthOf(
             32,
             'Confirm code is empty');
         done();
@@ -291,7 +291,7 @@ describe('User model', function() {
       }, function(error, user) {
         should.not.exist(user.recoverCode, 'Recover code exists');
         user.recover(function(error) {
-          user.recoverCode.should.not.be.empty.and.have.lengthOf(
+          user.recoverCode.should.not.be.empty().and.have.lengthOf(
               32,
               'Recover code is empty');
           done(error);
