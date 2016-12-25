@@ -3,6 +3,7 @@
   "curly": true,
   "devel": true,
   "eqeqeq": true,
+  "esversion": 6,
   "evil": false,
   "immed": true,
   "indent": 2,
