@@ -17,10 +17,10 @@
  */
 
 
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 
-var batchProductDonationSchema = new mongoose.Schema({
+const batchProductDonationSchema = new mongoose.Schema({
   organization: {type: mongoose.Schema.Types.ObjectId, ref: 'Organization'},
   sender: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   recipients: {type: [Number]},
@@ -30,7 +30,7 @@ var batchProductDonationSchema = new mongoose.Schema({
 });
 
 /* jshint -W003 */
-var BatchProductDonation =
+const BatchProductDonation =
   mongoose.model('BatchProductDonation', batchProductDonationSchema);
 /* jshint +W003 */
 module.exports = BatchProductDonation;

@@ -17,10 +17,10 @@
  */
 
 
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 
-var battleSchema = new mongoose.Schema({
+const battleSchema = new mongoose.Schema({
   battleId: {type: Number},
   label: {type: String},
   country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country'},
@@ -30,6 +30,6 @@ var battleSchema = new mongoose.Schema({
 });
 
 /* jshint -W003 */
-var Battle = mongoose.model('Battle', battleSchema);
+const Battle = mongoose.model('Battle', battleSchema);
 /* jshint +W003 */
 module.exports = Battle;

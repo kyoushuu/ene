@@ -17,28 +17,28 @@
  */
 
 
-var mongoose = require('mongoose');
-var crypto = require('crypto');
-var request = require('request');
-var cheerio = require('cheerio');
-var zlib = require('zlib');
-var numeral = require('numeral');
-var moment = require('moment-timezone');
+const mongoose = require('mongoose');
+const crypto = require('crypto');
+const request = require('request');
+const cheerio = require('cheerio');
+const zlib = require('zlib');
+const numeral = require('numeral');
+const moment = require('moment-timezone');
 
-var Server = require('./server');
-var Country = require('./country');
-var ProductDonation = require('./product-donation');
-var BatchProductDonation = require('./batch-product-donation');
+const Server = require('./server');
+const Country = require('./country');
+const ProductDonation = require('./product-donation');
+const BatchProductDonation = require('./batch-product-donation');
 
 
-var secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
+const secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
 
 function cipherValue(value) {
   if (!value) {
     return null;
   }
 
-  var cipher = crypto.createCipher('aes-256-cbc', secret);
+  const cipher = crypto.createCipher('aes-256-cbc', secret);
   return cipher.update(value, 'binary', 'base64') + cipher.final('base64');
 }
 
@@ -47,11 +47,11 @@ function decipherValue(value) {
     return null;
   }
 
-  var decipher = crypto.createDecipher('aes-256-cbc', secret);
+  const decipher = crypto.createDecipher('aes-256-cbc', secret);
   return decipher.update(value, 'base64', 'binary') + decipher.final('binary');
 }
 
-var organizationSchema = new mongoose.Schema({
+const organizationSchema = new mongoose.Schema({
   country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country'},
   username: {type: String, required: true},
   password: {
@@ -141,15 +141,15 @@ function populateServer(self, callback) {
 }
 
 organizationSchema.methods.createRequest = function(callback) {
-  var self = this;
+  const self = this;
 
   function createRequest() {
-    var jar = request.jar();
+    const jar = request.jar();
     if (self.cookies) {
       jar.setCookie(self.cookies, self.country.server.address);
     }
 
-    var req = request.defaults({
+    const req = request.defaults({
       jar: jar,
       followAllRedirects: true,
       headers: {
@@ -168,17 +168,17 @@ organizationSchema.methods.createRequest = function(callback) {
         options = {};
       }
 
-      var r = req(uri, options);
+      const r = req(uri, options);
 
       r.on('response', function(res) {
-        var chunks = [];
+        const chunks = [];
         res.on('data', function(chunk) {
           chunks.push(chunk);
         });
 
         res.on('end', function() {
-          var buffer = Buffer.concat(chunks);
-          var encoding = res.headers['content-encoding'];
+          const buffer = Buffer.concat(chunks);
+          const encoding = res.headers['content-encoding'];
           if (encoding === 'gzip') {
             zlib.gunzip(buffer, function(error, decoded) {
               c(error, res, decoded && decoded.toString());
@@ -214,10 +214,10 @@ organizationSchema.methods.createRequest = function(callback) {
 };
 
 organizationSchema.methods.login = function(callback) {
-  var self = this;
+  const self = this;
 
   function login(request, jar, retries) {
-    var url = self.country.server.address + '/login.html';
+    const url = self.country.server.address + '/login.html';
     request(url, {
       method: 'POST',
       form: {
@@ -228,7 +228,7 @@ organizationSchema.methods.login = function(callback) {
       },
     }, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
         if ($('a#userName').length) {
           self.cookies =
               jar.getCookieString(self.country.server.address);
@@ -238,7 +238,7 @@ organizationSchema.methods.login = function(callback) {
         } else if (retries) {
           login(request, jar, --retries);
         } else if ($('div.testDivred').length) {
-          var msg = $('div.testDivred').text().trim();
+          const msg = $('div.testDivred').text().trim();
 
           if (msg ===
               'Wrong password. Please pay attention to upper and lower case!') {
@@ -271,10 +271,10 @@ organizationSchema.methods.login = function(callback) {
       callback(error);
     }
 
-    var url = self.country.server.address;
+    const url = self.country.server.address;
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
         if ($('a#userName').length) {
           callback(null);
         } else {
@@ -288,17 +288,17 @@ organizationSchema.methods.login = function(callback) {
 };
 
 organizationSchema.methods.logout = function(callback) {
-  var self = this;
+  const self = this;
 
   this.createRequest(function(error, request, jar) {
     if (error) {
       callback(error);
     }
 
-    var url = self.country.server.address + '/logout.html';
+    const url = self.country.server.address + '/logout.html';
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
         if ($('div#loginContainer').length) {
           callback(null);
         } else {
@@ -313,7 +313,7 @@ organizationSchema.methods.logout = function(callback) {
 
 organizationSchema.methods.donateProducts = function(
         sender, citizenId, product, quantity, reason, callback) {
-  var self = this;
+  const self = this;
 
   this.createRequest(function(error, request, jar) {
     if (error) {
@@ -325,7 +325,7 @@ organizationSchema.methods.donateProducts = function(
       return;
     }
 
-    var url = self.country.server.address + '/donateProducts.html';
+    const url = self.country.server.address + '/donateProducts.html';
     request(url, {
       method: 'POST',
       qs: {
@@ -339,7 +339,7 @@ organizationSchema.methods.donateProducts = function(
       },
     }, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
         if (!$('a#userName').length) {
           self.login(function(error) {
             if (error) {
@@ -376,7 +376,7 @@ organizationSchema.methods.donateProducts = function(
 
 organizationSchema.methods.batchDonateProducts = function(
         sender, citizenIds, product, quantity, reason, callback) {
-  var self = this;
+  const self = this;
 
   this.createRequest(function(error, request, jar) {
     if (error) {
@@ -388,25 +388,25 @@ organizationSchema.methods.batchDonateProducts = function(
       return;
     }
 
-    var form = {
+    const form = {
       product: product,
       quantity: quantity,
       reason: reason,
       submit: 'Donate',
     };
 
-    var l = citizenIds.length;
-    for (var i = 0; i < l; i++) {
+    const l = citizenIds.length;
+    for (let i = 0; i < l; i++) {
       form['citizen' + (i + 1)] = citizenIds[i];
     }
 
-    var url = self.country.server.address + '/militaryUnitStorage.html';
+    const url = self.country.server.address + '/militaryUnitStorage.html';
     request(url, {
       method: 'POST',
       form: form,
     }, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
         if (!$('a#userName').length) {
           self.login(function(error) {
             if (error) {
@@ -443,17 +443,17 @@ organizationSchema.methods.batchDonateProducts = function(
 };
 
 organizationSchema.methods.getInventory = function(callback) {
-  var self = this;
+  const self = this;
 
   this.createRequest(function(error, request, jar) {
     if (error) {
       callback(error);
     }
 
-    var url = self.country.server.address + '/militaryUnitStorage.html';
+    const url = self.country.server.address + '/militaryUnitStorage.html';
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
         if (!$('a#userName').length) {
           self.login(function(error) {
             if (error) {
@@ -465,24 +465,20 @@ organizationSchema.methods.getInventory = function(callback) {
           });
         }
 
-        var i = 0;
-        var l = 0;
-        var images = null;
-        var product = null;
-        var quality = null;
+        let l = 0;
 
-        var inventoryOrg = {};
-        var storageOrg = $('div.storageMini');
+        const inventoryOrg = {};
+        const storageOrg = $('div.storageMini');
         l = storageOrg.length;
-        for (i = 0; i < l; i++) {
-          images = storageOrg.eq(i).find('img');
+        for (let i = 0; i < l; i++) {
+          const images = storageOrg.eq(i).find('img');
 
-          product = images.eq(0).attr('src');
+          let product = images.eq(0).attr('src');
           product = product.substring(
             product.lastIndexOf('/') + 1,
             product.lastIndexOf('.'));
 
-          quality = images.eq(1).attr('src');
+          let quality = images.eq(1).attr('src');
           if (quality) {
             quality = parseInt(quality.substring(
               quality.lastIndexOf('/') + 2,
@@ -493,18 +489,18 @@ organizationSchema.methods.getInventory = function(callback) {
             parseInt(storageOrg.eq(i).find('div').eq(0).text());
         }
 
-        var inventoryMu = {};
-        var storageMu = $('div.storage');
+        const inventoryMu = {};
+        const storageMu = $('div.storage');
         l = storageMu.length;
-        for (i = 0; i < l; i++) {
-          images = storageMu.eq(i).find('img');
+        for (let i = 0; i < l; i++) {
+          const images = storageMu.eq(i).find('img');
 
-          product = images.eq(0).attr('src');
+          let product = images.eq(0).attr('src');
           product = product.substring(
             product.lastIndexOf('/') + 1,
             product.lastIndexOf('.'));
 
-          quality = images.eq(1).attr('src');
+          let quality = images.eq(1).attr('src');
           if (quality) {
             quality = parseInt(quality.substring(
               quality.lastIndexOf('/') + 2,
@@ -524,14 +520,14 @@ organizationSchema.methods.getInventory = function(callback) {
 };
 
 organizationSchema.methods.getBattleInfo = function(battleId, callback) {
-  var self = this;
+  const self = this;
 
   this.createRequest(function(error, request, jar) {
     if (error) {
       callback(error);
     }
 
-    var url = self.country.server.address + '/battle.html';
+    const url = self.country.server.address + '/battle.html';
     request(url, {
       method: 'GET',
       qs: {
@@ -539,16 +535,16 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
       },
     }, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
 
         if ($('div#mainFight div#fightName span').length) {
-          var type = null;
-          var label = null;
-          var id = 0;
-          var frozen = false;
-          var defender = $('div#mainFight div.alliesList').eq(0).clone()
+          let type = null;
+          let label = null;
+          let id = 0;
+          let frozen = false;
+          let defender = $('div#mainFight div.alliesList').eq(0).clone()
                 .children().remove().end().text().trim();
-          var attacker = $('div#mainFight div.alliesList').eq(1).clone()
+          const attacker = $('div#mainFight div.alliesList').eq(1).clone()
                 .children().remove().end().text().trim();
 
           if ($('div#newFightView div.testDivred').text().trim()
@@ -631,14 +627,14 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
 
 organizationSchema.methods.getBattleRoundInfo =
 function(battleRoundId, callback) {
-  var self = this;
+  const self = this;
 
   this.createRequest(function(error, request, jar) {
     if (error) {
       callback(error);
     }
 
-    var url = self.country.server.address + '/battleScore.html';
+    const url = self.country.server.address + '/battleScore.html';
     request(url, {
       method: 'GET',
       qs: {
@@ -649,12 +645,12 @@ function(battleRoundId, callback) {
     }, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         try {
-          var battleRoundInfo = JSON.parse(body);
+          const battleRoundInfo = JSON.parse(body);
 
           callback(null, battleRoundInfo);
           return;
         } catch (e) {
-          var $ = cheerio.load(body);
+          const $ = cheerio.load(body);
 
           if ($('div.testDivwhite h3').length) {
             callback($('div.testDivwhite h3').text().trim());
@@ -672,6 +668,6 @@ function(battleRoundId, callback) {
 };
 
 /* jshint -W003 */
-var Organization = mongoose.model('Organization', organizationSchema);
+const Organization = mongoose.model('Organization', organizationSchema);
 /* jshint +W003 */
 module.exports = Organization;

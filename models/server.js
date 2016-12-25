@@ -17,11 +17,11 @@
  */
 
 
-var mongoose = require('mongoose');
-var request = require('request');
+const mongoose = require('mongoose');
+const request = require('request');
 
 
-var serverSchema = new mongoose.Schema({
+const serverSchema = new mongoose.Schema({
   name: {type: String, required: true, unique: true},
   shortname: {
     type: String, required: true, unique: true, lowercase: true,
@@ -77,7 +77,7 @@ serverSchema.path('shortname').validate(function(value, respond) {
 }, 'Server short name already exists');
 
 serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
-  var self = this;
+  const self = this;
 
   if (!self.countriesList) {
     getCountriesList(function(error) {
@@ -94,8 +94,8 @@ serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
   getCountryInfoByName();
 
   function getCountryInfoByName() {
-    var l = self.countriesList.length;
-    for (var i = 0; i < l; i++) {
+    const l = self.countriesList.length;
+    for (let i = 0; i < l; i++) {
       if (self.countriesList[i].name.toLowerCase() ===
           countryName.toLowerCase()) {
         callback(null, self.countriesList[i]);
@@ -107,7 +107,7 @@ serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
   }
 
   function getCountriesList(callback) {
-    var address = self.address + '/apiCountries.html';
+    const address = self.address + '/apiCountries.html';
     request(address, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         self.countriesList = JSON.parse(body);
@@ -120,7 +120,7 @@ serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
 };
 
 serverSchema.methods.getRegionInfo = function(regionId, callback) {
-  var self = this;
+  const self = this;
 
   if (!self.regionsList) {
     getRegionsList(function(error) {
@@ -137,8 +137,8 @@ serverSchema.methods.getRegionInfo = function(regionId, callback) {
   getRegionInfo();
 
   function getRegionInfo() {
-    var l = self.regionsList.length;
-    for (var i = 0; i < l; i++) {
+    const l = self.regionsList.length;
+    for (let i = 0; i < l; i++) {
       if (self.regionsList[i].id === regionId) {
         callback(null, self.regionsList[i]);
         return;
@@ -149,7 +149,7 @@ serverSchema.methods.getRegionInfo = function(regionId, callback) {
   }
 
   function getRegionsList(callback) {
-    var address = self.address + '/apiRegions.html';
+    const address = self.address + '/apiRegions.html';
     request(address, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         self.regionsList = JSON.parse(body);
@@ -162,16 +162,16 @@ serverSchema.methods.getRegionInfo = function(regionId, callback) {
 };
 
 serverSchema.methods.getRegionStatus = function(regionId, callback) {
-  var self = this;
+  const self = this;
 
-  var address = self.address + '/apiMap.html';
+  const address = self.address + '/apiMap.html';
   request(address, function(error, response, body) {
     if (!error && response.statusCode === 200) {
       try {
-        var regionsStatusList = JSON.parse(body);
+        const regionsStatusList = JSON.parse(body);
 
-        var l = regionsStatusList.length;
-        for (var i = 0; i < l; i++) {
+        const l = regionsStatusList.length;
+        for (let i = 0; i < l; i++) {
           if (regionsStatusList[i].regionId === regionId) {
             callback(null, regionsStatusList[i]);
             return;
@@ -193,10 +193,10 @@ serverSchema.methods.getRegionStatus = function(regionId, callback) {
 
 serverSchema.methods.getAttackerBonusRegion =
 function(regionId, countries, callback) {
-  var self = this;
+  const self = this;
 
-  var bonusRegions = [];
-  var countriesId = [];
+  const bonusRegions = [];
+  const countriesId = [];
 
   getCountriesId(0);
 
@@ -265,6 +265,6 @@ function(regionId, countries, callback) {
 };
 
 /* jshint -W003 */
-var Server = mongoose.model('Server', serverSchema);
+const Server = mongoose.model('Server', serverSchema);
 /* jshint +W003 */
 module.exports = Server;

@@ -17,8 +17,8 @@
  */
 
 
-var mongoose = require('mongoose');
-var crypto = require('crypto');
+const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 
 function hash(password, salt) {
@@ -38,7 +38,7 @@ function createConfirmCode() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-var userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   username: {type: String, required: true, unique: true},
   password: {type: String, required: true, set: setPassword},
   salt: {type: String, required: true},
@@ -107,8 +107,8 @@ userSchema.path('email').validate(function(value, respond) {
 }, 'E-mail is already registered');
 
 userSchema.path('nicknames').validate(function(value, respond) {
-  var self = this;
-  var l = value.length;
+  const self = this;
+  const l = value.length;
 
   function checkNickname(i) {
     if (i >= l) {
@@ -136,6 +136,6 @@ userSchema.path('nicknames').validate(function(value, respond) {
 }, 'Nickname is already in use');
 
 /* jshint -W003 */
-var User = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
 /* jshint +W003 */
 module.exports = User;

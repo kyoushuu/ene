@@ -17,10 +17,10 @@
  */
 
 
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 
-var productDonationSchema = new mongoose.Schema({
+const productDonationSchema = new mongoose.Schema({
   organization: {type: mongoose.Schema.Types.ObjectId, ref: 'Organization'},
   sender: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   recipient: {type: Number},
@@ -30,6 +30,7 @@ var productDonationSchema = new mongoose.Schema({
 });
 
 /* jshint -W003 */
-var ProductDonation = mongoose.model('ProductDonation', productDonationSchema);
+const ProductDonation =
+  mongoose.model('ProductDonation', productDonationSchema);
 /* jshint +W003 */
 module.exports = ProductDonation;

@@ -17,10 +17,10 @@
  */
 
 
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 
-var motivatedCitizenSchema = new mongoose.Schema({
+const motivatedCitizenSchema = new mongoose.Schema({
   citizenId: {type: Number},
   server: {type: mongoose.Schema.Types.ObjectId, ref: 'Server'},
   weapon: {type: Boolean},
@@ -29,7 +29,7 @@ var motivatedCitizenSchema = new mongoose.Schema({
 });
 
 /* jshint -W003 */
-var MotivatedCitizen = mongoose.model(
+const MotivatedCitizen = mongoose.model(
     'MotivatedCitizen', motivatedCitizenSchema);
 /* jshint +W003 */
 module.exports = MotivatedCitizen;

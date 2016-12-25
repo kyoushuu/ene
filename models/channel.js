@@ -17,18 +17,18 @@
  */
 
 
-var mongoose = require('mongoose');
-var crypto = require('crypto');
+const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 
-var secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
+const secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
 
 function cipherValue(value) {
   if (!value) {
     return null;
   }
 
-  var cipher = crypto.createCipher('aes-256-cbc', secret);
+  const cipher = crypto.createCipher('aes-256-cbc', secret);
   return cipher.update(value, 'binary', 'base64') + cipher.final('base64');
 }
 
@@ -37,11 +37,11 @@ function decipherValue(value) {
     return null;
   }
 
-  var decipher = crypto.createDecipher('aes-256-cbc', secret);
+  const decipher = crypto.createDecipher('aes-256-cbc', secret);
   return decipher.update(value, 'base64', 'binary') + decipher.final('binary');
 }
 
-var channelSchema = new mongoose.Schema({
+const channelSchema = new mongoose.Schema({
   name: {type: String, required: true, unique: true},
   keyword: {type: String, get: decipherValue, set: cipherValue},
   countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
@@ -66,6 +66,6 @@ channelSchema.path('name').validate(function(value, respond) {
 }, 'Channel name already exists');
 
 /* jshint -W003 */
-var Channel = mongoose.model('Channel', channelSchema);
+const Channel = mongoose.model('Channel', channelSchema);
 /* jshint +W003 */
 module.exports = Channel;
