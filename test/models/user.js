@@ -17,11 +17,11 @@
  */
 
 
-var should = require('should');
-var mongoose = require('mongoose');
-var mockgoose = require('mockgoose');
+const should = require('should');
+const mongoose = require('mongoose');
+const mockgoose = require('mockgoose');
 
-var User = require('../../models/user');
+const User = require('../../models/user');
 
 describe('User model', function() {
   before(function(done) {
@@ -236,7 +236,7 @@ describe('User model', function() {
         password: 'secret',
         email: 'test@example.com',
       }, function(error, user) {
-        var oldSalt = user.salt;
+        const oldSalt = user.salt;
         user.password = 'secret';
 
         oldSalt.should.not.be.equal(

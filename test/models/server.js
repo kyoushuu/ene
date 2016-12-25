@@ -17,12 +17,12 @@
  */
 
 
-var should = require('should');
-var mongoose = require('mongoose');
-var mockgoose = require('mockgoose');
-var nock = require('nock');
+const should = require('should');
+const mongoose = require('mongoose');
+const mockgoose = require('mockgoose');
+const nock = require('nock');
 
-var Server = require('../../models/server');
+const Server = require('../../models/server');
 
 describe('Server model', function() {
   before(function(done) {
@@ -147,7 +147,7 @@ describe('Server model', function() {
   });
 
   describe('getCountryInfoByName', function() {
-    var testServer = null;
+    let testServer;
 
     before(function(done) {
       Server.create({
@@ -211,7 +211,7 @@ describe('Server model', function() {
   });
 
   describe('getRegionInfo', function() {
-    var testServer = null;
+    let testServer;
 
     before(function(done) {
       Server.create({
@@ -275,7 +275,7 @@ describe('Server model', function() {
   });
 
   describe('getRegionStatus', function() {
-    var testServer = null;
+    let testServer;
 
     before(function(done) {
       Server.create({
@@ -348,7 +348,7 @@ describe('Server model', function() {
   });
 
   describe('getAttackerBonusRegion', function() {
-    var testServer = null;
+    let testServer;
 
     before(function(done) {
       Server.create({
