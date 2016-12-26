@@ -18,11 +18,11 @@
  */
 
 
-var debug = require('debug')('ene');
-var mongoose = require('mongoose');
+const debug = require('debug')('ene');
+const mongoose = require('mongoose');
 
-var app = require('../app');
-var bot = require('../irc-bot/bot');
+const app = require('../app');
+const bot = require('../irc-bot/bot');
 
 
 mongoose.connection.on('connected', function() {
@@ -43,7 +43,7 @@ app.set('port',
 app.set('ipaddress',
         process.env.IP || process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1');
 
-var server = app.listen(app.get('port'), app.get('ipaddress'), function() {
+const server = app.listen(app.get('port'), app.get('ipaddress'), function() {
   debug('Express server listening on port ' + server.address().port);
 });
 
