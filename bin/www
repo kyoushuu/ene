@@ -25,15 +25,15 @@ const app = require('../app');
 const bot = require('../irc-bot/bot');
 
 
-mongoose.connection.on('connected', function() {
+mongoose.connection.on('connected', () => {
   debug('Mongoose connected');
 });
 
-mongoose.connection.on('disconnected', function() {
+mongoose.connection.on('disconnected', () => {
   debug('Mongoose disconnected');
 });
 
-mongoose.connection.on('error', function(error) {
+mongoose.connection.on('error', (error) => {
   debug(`Mongoose connection error: ${error}`);
 });
 
@@ -43,7 +43,7 @@ app.set('port',
 app.set('ipaddress',
         process.env.IP || process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1');
 
-const server = app.listen(app.get('port'), app.get('ipaddress'), function() {
+const server = app.listen(app.get('port'), app.get('ipaddress'), () => {
   debug(`Express server listening on port ${server.address().port}`);
 });
 
@@ -52,23 +52,23 @@ bot.connect();
 
 
 function close() {
-  mongoose.connection.close(function() {
+  mongoose.connection.close(() => {
     debug('Mongoose disconnected because of app termination');
   });
 
-  server.close(function() {
+  server.close(() => {
     debug('Express server disconnected because of app termination');
   });
 
-  bot.disconnect(function() {
+  bot.disconnect(() => {
     debug('IRC bot disconnected because of app termination');
   });
 }
 
-process.on('SIGINT', function() {
+process.on('SIGINT', () => {
   close();
 });
 
-process.on('SIGTERM', function() {
+process.on('SIGTERM', () => {
   close();
 });
