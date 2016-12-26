@@ -28,7 +28,7 @@ module.exports = function(bot, from, to, argv) {
     ['i', 'id', 'Given citizen is a citizen id'],
   ], argv, 3, 4, to, true, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -40,7 +40,7 @@ module.exports = function(bot, from, to, argv) {
     });
     query.exec(function(error, channel) {
       if (error) {
-        bot.say(to, 'Error: ' + error);
+        bot.say(to, `Error: ${error}`);
         return;
       } else if (!channel) {
         bot.say(to, 'Channel not registered in database.');
@@ -55,7 +55,7 @@ module.exports = function(bot, from, to, argv) {
       }, function(error, user) {
         if (error) {
           bot.say(to,
-              'Failed to find user via nickname: ' + error);
+              `Failed to find user via nickname: ${error}`);
           return;
         }
 
@@ -123,11 +123,11 @@ function donateParse_(error, bot, from, to, args, country, user) {
     id: opt.options.id,
   }, function(error) {
     if (!error) {
+      const recipient = `${opt.options.id ? '#' : ''}${opt.argv[0]}`;
       bot.say(to,
-          'Products successfully donated to citizen ' +
-          (opt.options.id ? '#' : '') + opt.argv[0] + '.');
+          `Products successfully donated to citizen ${recipient}.`);
     } else {
-      bot.say(to, 'Failed to donate products: ' + error);
+      bot.say(to, `Failed to donate products: ${error}`);
     }
   });
 }
@@ -135,7 +135,7 @@ function donateParse_(error, bot, from, to, args, country, user) {
 function donate(country, organization, user, options, callback) {
   if (!options.id) {
     organization.createRequest(function(error, request, jar) {
-      const url = country.server.address + '/apiCitizenByName.html';
+      const url = `${country.server.address}/apiCitizenByName.html`;
       request(url, {
         method: 'GET',
         qs: {
@@ -155,8 +155,8 @@ function donate(country, organization, user, options, callback) {
 
           donate(country, organization, user, options, callback);
         } else {
-          callback('Failed to get citizen info: ' +
-            (error || 'HTTP Error: ' + response.statusCode));
+          callback(`Failed to get citizen info: ${
+            error || `HTTP Error: ${response.statusCode}`}`);
         }
       });
     });

@@ -33,7 +33,7 @@ module.exports = function(bot, from, to, argv) {
     ['a', 'attacker', 'Attacker side'],
   ], argv, 1, 1, to, true, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -45,7 +45,7 @@ module.exports = function(bot, from, to, argv) {
     });
     query.exec(function(error, channel) {
       if (error) {
-        bot.say(to, 'Error: ' + error);
+        bot.say(to, `Error: ${error}`);
         return;
       } else if (!channel) {
         bot.say(to, 'Channel not registered in database.');
@@ -60,7 +60,7 @@ module.exports = function(bot, from, to, argv) {
       }, function(error, user) {
         if (error) {
           bot.say(to,
-              'Failed to find user via nickname: ' + error);
+              `Failed to find user via nickname: ${error}`);
           return;
         }
 
@@ -136,7 +136,7 @@ function battleParse_(error, bot, from, to, args, country, user) {
     if (!error) {
       bot.say(to, result);
     } else {
-      bot.say(to, 'Failed to show battle: ' + error);
+      bot.say(to, `Failed to show battle: ${error}`);
     }
   });
 }
@@ -177,36 +177,39 @@ function battleShow(country, organization, options, callback) {
 
         const time = Math.max(0, battleRoundInfo.remainingTimeInSeconds);
 
+        const ul = codes.underline;
+        const bold = codes.bold;
+        const reset = codes.reset;
+
         /* jshint camelcase: false */
         /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
-        callback(null,
-            country.server.address + '/battle.html?id=' + options.battleId +
-            ' | ' +
-            codes.underline + codes.bold + battleInfo.label + codes.reset +
-            ' (' +
-            (side === 'defender' ? battleInfo.defender : battleInfo.attacker) +
-            ') - ' +
-            codes.bold + 'R' + battleInfo.round + codes.reset +
-            ' (' +
-            (side === 'defender' ? codes.dark_green : codes.dark_red) +
-            codes.bold + battleInfo.defenderWins +
-            codes.reset + ':' +
-            (side === 'defender' ? codes.dark_red : codes.dark_green) +
-            codes.bold + battleInfo.attackerWins +
-            codes.reset + ') | ' +
-            codes.bold +
-            (percentage > 0.5 ?
-              codes.dark_green + 'Winning' :
-              codes.dark_red + 'Losing') +
-            codes.reset + ': ' + numeral(percentage).format('0.00%') + ' | ' +
-            codes.bold + 'Wall: ' +
-            (percentage > 0.5 ? codes.dark_green : codes.dark_red) +
-            numeral(wall).format('+0,0') +
-            codes.reset + ' | ' +
-            codes.bold + 'Time: ' + codes.reset + '0' +
-            numeral(time).format('00:00:00'));
+        const dr = codes.dark_red;
+        const dg = codes.dark_green;
+        const or = codes.orange;
         /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
         /* jshint camelcase: true */
+
+        const defSide = side === 'defender';
+        const rnd = battleInfo.round;
+        const winning = percentage > 0.5;
+
+        const def = battleInfo.defender;
+        const defWins = battleInfo.defenderWins;
+        const atk = battleInfo.attacker;
+        const atkWins = battleInfo.attackerWins;
+
+        callback(null,
+            `${country.server.address}/battle.html?id=${options.battleId} | ` +
+            `${ul}${bold}${battleInfo.label}${reset} ` +
+            `(${defSide ? def : atk}) - ` +
+            `${bold}R${rnd}${reset} ` +
+            `(${defSide ? dg : dr}${bold}${defWins}${reset}:` +
+            `${defSide ? dr : dg}${bold}${atkWins}${reset}) | ` +
+            `${bold}${winning ? `${dg}Winning` : `${dr}Losing`}${reset}: ` +
+            `${numeral(percentage).format('0.00%')} | ` +
+            `${bold}Wall: ${winning ? dg : dr}` +
+            `${numeral(wall).format('+0,0')}${reset} | ` +
+            `${bold}Time: ${reset}0${numeral(time).format('00:00:00')}`);
       });
   });
 }

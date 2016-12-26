@@ -34,7 +34,7 @@ module.exports = function(bot, from, to, argv) {
     ['f', 'from=ORGANIZATION', 'Get supplies from ORGANIZATION'],
   ], argv, 2, 3, to, true, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -46,7 +46,7 @@ module.exports = function(bot, from, to, argv) {
     });
     query.exec(function(error, channel) {
       if (error) {
-        bot.say(to, 'Error: ' + error);
+        bot.say(to, `Error: ${error}`);
         return;
       } else if (!channel) {
         bot.say(to, 'Channel not registered in database.');
@@ -61,7 +61,7 @@ module.exports = function(bot, from, to, argv) {
       }, function(error, user) {
         if (error) {
           bot.say(to,
-              'Failed to find user via nickname: ' + error);
+              `Failed to find user via nickname: ${error}`);
           return;
         }
 
@@ -156,11 +156,10 @@ function supplyParse_(error, bot, from, to, args, channel, country, user) {
       dryRun: opt.options['dry-run'],
     }, function(error) {
       if (!error) {
-        bot.say(to,
-            'Supplies successfully donated to citizen ' +
-            (opt.options.id ? '#' : '') + opt.argv[0] + '.');
+        const recipient = `${opt.options.id ? '#' : ''}${opt.argv[0]}`;
+        bot.say(to, `Supplies successfully donated to citizen ${recipient}.`);
       } else {
-        bot.say(to, 'Failed to supply: ' + error);
+        bot.say(to, `Failed to supply: ${error}`);
       }
     });
   });
@@ -169,7 +168,7 @@ function supplyParse_(error, bot, from, to, args, channel, country, user) {
 function supply(country, organization, user, options, callback) {
   if (!options.id) {
     organization.createRequest(function(error, request, jar) {
-      const url = country.server.address + '/apiCitizenByName.html';
+      const url = `${country.server.address}/apiCitizenByName.html`;
       request(url, {
         method: 'GET',
         qs: {
@@ -189,8 +188,8 @@ function supply(country, organization, user, options, callback) {
 
           supply(country, organization, user, options, callback);
         } else {
-          callback('Failed to get citizen info: ' +
-            (error || 'HTTP Error: ' + response.statusCode));
+          const errMsg = error || `HTTP Error: ${response.statusCode}`;
+          callback(`Failed to get citizen info: ${errMsg}`);
         }
       });
     });
@@ -203,7 +202,7 @@ function supply(country, organization, user, options, callback) {
     const c = options.supplyQuantity[i];
 
     if (!isFinite(c) || c < 0) {
-      callback('Quantity #' + (i + 1) + ' is not a valid number');
+      callback(`Quantity #${i + 1} is not a valid number`);
       return;
     }
   }
@@ -250,8 +249,7 @@ function supplyCheckMax(
     if (result.length &&
         parseInt(options.supplyQuantity[i]) + result[0].total >
                 parseInt(limit[1])) {
-      callback('Daily limit for ' + limit[0] + ' exceeded (' +
-          parseInt(limit[1]) + ')');
+      callback(`Daily limit for ${limit[0]} exceeded (${parseInt(limit[1])})`);
       return;
     }
 
@@ -279,8 +277,7 @@ function supplyDonate(organization, user, options, i, callback) {
       function(error) {
         if (error) {
           callback(
-              'Failed to send ' + quantity + ' items of ' +
-              product + ': ' + error);
+              `Failed to send ${quantity} items of ${product}: ${error}`);
           return;
         }
 

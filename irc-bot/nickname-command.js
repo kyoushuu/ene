@@ -26,7 +26,7 @@ exports.add = function(bot, from, argv) {
   parse(bot, 'add-nickname username password', [
   ], argv, 2, 2, from, false, function(error, args) {
     if (error) {
-      bot.say(from, 'Error: ' + error);
+      bot.say(from, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -34,7 +34,7 @@ exports.add = function(bot, from, argv) {
 
     User.findOne({username: args.opt.argv[0]}, function(error, user) {
       if (error) {
-        bot.say(from, 'Error: ' + error);
+        bot.say(from, `Error: ${error}`);
         return;
       } else if (!user || !user.isValidPassword(args.opt.argv[1])) {
         bot.say(from, 'Error: Invalid username or password');
@@ -47,7 +47,7 @@ exports.add = function(bot, from, argv) {
       user.nicknames.push(from);
       user.save(function(error) {
         if (error) {
-          bot.say(from, 'Error: ' + error);
+          bot.say(from, `Error: ${error}`);
           return;
         }
 

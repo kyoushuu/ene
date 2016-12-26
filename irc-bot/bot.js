@@ -95,7 +95,7 @@ bot.addListener('registered', function(from, to, message) {
             }).populate('country channel').exec(function(error, battles) {
               if (error) {
                 bot.say(channels[i].name,
-                  'Failed to watch battles of this channel: ' + error);
+                  `Failed to watch battles of this channel: ${error}`);
                 return;
               }
 
@@ -112,8 +112,8 @@ bot.addListener('registered', function(from, to, message) {
                     function(error) {
                       if (error) {
                         bot.say(channels[i].name,
-                          'Failed to watch battle #' + battles[j].battleId +
-                          ': ' + error);
+                          'Failed to watch battle ' +
+                          `#${battles[j].battleId}: ${error}`);
                       }
                     });
                 };
@@ -132,7 +132,7 @@ bot.addListener('registered', function(from, to, message) {
         for (let i = 0; i < l; i++) {
           let joinArgs = channels[i].name;
           if (channels[i].keyword) {
-            joinArgs += ' ' + channels[i].keyword;
+            joinArgs += ` ${channels[i].keyword}`;
           }
 
           bot.join(joinArgs, makeJoinCallback(i));
@@ -140,7 +140,7 @@ bot.addListener('registered', function(from, to, message) {
       });
     }
   });
-  bot.say('NickServ', 'IDENTIFY ' + process.env.IRC_PASSWORD);
+  bot.say('NickServ', `IDENTIFY ${process.env.IRC_PASSWORD}`);
 });
 
 bot.addListener('message#', function(from, to, message) {

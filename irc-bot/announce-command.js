@@ -29,7 +29,7 @@ module.exports = function(bot, to, argv) {
   parse(bot, 'announce (message)', [
   ], argv, 1, 1, to, false, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -40,7 +40,7 @@ module.exports = function(bot, to, argv) {
     }, function(error, user) {
       if (error) {
         bot.say(to,
-            'Failed to find user via nickname: ' + error);
+            `Failed to find user via nickname: ${error}`);
         return;
       }
 
@@ -72,6 +72,6 @@ function announce(bot, to, message) {
 
   const l = chans.length;
   for (let i = 0; i < l; i++) {
-    bot.say(chans[i], codes.bold + 'ANNOUNCEMENT: ' + codes.reset + message);
+    bot.say(chans[i], `${codes.bold}ANNOUNCEMENT: ${codes.reset}${message}`);
   }
 }

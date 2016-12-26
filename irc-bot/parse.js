@@ -38,7 +38,7 @@ const parseArgv = function(
     serverOptions.push([
       servers[i].shortname,
       servers[i].name.toLowerCase(),
-      'Set server to ' + servers[i].name]);
+      `Set server to ${servers[i].name}`]);
   }
   if (serverOptions.length) {
     allOptions = allOptions.concat(serverOptions);
@@ -47,7 +47,7 @@ const parseArgv = function(
   allOptions = allOptions.concat(commonOptions);
 
   const options = getopt.create(allOptions);
-  options.setHelp('Usage: ' + usage + '\n\n[[OPTIONS]]\n');
+  options.setHelp(`Usage: ${usage}\n\n[[OPTIONS]]\n`);
 
   let error = null;
   options.error(function(e) {
@@ -64,11 +64,11 @@ const parseArgv = function(
     return callback(null, null);
   } else if (opt.argv.length < min) {
     bot.say(to, 'Not enough arguments.');
-    bot.say(to, 'Try \u0002' + command + ' --help\u0002 for more info.');
+    bot.say(to, `Try \u0002${command} --help\u0002 for more info.`);
     return callback(null, null);
   } else if (opt.argv.length > max) {
     bot.say(to, 'Too many arguments.');
-    bot.say(to, 'Try \u0002' + command + ' --help\u0002 for more info.');
+    bot.say(to, `Try \u0002${command} --help\u0002 for more info.`);
     return callback(null, null);
   }
 

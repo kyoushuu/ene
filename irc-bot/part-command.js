@@ -26,7 +26,7 @@ module.exports = function(bot, to, argv) {
   parse(bot, 'part (channel)', [
   ], argv, 1, 1, to, false, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -37,7 +37,7 @@ module.exports = function(bot, to, argv) {
     }, function(error, user) {
       if (error) {
         bot.say(to,
-            'Failed to find user via nickname: ' + error);
+            `Failed to find user via nickname: ${error}`);
         return;
       }
 

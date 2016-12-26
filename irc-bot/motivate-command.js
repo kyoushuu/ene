@@ -39,7 +39,7 @@ module.exports = function(bot, from, to, argv) {
     ['n', 'notify', 'Send links as notice (default)'],
   ], argv, 0, 1, to, true, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -51,7 +51,7 @@ module.exports = function(bot, from, to, argv) {
     });
     query.exec(function(error, channel) {
       if (error) {
-        bot.say(to, 'Error: ' + error);
+        bot.say(to, `Error: ${error}`);
         return;
       } else if (!channel) {
         bot.say(to, 'Channel not registered in database.');
@@ -107,7 +107,7 @@ function motivateParse_(error, bot, from, to, args, country) {
       bot.say(to,
           'Command is locked in given server. Someone else used ' +
           'the command less than two minutes ago. Please try again ' +
-          'after ' + remainingTime.toFixed(2) + ' seconds.');
+          `after ${remainingTime.toFixed(2)} seconds.`);
       return;
     } else {
       bot.say(to,
@@ -165,8 +165,8 @@ function motivateParse_(error, bot, from, to, args, country) {
   }
 
   bot.say(to,
-      'Looking for new citizens that can be motivated in ' + server.name +
-      ' server...');
+      'Looking for new citizens that can be motivated ' +
+      `in ${server.name} server...`);
 
   if (notify) {
     bot.say(to,
@@ -186,7 +186,7 @@ function motivateParse_(error, bot, from, to, args, country) {
     cache: !opt.options['no-cache'],
   }, function(error, found) {
     if (!error) {
-      bot.say(to, 'Done. Found ' + found + ' citizen/s.');
+      bot.say(to, `Done. Found ${found} citizen/s.`);
       if (found < find) {
         bot.say(to,
             'Not enough citizens found. You may re-run the ' +
@@ -196,18 +196,18 @@ function motivateParse_(error, bot, from, to, args, country) {
                         'for two citizens.');
       }
     } else {
-      bot.say(to, 'Failed to find citizens to motivate: ' + error);
+      bot.say(to, `Failed to find citizens to motivate: ${error}`);
     }
     motivateLock[server.name].date = Date.now();
     motivateLock[server.name].done = true;
   }, function(page) {
-    bot.say(to, 'Checking page ' + page + '...');
+    bot.say(to, `Checking page ${page}...`);
     motivateLock[server.name].date = Date.now();
   }, function(motivateUrl) {
     if (notify) {
-      bot.notice(from, 'Found ' + motivateUrl);
+      bot.notice(from, `Found ${motivateUrl}`);
     } else {
-      bot.say(from, 'Found ' + motivateUrl);
+      bot.say(from, `Found ${motivateUrl}`);
     }
     bot.say(to, 'Found a citizen to motivate');
     motivateLock[server.name].date = Date.now();
@@ -218,7 +218,7 @@ function motivate(
         country, organization, options,
         callback, pageCallback, foundCallback) {
   organization.createRequest(function(error, request, jar) {
-    const url = country.server.address + '/newCitizens.html?countryId=0';
+    const url = `${country.server.address}/newCitizens.html?countryId=0`;
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
@@ -229,7 +229,7 @@ function motivate(
               motivate(country, organization, options,
                   callback, pageCallback, foundCallback);
             } else {
-              callback('Failed to get motivate page: ' + error);
+              callback(`Failed to get motivate page: ${error}`);
             }
           });
           return;
@@ -245,8 +245,8 @@ function motivate(
           callback('Failed to parse motivate page.');
         }
       } else {
-        callback('Failed to get motivate page: ' +
-            (error || 'HTTP Error: ' + response.statusCode));
+        const errMsg = error || `HTTP Error: ${response.statusCode}`;
+        callback(`Failed to get motivate page: ${errMsg}`);
       }
     });
   });
@@ -257,8 +257,8 @@ function motivateCheckPage_(
         callback, pageCallback, foundCallback) {
   pageCallback(page);
 
-  const url = country.server.address +
-            '/newCitizens.html?countryId=0&page=' + page;
+  const url =
+    `${country.server.address}/newCitizens.html?countryId=0&page=${page}`;
   request(url, function(error, response, body) {
     if (!error && response.statusCode === 200) {
       const $ = cheerio.load(body);
@@ -271,7 +271,7 @@ function motivateCheckPage_(
                 found, page,
                 callback, pageCallback, foundCallback);
           } else {
-            callback('Failed to check page: ' + error);
+            callback(`Failed to check page: ${error}`);
           }
         });
         return;
@@ -286,8 +286,8 @@ function motivateCheckPage_(
           found, page, citizens, 0,
           callback, pageCallback, foundCallback);
     } else {
-      callback('Failed to check page: ' +
-          (error || 'HTTP Error: ' + response.statusCode));
+      const errMsg = error || `HTTP Error: ${response.statusCode}`;
+      callback(`Failed to check page: ${errMsg}`);
     }
   });
 }
@@ -348,8 +348,8 @@ function motivateCheckCitizenFromServer_(
         country, organization, options, request,
         found, page, citizens, i, citizen,
         callback, pageCallback, foundCallback) {
-  const url = country.server.address +
-            '/motivateCitizen.html?id=' + citizens[i];
+  const url =
+    `${country.server.address}/motivateCitizen.html?id=${citizens[i]}`;
   request(url, function(error, response, body) {
     if (!error && response.statusCode === 200) {
       const $ = cheerio.load(body);
@@ -362,7 +362,7 @@ function motivateCheckCitizenFromServer_(
                 found, page, citizens, i, citizen,
                 callback, pageCallback, foundCallback);
           } else {
-            callback('Failed to check citizen: ' + error);
+            callback(`Failed to check citizen: ${error}`);
           }
         });
         return;
@@ -396,9 +396,9 @@ function motivateCheckCitizenFromServer_(
         options.pack === 'gift' ? 3 :
         2;
 
-      if ($('input[value=' + pack + ']').length) {
-        const motivateUrl = country.server.address +
-            '/motivateCitizen.html?id=' + citizens[i];
+      if ($(`input[value=${pack}]`).length) {
+        const motivateUrl =
+          `${country.server.address}/motivateCitizen.html?id=${citizens[i]}`;
         foundCallback(motivateUrl);
         found++;
       }
@@ -408,8 +408,8 @@ function motivateCheckCitizenFromServer_(
           found, page, citizens, i,
           callback, pageCallback, foundCallback);
     } else {
-      callback('Failed to check citizen: ' +
-          (error || 'HTTP Error: ' + response.statusCode));
+      const errMsg = error || `HTTP Error: ${response.statusCode}`;
+      callback(`Failed to check citizen: ${errMsg}`);
     }
   });
 }
@@ -442,7 +442,7 @@ const cleanJob = new cron.CronJob('00 00 00 * * *', function() {
     if (!error) {
       console.log('Successfully cleared cache with a cron job.');
     } else {
-      console.log('Failed to clear cache with a cron job: ' + error);
+      console.log(`Failed to clear cache with a cron job: ${error}`);
     }
   });
 }, function() {

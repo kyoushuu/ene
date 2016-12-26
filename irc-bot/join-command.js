@@ -26,7 +26,7 @@ module.exports = function(bot, to, argv) {
   parse(bot, 'join (channel) [keyword]', [
   ], argv, 1, 2, to, false, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -37,7 +37,7 @@ module.exports = function(bot, to, argv) {
     }, function(error, user) {
       if (error) {
         bot.say(to,
-            'Failed to find user via nickname: ' + error);
+            `Failed to find user via nickname: ${error}`);
         return;
       }
 
@@ -61,7 +61,7 @@ function joinParse_(error, bot, to, args, user) {
 
   const opt = args.opt;
 
-  join(bot, to, opt.argv[0] + (opt.argv.length > 1 ? ' ' + opt.argv[1] : ''));
+  join(bot, to, opt.argv[0] + (opt.argv.length > 1 ? ` ${opt.argv[1]}` : ''));
 }
 
 function join(bot, to, channel) {

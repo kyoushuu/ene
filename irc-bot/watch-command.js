@@ -58,7 +58,7 @@ module.exports = function(bot, from, to, argv) {
     ['r', 'remove', 'Remove battle from watchlist (battle id required)'],
   ], argv, 0, 1, to, true, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -70,7 +70,7 @@ module.exports = function(bot, from, to, argv) {
     });
     query.exec(function(error, channel) {
       if (error) {
-        bot.say(to, 'Error: ' + error);
+        bot.say(to, `Error: ${error}`);
         return;
       } else if (!channel) {
         bot.say(to, 'Channel not registered in database.');
@@ -85,7 +85,7 @@ module.exports = function(bot, from, to, argv) {
       }, function(error, user) {
         if (error) {
           bot.say(to,
-              'Failed to find user via nickname: ' + error);
+              `Failed to find user via nickname: ${error}`);
           return;
         }
 
@@ -174,9 +174,9 @@ function watchParse_(error, bot, from, to, args, country, channel) {
 
       for (let i = 0; i < l; i++) {
         bot.say(to,
-          (i + 1) + '. ' +
-          country.server.address + '/battle.html?id=' + battles[i].battleId +
-          ' - ' + (battles[i].label ? battles[i].label : battles[i].side));
+          `${i + 1}. ` +
+          `${country.server.address}/battle.html?id=${battles[i].battleId} - ` +
+          `${battles[i].label ? battles[i].label : battles[i].side}`);
       }
     });
   } else if (opt.argv.length < 1) {
@@ -188,7 +188,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
       channel: channel,
     }, function(error, battle) {
       if (error) {
-        bot.say(to, 'Failed to watch battle: ' + error);
+        bot.say(to, `Failed to watch battle: ${error}`);
         return;
       }
 
@@ -214,7 +214,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
       channel: channel,
     }, function(error, battle) {
       if (error) {
-        bot.say(to, 'Failed to watch battle: ' + error);
+        bot.say(to, `Failed to watch battle: ${error}`);
         return;
       }
 
@@ -246,7 +246,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
           watchBattle(bot, country.organizations[0], battle,
           function(error, result) {
             if (error) {
-              bot.say(to, 'Failed to watch battle: ' + error);
+              bot.say(to, `Failed to watch battle: ${error}`);
             }
           });
         });
@@ -285,7 +285,7 @@ function showBattleRound(
 
   if (battleInfo.type === 'resistance' ||
       (battleInfo.type === 'direct' && side === 'defender')) {
-    bonusRegion = battleInfo.label + ', ' + battleInfo.defender;
+    bonusRegion = `${battleInfo.label}, ${battleInfo.defender}`;
   } else if (battleInfo.type === 'direct' && side === 'attacker') {
     const allies = battleInfo.attackerAllies.slice();
     allies.unshift(battleInfo.attacker);
@@ -293,7 +293,7 @@ function showBattleRound(
     server.getAttackerBonusRegion(battleInfo.id, allies,
     function(error, region) {
       if (error) {
-        console.log('Error: ' + error);
+        console.log(`Error: ${error}`);
       }
 
       bonusRegion = (error ? null : region);
@@ -305,38 +305,55 @@ function showBattleRound(
   show();
 
   function show() {
+    const ul = codes.underline;
+    const bold = codes.bold;
+    const reset = codes.reset;
+
     /* jshint camelcase: false */
     /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
-    bot.say(battle.channel.name,
-        server.address + '/battle.html?id=' + battle.battleId +
-        ' | ' +
-        codes.underline + codes.bold + battleInfo.label + codes.reset +
-        ' (' +
-        (side === 'defender' ? battleInfo.defender : battleInfo.attacker) +
-        ') - ' +
-        codes.bold + 'R' + battleInfo.round + codes.reset +
-        ' (' +
-        (side === 'defender' ? codes.dark_green : codes.dark_red) +
-        codes.bold + battleInfo.defenderWins +
-        codes.reset + ':' +
-        (side === 'defender' ? codes.dark_red : codes.dark_green) +
-        codes.bold + battleInfo.attackerWins +
-        codes.reset + ') | ' +
-        (bonusRegion ?
-          codes.bold + 'Bonus: ' + codes.reset + bonusRegion + ' | ' : '') +
-        codes.bold +
-        (percentage > 0.5 ?
-          codes.dark_green + 'Winning' :
-          codes.dark_red + 'Losing') +
-        codes.reset + ': ' + numeral(percentage).format('0.00%') + ' | ' +
-        codes.bold + 'Wall: ' +
-        (percentage > 0.5 ? codes.dark_green : codes.dark_red) +
-        numeral(wall).format('+0,0') +
-        codes.reset + ' | ' +
-        codes.bold + 'Time: ' + codes.reset + '0' +
-        numeral(time).format('00:00:00'));
+    const dr = codes.dark_red;
+    const dg = codes.dark_green;
+    const or = codes.orange;
     /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
     /* jshint camelcase: true */
+
+    const defSide = side === 'defender';
+    const rnd = battleInfo.round;
+    const winning = percentage > 0.5;
+
+    const def = battleInfo.defender;
+    const defWins = battleInfo.defenderWins;
+    const atk = battleInfo.attacker;
+    const atkWins = battleInfo.attackerWins;
+
+    const urlSection = `${server.address}/battle.html?id=${battle.battleId}`;
+    const summarySection =
+        `${ul}${bold}${battleInfo.label}${reset} ` +
+        `(${defSide ? def : atk}) - ` +
+        `${bold}R${rnd}${reset} ` +
+        `(${defSide ? dg : dr}${bold}${defWins}${reset}:` +
+        `${defSide ? dr : dg}${bold}${atkWins}${reset})`;
+    const bonusSection =
+        bonusRegion ? `${bold}Bonus: ${reset}${bonusRegion}` : null;
+    const percentSection =
+        `${bold}${winning ? `${dg}Winning` : `${dr}Losing`}${reset}: ` +
+        `${numeral(percentage).format('0.00%')}`;
+    const wallSection =
+        `${bold}Wall: ${winning ? dg : dr}` +
+        `${numeral(wall).format('+0,0')}${reset}`;
+    const timeSection =
+        `${bold}Time: ${reset}0${numeral(time).format('00:00:00')}`;
+
+    const sections = [
+      urlSection,
+      summarySection,
+      bonusSection,
+      percentSection,
+      wallSection,
+      timeSection,
+    ].filter((value) => value !== null);
+
+    bot.say(battle.channel.name, sections.join(' | '));
   }
 }
 
@@ -384,10 +401,10 @@ function watchBattleRound(
           }
 
           call.call(
-            bot, battle.channel.name, 'T-2 --- ' +
-            (percentage < 0.52 ?
+            bot, battle.channel.name, `T-2 --- ${
+            percentage < 0.52 ?
               'Start hitting!!!' :
-              'Hold your hits --- Only hit when bar drops below 52%!!!'));
+              'Hold your hits --- Only hit when bar drops below 52%!!!'}`);
         }
 
         if (!frozen) {
@@ -416,11 +433,11 @@ function watchBattleRound(
   const defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
   const attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
 
+  const winner = defenderScore >= attackerScore ?
+      battleInfo.defender : battleInfo.attacker;
+
   bot.say(battle.channel.name,
-    'The round has ended in favor of ' +
-    (defenderScore >= attackerScore ?
-        battleInfo.defender :
-        battleInfo.attacker));
+    `The round has ended in favor of ${winner}`);
   callback(null);
 }
 
@@ -432,11 +449,9 @@ function watchBattle(bot, organization, battle, callback) {
     }
 
     if (!battle.label) {
-      battle.label = battleInfo.label + ' (' +
-        (battle.side === 'defender' ?
-          battleInfo.defender :
-          battleInfo.attacker) +
-        ')';
+      const side = battle.side === 'defender' ?
+          battleInfo.defender : battleInfo.attacker;
+      battle.label = `${battleInfo.label} (${side})`;
       battle.save();
     }
 
@@ -453,11 +468,11 @@ function watchBattle(bot, organization, battle, callback) {
           const attackerScore = numeral()
             .unformat(battleRoundInfo.attackerScore);
 
+          const winner = defenderScore >= attackerScore ?
+            battleInfo.defender : battleInfo.attacker;
+
           bot.say(battle.channel.name,
-              'The battle has ended in favor of ' +
-              (defenderScore >= attackerScore ?
-                  battleInfo.defender :
-                  battleInfo.attacker));
+              `The battle has ended in favor of ${winner}`);
           callback(null);
 
           battle.remove(function(error, battle) {

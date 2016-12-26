@@ -36,7 +36,7 @@ module.exports = function(bot, from, to, argv) {
     ['S', 'skip=WORKER+', 'Skip WORKER, could be used multiple times'],
   ], argv, 2, 3, to, true, function(error, args) {
     if (error) {
-      bot.say(to, 'Error: ' + error);
+      bot.say(to, `Error: ${error}`);
       return;
     } else if (!args) {
       return;
@@ -48,7 +48,7 @@ module.exports = function(bot, from, to, argv) {
     });
     query.exec(function(error, channel) {
       if (error) {
-        bot.say(to, 'Error: ' + error);
+        bot.say(to, `Error: ${error}`);
         return;
       } else if (!channel) {
         bot.say(to, 'Channel not registered in database.');
@@ -63,7 +63,7 @@ module.exports = function(bot, from, to, argv) {
       }, function(error, user) {
         if (error) {
           bot.say(to,
-              'Failed to find user via nickname: ' + error);
+              `Failed to find user via nickname: ${error}`);
           return;
         }
 
@@ -154,7 +154,7 @@ function supplyCommuneParse_(
 
 function getMembers_(country, organization, user, options, bot, to) {
   organization.createRequest(function(error, request, jar) {
-    const url = country.server.address + '/myMilitaryUnit.html';
+    const url = `${country.server.address}/myMilitaryUnit.html`;
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
@@ -164,7 +164,7 @@ function getMembers_(country, organization, user, options, bot, to) {
             if (!error) {
               getMembers_(country, organization, user, options, bot, to);
             } else {
-              bot.say(to, 'Failed to get military unit page: ' + error);
+              bot.say(to, `Failed to get military unit page: ${error}`);
             }
           });
           return;
@@ -177,7 +177,7 @@ function getMembers_(country, organization, user, options, bot, to) {
         if (options.reason === null) {
           const day = numeral().unformat($('#contentDrop b').eq(1)
             .text().trim());
-          options.reason = 'Commune Supply: Day ' + day;
+          options.reason = `Commune Supply: Day ${day}`;
         }
 
         const membersList = $('div#militaryUnitContainer ~ div').eq(0)
@@ -195,8 +195,8 @@ function getMembers_(country, organization, user, options, bot, to) {
         return;
       }
 
-      bot.say(to, 'Failed to get military unit page: ' +
-        (error || 'HTTP Error: ' + response.statusCode));
+      const errMsg = error || `HTTP Error: ${response.statusCode}`;
+      bot.say(to, `Failed to get military unit page: ${errMsg}`);
     });
   });
 }
@@ -243,7 +243,7 @@ function getCompanies_(country, organization, user, options, bot, to) {
 function getWorkResults_(i, country, organization, user, options, bot, to) {
   if (i >= options.companiesId.length) {
     if (options.jump && options.jumpPos < 0) {
-      bot.say(to, 'Citizen ' + options.jump + ' not found in list.');
+      bot.say(to, `Citizen ${options.jump} not found in list.`);
       return;
     }
 
@@ -263,7 +263,7 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
         }
 
         if (citizenId < 0) {
-          bot.say(to, 'Citizen ' + options.skip[j] + ' not found in list.');
+          bot.say(to, `Citizen ${options.skip[j]} not found in list.`);
           return;
         }
 
@@ -284,7 +284,7 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
       }
 
       bot.say(to,
-        'Sending supplies to ' + options.membersWorked[j].name + '...');
+        `Sending supplies to ${options.membersWorked[j].name}...`);
       options.recipients.push(options.membersWorked[j].id);
     }
 
@@ -298,7 +298,7 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
   }
 
   organization.createRequest(function(error, request, jar) {
-    const url = country.server.address + '/companyWorkResults.html';
+    const url = `${country.server.address}/companyWorkResults.html`;
     request(url, {
       method: 'GET',
       qs: {
@@ -360,10 +360,10 @@ function sendSupplies_(i, country, organization, user, options, bot, to) {
   options.citizen = options.membersWorked[i].id;
   options.id = true;
 
-  bot.say(to, 'Sending supplies to ' + name + '...');
+  bot.say(to, `Sending supplies to ${name}...`);
   supply.supply(country, organization, user, options, function(error) {
     if (error) {
-      bot.say(to, 'Failed to supply ' + name + ': ' + error);
+      bot.say(to, `Failed to supply ${name}: ${error}`);
       return;
     }
 
@@ -390,8 +390,7 @@ function sendSuppliesBatch_(i, country, organization, user, options, bot, to) {
       function(error) {
         if (error) {
           bot.say(to,
-              'Failed to send ' + quantity + ' items of ' +
-              product + ': ' + error);
+              `Failed to send ${quantity} items of ${product}: ${error}`);
           return;
         }
 

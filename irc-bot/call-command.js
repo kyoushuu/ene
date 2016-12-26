@@ -30,7 +30,7 @@ module.exports = function(bot, from, to, argv, raw) {
   }, function(error, user) {
     if (error) {
       bot.say(to,
-          'Failed to find user via nickname: ' + error);
+          `Failed to find user via nickname: ${error}`);
       return;
     }
 
@@ -47,7 +47,7 @@ module.exports = function(bot, from, to, argv, raw) {
     });
     query.exec(function(error, channel) {
       if (error) {
-        bot.say(to, 'Error: ' + error);
+        bot.say(to, `Error: ${error}`);
         return;
       } else if (!channel) {
         bot.say(to, 'Channel not registered in database.');
@@ -64,17 +64,17 @@ module.exports = function(bot, from, to, argv, raw) {
 };
 
 function call(bot, to, message) {
-  bot.once('names' + to, function(nicks) {
+  bot.once(`names${to}`, function(nicks) {
     const names = Object.getOwnPropertyNames(nicks);
     names.splice(names.indexOf(bot.nick), 1);
 
-    bot.say(to, codes.bold + 'Listen up! ' + codes.reset + names.join(' '));
+    bot.say(to, `${codes.bold}Listen up! ${codes.reset}${names.join(' ')}`);
 
     if (message) {
       bot.say(to,
-        codes.bold + codes.black + ',07' +
-        '############# ' + message + ' #############' +
-        codes.reset);
+        `${codes.bold + codes.black},07` +
+        `############# ${message} #############` +
+        `${codes.reset}`);
     }
   });
   bot.send('NAMES', to);
