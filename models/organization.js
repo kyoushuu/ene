@@ -548,7 +548,7 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
                 .children().remove().end().text().trim();
 
           if ($('div#newFightView div.testDivred').text().trim()
-              .indexOf('frozen') > -1) {
+              .includes('frozen')) {
             frozen = true;
           }
 
@@ -560,8 +560,8 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
               $('div#mainFight div#fightName span a[href*="region.html"]')
               .attr('href').split('=')[1]);
 
-            if ($('div#mainFight div#fightName span div').text().trim()
-                .indexOf('Resistance war') < 0) {
+            if (!$('div#mainFight div#fightName span div').text().trim()
+                .includes('Resistance war')) {
               type = 'direct';
             } else {
               type = 'resistance';

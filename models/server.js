@@ -238,7 +238,7 @@ function(regionId, countries, callback) {
         return;
       }
 
-      if (countriesId.indexOf(status.occupantId) > -1) {
+      if (countriesId.includes(status.occupantId)) {
         if (status.battle === true) {
           getFullName(status,
                       countries[countriesId.indexOf(status.occupantId)]);
