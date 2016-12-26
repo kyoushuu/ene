@@ -166,7 +166,7 @@ describe('Server model', function() {
           '/apiCountries.html'
       ).replyWithFile(
           200,
-          __dirname + '/data/apiCountries.html'
+          `${__dirname}/data/apiCountries.html`
       );
     });
 
@@ -230,7 +230,7 @@ describe('Server model', function() {
           '/apiRegions.html'
       ).replyWithFile(
           200,
-          __dirname + '/data/apiRegions.html'
+          `${__dirname}/data/apiRegions.html`
       );
     });
 
@@ -294,7 +294,7 @@ describe('Server model', function() {
           '/apiMap.html'
       ).replyWithFile(
           200,
-          __dirname + '/data/apiMap.html'
+          `${__dirname}/data/apiMap.html`
       );
     });
 
@@ -367,19 +367,19 @@ describe('Server model', function() {
           '/apiCountries.html'
       ).replyWithFile(
           200,
-          __dirname + '/data/apiCountries.html'
+          `${__dirname}/data/apiCountries.html`
       ).get(
           '/apiRegions.html'
       ).replyWithFile(
           200,
-          __dirname + '/data/apiRegions.html'
+          `${__dirname}/data/apiRegions.html`
       ).get(
           '/apiMap.html'
       ).times(
           3
       ).replyWithFile(
           200,
-          __dirname + '/data/apiMap.html'
+          `${__dirname}/data/apiMap.html`
       );
     });
 
