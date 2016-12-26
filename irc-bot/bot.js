@@ -145,7 +145,7 @@ bot.addListener('registered', function(from, to, message) {
 
 bot.addListener('message#', function(from, to, message) {
   if (process.env.FILTER_NICK &&
-      process.env.FILTER_NICK.split(':').indexOf(from) < 0) {
+      !process.env.FILTER_NICK.split(':').includes(from)) {
     return;
   }
 

@@ -72,7 +72,7 @@ module.exports = function(bot, from, to, argv) {
         }
 
         if (j < 0 ||
-            country.channels[j].types.indexOf('motivation') < 0) {
+            !country.channels[j].types.includes('motivation')) {
           bot.say(to,
               'Motivate command not allowed for server in this ' +
               'channel.');

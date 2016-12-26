@@ -97,7 +97,7 @@ module.exports = function(bot, from, to, argv) {
           }
 
           if (j < 0 ||
-              country.channels[j].types.indexOf('military') < 0) {
+              !country.channels[j].types.includes('military')) {
             bot.say(to,
                 'Military commands are not allowed for the given server in ' +
                 'this channel.');

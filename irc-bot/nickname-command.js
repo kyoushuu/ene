@@ -39,7 +39,7 @@ exports.add = function(bot, from, argv) {
       } else if (!user || !user.isValidPassword(args.opt.argv[1])) {
         bot.say(from, 'Error: Invalid username or password');
         return;
-      } else if (user.nicknames.indexOf(from) >= 0) {
+      } else if (user.nicknames.includes(from)) {
         bot.say(from, 'Error: Nickname is already added');
         return;
       }

@@ -135,7 +135,7 @@ function supplyCommuneParse_(
     }
 
     if (j < 0 ||
-        country.channels[j].types.indexOf('military') < 0) {
+        !country.channels[j].types.includes('military')) {
       bot.say(to,
           'Military commands are not allowed for the given server in ' +
           'this channel.');
@@ -281,7 +281,7 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
     options.recipients = [];
     var n = options.membersWorked.length;
     for (var o = (options.jump ? options.jumpPos : 0); o < n; o++) {
-      if (options.skip && options.skipIds.indexOf(o) > -1) {
+      if (options.skip && options.skipIds.includes(o)) {
         continue;
       }
 
@@ -323,7 +323,7 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
           var worker = workerResults.eq(0).find('a');
           var citizenId = parseInt(worker.attr('href').split('=')[1]);
 
-          if (options.membersId.indexOf(citizenId) < 0) {
+          if (!options.membersId.includes(citizenId)) {
             continue;
           }
 
@@ -353,7 +353,7 @@ function sendSupplies_(i, country, organization, user, options, bot, to) {
   }
 
   if ((options.jump && options.jumpPos > i) ||
-      (options.skip && options.skipIds.indexOf(i) > -1)) {
+      (options.skip && options.skipIds.includes(i))) {
     sendSupplies_(++i, country, organization, user, options, bot, to);
     return;
   }
