@@ -217,7 +217,7 @@ organizationSchema.methods.login = function(callback) {
   const self = this;
 
   function login(request, jar, retries) {
-    const url = self.country.server.address + '/login.html';
+    const url = `${self.country.server.address}/login.html`;
     request(url, {
       method: 'POST',
       form: {
@@ -256,13 +256,13 @@ organizationSchema.methods.login = function(callback) {
       } else if (retries) {
         login(request, jar, --retries);
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   }
 
   if (self.lock && moment().isBefore(self.lock)) {
-    callback('Locked, try again after ' + moment(self.lock).toNow(true));
+    callback(`Locked, try again after ${moment(self.lock).toNow(true)}`);
     return;
   }
 
@@ -281,7 +281,7 @@ organizationSchema.methods.login = function(callback) {
           login(request, jar, 3);
         }
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   });
@@ -295,7 +295,7 @@ organizationSchema.methods.logout = function(callback) {
       callback(error);
     }
 
-    const url = self.country.server.address + '/logout.html';
+    const url = `${self.country.server.address}/logout.html`;
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
@@ -305,7 +305,7 @@ organizationSchema.methods.logout = function(callback) {
           callback('Failed to logout');
         }
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   });
@@ -325,7 +325,7 @@ organizationSchema.methods.donateProducts = function(
       return;
     }
 
-    const url = self.country.server.address + '/donateProducts.html';
+    const url = `${self.country.server.address}/donateProducts.html`;
     request(url, {
       method: 'POST',
       qs: {
@@ -368,7 +368,7 @@ organizationSchema.methods.donateProducts = function(
           callback('Failed to donate items');
         }
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   });
@@ -397,10 +397,10 @@ organizationSchema.methods.batchDonateProducts = function(
 
     const l = citizenIds.length;
     for (let i = 0; i < l; i++) {
-      form['citizen' + (i + 1)] = citizenIds[i];
+      form[`citizen${i + 1}`] = citizenIds[i];
     }
 
-    const url = self.country.server.address + '/militaryUnitStorage.html';
+    const url = `${self.country.server.address}/militaryUnitStorage.html`;
     request(url, {
       method: 'POST',
       form: form,
@@ -436,7 +436,7 @@ organizationSchema.methods.batchDonateProducts = function(
           callback('Failed to donate items');
         }
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   });
@@ -450,7 +450,7 @@ organizationSchema.methods.getInventory = function(callback) {
       callback(error);
     }
 
-    const url = self.country.server.address + '/militaryUnitStorage.html';
+    const url = `${self.country.server.address}/militaryUnitStorage.html`;
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
@@ -485,7 +485,7 @@ organizationSchema.methods.getInventory = function(callback) {
               quality.lastIndexOf('.')));
           }
 
-          inventoryOrg[product + (quality ? '-' + quality : '')] =
+          inventoryOrg[product + (quality ? `-${quality}` : '')] =
             parseInt(storageOrg.eq(i).find('div').eq(0).text());
         }
 
@@ -507,13 +507,13 @@ organizationSchema.methods.getInventory = function(callback) {
               quality.lastIndexOf('.')));
           }
 
-          inventoryMu[product + (quality ? '-' + quality : '')] =
+          inventoryMu[product + (quality ? `-${quality}` : '')] =
             parseInt(storageMu.eq(i).find('div').eq(0).text());
         }
 
         callback(null, inventoryOrg, inventoryMu);
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   });
@@ -527,7 +527,7 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
       callback(error);
     }
 
-    const url = self.country.server.address + '/battle.html';
+    const url = `${self.country.server.address}/battle.html`;
     request(url, {
       method: 'GET',
       qs: {
@@ -552,13 +552,12 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
             frozen = true;
           }
 
-          if ($('div#mainFight div#fightName span a[href*="region"]').text()
-              .trim() !== '') {
-            label = $('div#mainFight div#fightName span a[href*="region"]')
-              .text().trim();
-            id = parseInt(
-              $('div#mainFight div#fightName span a[href*="region.html"]')
-              .attr('href').split('=')[1]);
+          const linkSel =
+            (value) => 'div#mainFight div#fightName span a[href*="$value"]';
+
+          if ($(linkSel('region')).text().trim() !== '') {
+            label = $(linkSel('region')).text().trim();
+            id = parseInt($(linkSel('region.html')).attr('href').split('=')[1]);
 
             if (!$('div#mainFight div#fightName span div').text().trim()
                 .includes('Resistance war')) {
@@ -566,20 +565,14 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
             } else {
               type = 'resistance';
             }
-          } else if ($('div#mainFight div#fightName span a[href*="tournament"]')
-                     .text().trim() !== '') {
-            label = $('div#mainFight div#fightName span a[href*="tournament"]')
-              .text().trim() + ' (' + defender + ' vs. ' + attacker + ')';
-            id = parseInt(
-              $('div#mainFight div#fightName span a[href*="tournament"]')
-              .attr('href').split('=')[1]);
+          } else if ($(linkSel('tournament')).text().trim() !== '') {
+            label = `${$(linkSel('tournament')).text().trim()} ` +
+              `(${defender} vs. ${attacker})`;
+            id = parseInt($(linkSel('tournament')).attr('href').split('=')[1]);
             type = 'tournament';
-          } else if ($('div#mainFight div#fightName span a[href*="civilWar"]')
-                     .text().trim() !== '') {
-            label = 'Civil War (' + defender + ')';
-            id = parseInt(
-              $('div#mainFight div#fightName span a[href*="civilWar"]')
-              .attr('href').split('=')[1]);
+          } else if ($(linkSel('civilWar')).text().trim() !== '') {
+            label = `Civil War (${defender})`;
+            id = parseInt($(linkSel('civilWar')).attr('href').split('=')[1]);
             type = 'civil';
             defender = 'Loyalists';
           } else {
@@ -619,7 +612,7 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
           callback('Failed to get battle information');
         }
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   });
@@ -634,7 +627,7 @@ function(battleRoundId, callback) {
       callback(error);
     }
 
-    const url = self.country.server.address + '/battleScore.html';
+    const url = `${self.country.server.address}/battleScore.html`;
     request(url, {
       method: 'GET',
       qs: {
@@ -656,12 +649,12 @@ function(battleRoundId, callback) {
             callback($('div.testDivwhite h3').text().trim());
           } else {
             callback('Failed to get battle round information');
-            console.log('Error: ' + e);
-            console.log('Stack: ' + e.stack);
+            console.log(`Error: ${e}`);
+            console.log(`Stack: ${e.stack}`);
           }
         }
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   });

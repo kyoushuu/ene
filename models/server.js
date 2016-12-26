@@ -36,8 +36,8 @@ const serverSchema = new mongoose.Schema({
 });
 
 serverSchema.virtual('address').get(function() {
-  return 'http://' + this.name.toLowerCase() + '.e-sim.org' +
-    (this.port !== 80 ? ':' + this.port : '');
+  return `http://${this.name.toLowerCase()}.e-sim.org` +
+    `${this.port !== 80 ? `:${this.port}` : ''}`;
 });
 
 serverSchema.path('name').validate(function(value, respond) {
@@ -107,13 +107,13 @@ serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
   }
 
   function getCountriesList(callback) {
-    const address = self.address + '/apiCountries.html';
+    const address = `${self.address}/apiCountries.html`;
     request(address, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         self.countriesList = JSON.parse(body);
         callback(null);
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   }
@@ -149,13 +149,13 @@ serverSchema.methods.getRegionInfo = function(regionId, callback) {
   }
 
   function getRegionsList(callback) {
-    const address = self.address + '/apiRegions.html';
+    const address = `${self.address}/apiRegions.html`;
     request(address, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         self.regionsList = JSON.parse(body);
         callback(null);
       } else {
-        callback(error || 'HTTP Error: ' + response.statusCode);
+        callback(error || `HTTP Error: ${response.statusCode}`);
       }
     });
   }
@@ -164,7 +164,7 @@ serverSchema.methods.getRegionInfo = function(regionId, callback) {
 serverSchema.methods.getRegionStatus = function(regionId, callback) {
   const self = this;
 
-  const address = self.address + '/apiMap.html';
+  const address = `${self.address}/apiMap.html`;
   request(address, function(error, response, body) {
     if (!error && response.statusCode === 200) {
       try {
@@ -180,13 +180,13 @@ serverSchema.methods.getRegionStatus = function(regionId, callback) {
 
         callback('Region not found');
       } catch (e) {
-        console.log('Error: ' + e);
-        console.log('Stack: ' + e.stack);
-        console.log('Address: ' + address);
+        console.log(`Error: ${e}`);
+        console.log(`Stack: ${e.stack}`);
+        console.log(`Address: ${address}`);
         callback('Internal Error Occured');
       }
     } else {
-      callback(error || 'HTTP Error: ' + response.statusCode);
+      callback(error || `HTTP Error: ${response.statusCode}`);
     }
   });
 };
@@ -204,7 +204,7 @@ function(regionId, countries, callback) {
     if (i >= countries.length) {
       self.getRegionInfo(regionId, function(error, region) {
         if (error) {
-          callback('Failed to lookup region information: ' + error);
+          callback(`Failed to lookup region information: ${error}`);
           return;
         }
 
@@ -234,7 +234,7 @@ function(regionId, countries, callback) {
 
     self.getRegionStatus(neighbours[i], function(error, status) {
       if (error) {
-        callback('Failed to lookup region status: ' + error);
+        callback(`Failed to lookup region status: ${error}`);
         return;
       }
 
@@ -255,11 +255,11 @@ function(regionId, countries, callback) {
   function getFullName(regionStatus, country) {
     self.getRegionInfo(regionStatus.regionId, function(error, region) {
       if (error) {
-        callback('Failed to lookup region information: ' + error);
+        callback(`Failed to lookup region information: ${error}`);
         return;
       }
 
-      callback(null, region.name + ', ' + country);
+      callback(null, `${region.name}, ${country}`);
     });
   }
 };
