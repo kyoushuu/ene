@@ -34,7 +34,7 @@ module.exports = function(bot, from, to, argv) {
     ['i', 'use-org-inventory', 'Get supplies from organization\'s inventory'],
     ['j', 'jump=WORKER', 'Jump to WORKER, skipping previous workers'],
     ['S', 'skip=WORKER+', 'Skip WORKER, could be used multiple times'],
-  ], argv, 2, 3, to, true, function(error, args) {
+  ], argv, 2, 3, to, true, (error, args) => {
     if (error) {
       bot.say(to, `Error: ${error}`);
       return;
@@ -46,7 +46,7 @@ module.exports = function(bot, from, to, argv) {
       path: 'countries',
       match: {server: args.server._id},
     });
-    query.exec(function(error, channel) {
+    query.exec((error, channel) => {
       if (error) {
         bot.say(to, `Error: ${error}`);
         return;
@@ -60,7 +60,7 @@ module.exports = function(bot, from, to, argv) {
 
       User.findOne({
         nicknames: from,
-      }, function(error, user) {
+      }, (error, user) => {
         if (error) {
           bot.say(to,
               `Failed to find user via nickname: ${error}`);
@@ -117,7 +117,7 @@ function supplyCommuneParse_(
   country.populate('server').populate({
     path: 'organizations',
     match: {shortname: opt.argv[0]},
-  }, function(error, country) {
+  }, (error, country) => {
     if (!country.organizations.length) {
       bot.say(to, 'Organization not found.');
       return;
@@ -153,14 +153,14 @@ function supplyCommuneParse_(
 }
 
 function getMembers_(country, organization, user, options, bot, to) {
-  organization.createRequest(function(error, request, jar) {
+  organization.createRequest((error, request, jar) => {
     const url = `${country.server.address}/myMilitaryUnit.html`;
-    request(url, function(error, response, body) {
+    request(url, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
 
         if (!$('a#userName').length) {
-          organization.login(function(error) {
+          organization.login((error) => {
             if (!error) {
               getMembers_(country, organization, user, options, bot, to);
             } else {
@@ -202,7 +202,7 @@ function getMembers_(country, organization, user, options, bot, to) {
 }
 
 function getCompanies_(country, organization, user, options, bot, to) {
-  organization.createRequest(function(error, request, jar) {
+  organization.createRequest((error, request, jar) => {
     const url = country.server.address +
       (options.useOrgCompanies ?
         '/companies.html' :
@@ -212,7 +212,7 @@ function getCompanies_(country, organization, user, options, bot, to) {
       qs: {
         id: options.useOrgCompanies ? undefined : options.unitId,
       },
-    }, function(error, response, body) {
+    }, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
 
@@ -297,14 +297,14 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
     return;
   }
 
-  organization.createRequest(function(error, request, jar) {
+  organization.createRequest((error, request, jar) => {
     const url = `${country.server.address}/companyWorkResults.html`;
     request(url, {
       method: 'GET',
       qs: {
         id: options.companiesId[i],
       },
-    }, function(error, response, body) {
+    }, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
 
@@ -361,7 +361,7 @@ function sendSupplies_(i, country, organization, user, options, bot, to) {
   options.id = true;
 
   bot.say(to, `Sending supplies to ${name}...`);
-  supply.supply(country, organization, user, options, function(error) {
+  supply.supply(country, organization, user, options, (error) => {
     if (error) {
       bot.say(to, `Failed to supply ${name}: ${error}`);
       return;
@@ -387,7 +387,7 @@ function sendSuppliesBatch_(i, country, organization, user, options, bot, to) {
   organization.batchDonateProducts(
       user, options.recipients, product,
       quantity, options.reason,
-      function(error) {
+      (error) => {
         if (error) {
           bot.say(to,
               `Failed to send ${quantity} items of ${product}: ${error}`);

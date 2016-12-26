@@ -27,7 +27,7 @@ const User = require('../models/user');
 module.exports = function(bot, from, to, argv, raw) {
   User.findOne({
     nicknames: from,
-  }, function(error, user) {
+  }, (error, user) => {
     if (error) {
       bot.say(to,
           `Failed to find user via nickname: ${error}`);
@@ -45,7 +45,7 @@ module.exports = function(bot, from, to, argv, raw) {
         'accessList.account': user._id,
       },
     });
-    query.exec(function(error, channel) {
+    query.exec((error, channel) => {
       if (error) {
         bot.say(to, `Error: ${error}`);
         return;
@@ -64,7 +64,7 @@ module.exports = function(bot, from, to, argv, raw) {
 };
 
 function call(bot, to, message) {
-  bot.once(`names${to}`, function(nicks) {
+  bot.once(`names${to}`, (nicks) => {
     const names = Object.getOwnPropertyNames(nicks);
     names.splice(names.indexOf(bot.nick), 1);
 

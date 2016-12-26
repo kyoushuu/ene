@@ -37,7 +37,7 @@ module.exports = function(bot, from, to, argv) {
     ['c', 'no-cache', 'Don\'t use cache'],
     ['m', 'message', 'Send links as private message'],
     ['n', 'notify', 'Send links as notice (default)'],
-  ], argv, 0, 1, to, true, function(error, args) {
+  ], argv, 0, 1, to, true, (error, args) => {
     if (error) {
       bot.say(to, `Error: ${error}`);
       return;
@@ -49,7 +49,7 @@ module.exports = function(bot, from, to, argv) {
       path: 'countries',
       match: {server: args.server._id},
     });
-    query.exec(function(error, channel) {
+    query.exec((error, channel) => {
       if (error) {
         bot.say(to, `Error: ${error}`);
         return;
@@ -62,7 +62,7 @@ module.exports = function(bot, from, to, argv) {
       }
 
       const query = channel.countries[0].populate('server');
-      query.populate('organizations', function(error, country) {
+      query.populate('organizations', (error, country) => {
         let j = -1;
         const l = country.channels.length;
         for (let i = 0; i < l; i++) {
@@ -184,7 +184,7 @@ function motivateParse_(error, bot, from, to, args, country) {
     pack: pack,
     find: find,
     cache: !opt.options['no-cache'],
-  }, function(error, found) {
+  }, (error, found) => {
     if (!error) {
       bot.say(to, `Done. Found ${found} citizen/s.`);
       if (found < find) {
@@ -200,10 +200,10 @@ function motivateParse_(error, bot, from, to, args, country) {
     }
     motivateLock[server.name].date = Date.now();
     motivateLock[server.name].done = true;
-  }, function(page) {
+  }, (page) => {
     bot.say(to, `Checking page ${page}...`);
     motivateLock[server.name].date = Date.now();
-  }, function(motivateUrl) {
+  }, (motivateUrl) => {
     if (notify) {
       bot.notice(from, `Found ${motivateUrl}`);
     } else {
@@ -217,14 +217,14 @@ function motivateParse_(error, bot, from, to, args, country) {
 function motivate(
         country, organization, options,
         callback, pageCallback, foundCallback) {
-  organization.createRequest(function(error, request, jar) {
+  organization.createRequest((error, request, jar) => {
     const url = `${country.server.address}/newCitizens.html?countryId=0`;
-    request(url, function(error, response, body) {
+    request(url, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
 
         if (!$('a#userName').length) {
-          organization.login(function(error) {
+          organization.login((error) => {
             if (!error) {
               motivate(country, organization, options,
                   callback, pageCallback, foundCallback);
@@ -259,12 +259,12 @@ function motivateCheckPage_(
 
   const url =
     `${country.server.address}/newCitizens.html?countryId=0&page=${page}`;
-  request(url, function(error, response, body) {
+  request(url, (error, response, body) => {
     if (!error && response.statusCode === 200) {
       const $ = cheerio.load(body);
 
       if (!$('a#userName').length) {
-        organization.login(function(error) {
+        organization.login((error) => {
           if (!error) {
             motivateCheckPage_(
                 country, organization, options, request,
@@ -278,8 +278,8 @@ function motivateCheckPage_(
       }
 
       const citizens = [];
-      $('table.sortedTable tbody tr td:first-child a').each(function(i, elem) {
-        citizens.push(parseInt($(this).attr('href').split('=')[1]));
+      $('table.sortedTable tbody tr td:first-child a').each((i, elem) => {
+        citizens.push(parseInt(elem.attr('href').split('=')[1]));
       });
       motivateCheckCitizen_(
           country, organization, options, request,
@@ -314,7 +314,7 @@ function motivateCheckCitizenFromCache_(
   MotivatedCitizen.findOne({
     citizenId: citizens[i],
     server: country.server,
-  }, function(error, citizen) {
+  }, (error, citizen) => {
     if (error) {
       console.log(error);
     }
@@ -350,12 +350,12 @@ function motivateCheckCitizenFromServer_(
         callback, pageCallback, foundCallback) {
   const url =
     `${country.server.address}/motivateCitizen.html?id=${citizens[i]}`;
-  request(url, function(error, response, body) {
+  request(url, (error, response, body) => {
     if (!error && response.statusCode === 200) {
       const $ = cheerio.load(body);
 
       if (!$('a#userName').length) {
-        organization.login(function(error) {
+        organization.login((error) => {
           if (!error) {
             motivateCheckCitizenFromServer_(
                 country, organization, options, request,
@@ -382,7 +382,7 @@ function motivateCheckCitizenFromServer_(
         }
 
         if (citizen.isModified()) {
-          citizen.save(function(error) {
+          citizen.save((error) => {
             if (error) {
               console.log(error);
             }
@@ -437,15 +437,15 @@ function motivateCheckNextCitizen_(
   }
 }
 
-const cleanJob = new cron.CronJob('00 00 00 * * *', function() {
-  MotivatedCitizen.remove(function(error) {
+const cleanJob = new cron.CronJob('00 00 00 * * *', () => {
+  MotivatedCitizen.remove((error) => {
     if (!error) {
       console.log('Successfully cleared cache with a cron job.');
     } else {
       console.log(`Failed to clear cache with a cron job: ${error}`);
     }
   });
-}, function() {
+}, () => {
   console.log('Cron job for clearing motivate cache stops');
 }, false, 'Europe/Warsaw');
 cleanJob.start();

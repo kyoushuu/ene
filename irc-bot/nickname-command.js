@@ -24,7 +24,7 @@ const User = require('../models/user');
 
 exports.add = function(bot, from, argv) {
   parse(bot, 'add-nickname username password', [
-  ], argv, 2, 2, from, false, function(error, args) {
+  ], argv, 2, 2, from, false, (error, args) => {
     if (error) {
       bot.say(from, `Error: ${error}`);
       return;
@@ -32,7 +32,7 @@ exports.add = function(bot, from, argv) {
       return;
     }
 
-    User.findOne({username: args.opt.argv[0]}, function(error, user) {
+    User.findOne({username: args.opt.argv[0]}, (error, user) => {
       if (error) {
         bot.say(from, `Error: ${error}`);
         return;
@@ -45,7 +45,7 @@ exports.add = function(bot, from, argv) {
       }
 
       user.nicknames.push(from);
-      user.save(function(error) {
+      user.save((error) => {
         if (error) {
           bot.say(from, `Error: ${error}`);
           return;

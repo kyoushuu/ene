@@ -67,19 +67,19 @@ function isNickIdentified(nick, callback) {
   };
   bot.addListener('raw', wrapper);
 
-  bot.whois(nick, function(info) {
+  bot.whois(nick, (info) => {
     bot.removeListener('raw', wrapper);
     callback(identified);
   });
 }
 
-bot.addListener('registered', function(from, to, message) {
+bot.addListener('registered', (from, to, message) => {
   bot.addListener('notice', function join(from, to, message) {
     if (from === 'NickServ' &&
         message === 'Password accepted - you are now recognized.') {
       bot.removeListener('notice', join);
 
-      Channel.find({}, function(error, channels) {
+      Channel.find({}, (error, channels) => {
         if (error) {
           console.log(error);
           return;
@@ -92,7 +92,7 @@ bot.addListener('registered', function(from, to, message) {
           return function() {
             Battle.find({
               channel: channels[i],
-            }).populate('country channel').exec(function(error, battles) {
+            }).populate('country channel').exec((error, battles) => {
               if (error) {
                 bot.say(channels[i].name,
                   `Failed to watch battles of this channel: ${error}`);
@@ -109,7 +109,7 @@ bot.addListener('registered', function(from, to, message) {
 
                   watchBattle(
                     bot, battles[j].country.organizations[0], battles[j],
-                    function(error) {
+                    (error) => {
                       if (error) {
                         bot.say(channels[i].name,
                           'Failed to watch battle ' +
@@ -143,7 +143,7 @@ bot.addListener('registered', function(from, to, message) {
   bot.say('NickServ', `IDENTIFY ${process.env.IRC_PASSWORD}`);
 });
 
-bot.addListener('message#', function(from, to, message) {
+bot.addListener('message#', (from, to, message) => {
   if (process.env.FILTER_NICK &&
       !process.env.FILTER_NICK.split(':').includes(from)) {
     return;
@@ -152,7 +152,7 @@ bot.addListener('message#', function(from, to, message) {
   const argv = parse(message);
 
   if (commands.channel.hasOwnProperty(argv[0])) {
-    isNickIdentified(from, function(identified) {
+    isNickIdentified(from, (identified) => {
       if (identified) {
         commands.channel[argv[0]](bot, from, to, argv, message);
       } else {
@@ -162,11 +162,11 @@ bot.addListener('message#', function(from, to, message) {
   }
 });
 
-bot.addListener('pm', function(from, message) {
+bot.addListener('pm', (from, message) => {
   const argv = parse(message);
 
   if (commands.pm.hasOwnProperty(argv[0])) {
-    isNickIdentified(from, function(identified) {
+    isNickIdentified(from, (identified) => {
       if (identified) {
         commands.pm[argv[0]](bot, from, argv, message);
       } else {
@@ -176,7 +176,7 @@ bot.addListener('pm', function(from, message) {
   }
 });
 
-bot.addListener('error', function(message) {
+bot.addListener('error', (message) => {
   console.log('Bot error: ', message);
 });
 

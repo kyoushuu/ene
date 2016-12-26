@@ -27,7 +27,7 @@ const User = require('../models/user');
 
 module.exports = function(bot, to, argv) {
   parse(bot, 'announce (message)', [
-  ], argv, 1, 1, to, false, function(error, args) {
+  ], argv, 1, 1, to, false, (error, args) => {
     if (error) {
       bot.say(to, `Error: ${error}`);
       return;
@@ -37,7 +37,7 @@ module.exports = function(bot, to, argv) {
 
     User.findOne({
       nicknames: to,
-    }, function(error, user) {
+    }, (error, user) => {
       if (error) {
         bot.say(to,
             `Failed to find user via nickname: ${error}`);

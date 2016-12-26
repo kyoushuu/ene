@@ -31,7 +31,7 @@ module.exports = function(bot, from, to, argv) {
   parse(bot, '!battle (id)', [
     ['d', 'defender', 'Defender side (default)'],
     ['a', 'attacker', 'Attacker side'],
-  ], argv, 1, 1, to, true, function(error, args) {
+  ], argv, 1, 1, to, true, (error, args) => {
     if (error) {
       bot.say(to, `Error: ${error}`);
       return;
@@ -43,7 +43,7 @@ module.exports = function(bot, from, to, argv) {
       path: 'countries',
       match: {server: args.server._id},
     });
-    query.exec(function(error, channel) {
+    query.exec((error, channel) => {
       if (error) {
         bot.say(to, `Error: ${error}`);
         return;
@@ -57,7 +57,7 @@ module.exports = function(bot, from, to, argv) {
 
       User.findOne({
         nicknames: from,
-      }, function(error, user) {
+      }, (error, user) => {
         if (error) {
           bot.say(to,
               `Failed to find user via nickname: ${error}`);
@@ -87,7 +87,7 @@ module.exports = function(bot, from, to, argv) {
         }
 
         const query = countries[0].populate('server');
-        query.populate('organizations', function(error, country) {
+        query.populate('organizations', (error, country) => {
           let j = -1;
           const l = country.channels.length;
           for (let i = 0; i < l; i++) {
@@ -132,7 +132,7 @@ function battleParse_(error, bot, from, to, args, country, user) {
   battleShow(country, country.organizations[0], {
     battleId: battleId,
     side: side,
-  }, function(error, result) {
+  }, (error, result) => {
     if (!error) {
       bot.say(to, result);
     } else {
@@ -142,14 +142,14 @@ function battleParse_(error, bot, from, to, args, country, user) {
 }
 
 function battleShow(country, organization, options, callback) {
-  organization.getBattleInfo(options.battleId, function(error, battleInfo) {
+  organization.getBattleInfo(options.battleId, (error, battleInfo) => {
     if (error) {
       callback(error);
       return;
     }
 
     organization.getBattleRoundInfo(battleInfo.roundId,
-      function(error, battleRoundInfo) {
+      (error, battleRoundInfo) => {
         if (error) {
           callback(error);
           return;

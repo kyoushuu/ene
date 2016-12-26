@@ -32,7 +32,7 @@ module.exports = function(bot, from, to, argv) {
     ['i', 'id', 'Given citizen is a citizen id'],
     ['d', 'dry-run', 'Dry run - do not actually send items'],
     ['f', 'from=ORGANIZATION', 'Get supplies from ORGANIZATION'],
-  ], argv, 2, 3, to, true, function(error, args) {
+  ], argv, 2, 3, to, true, (error, args) => {
     if (error) {
       bot.say(to, `Error: ${error}`);
       return;
@@ -44,7 +44,7 @@ module.exports = function(bot, from, to, argv) {
       path: 'countries',
       match: {server: args.server._id},
     });
-    query.exec(function(error, channel) {
+    query.exec((error, channel) => {
       if (error) {
         bot.say(to, `Error: ${error}`);
         return;
@@ -58,7 +58,7 @@ module.exports = function(bot, from, to, argv) {
 
       User.findOne({
         nicknames: from,
-      }, function(error, user) {
+      }, (error, user) => {
         if (error) {
           bot.say(to,
               `Failed to find user via nickname: ${error}`);
@@ -125,7 +125,7 @@ function supplyParse_(error, bot, from, to, args, channel, country, user) {
     query = country.populate('organizations');
   }
 
-  query.populate('server', function(error, country) {
+  query.populate('server', (error, country) => {
     if (country.organizations.length < 1) {
       bot.say(to, 'Organization not found.');
       return;
@@ -154,7 +154,7 @@ function supplyParse_(error, bot, from, to, args, channel, country, user) {
       reason: reason,
       id: opt.options.id,
       dryRun: opt.options['dry-run'],
-    }, function(error) {
+    }, (error) => {
       if (!error) {
         const recipient = `${opt.options.id ? '#' : ''}${opt.argv[0]}`;
         bot.say(to, `Supplies successfully donated to citizen ${recipient}.`);
@@ -167,14 +167,14 @@ function supplyParse_(error, bot, from, to, args, channel, country, user) {
 
 function supply(country, organization, user, options, callback) {
   if (!options.id) {
-    organization.createRequest(function(error, request, jar) {
+    organization.createRequest((error, request, jar) => {
       const url = `${country.server.address}/apiCitizenByName.html`;
       request(url, {
         method: 'GET',
         qs: {
           name: options.citizen.toLowerCase(),
         },
-      }, function(error, response, body) {
+      }, (error, response, body) => {
         if (!error && response.statusCode === 200) {
           const citizenInfo = JSON.parse(body);
 
@@ -240,7 +240,7 @@ function supplyCheckMax(
         total: {$sum: '$quantity'},
       },
     },
-  ], function(error, result) {
+  ], (error, result) => {
     if (error) {
       callback(error);
       return;
@@ -274,7 +274,7 @@ function supplyDonate(organization, user, options, i, callback) {
   organization.donateProducts(
       user, options.citizen, product,
       quantity, options.reason,
-      function(error) {
+      (error) => {
         if (error) {
           callback(
               `Failed to send ${quantity} items of ${product}: ${error}`);

@@ -56,7 +56,7 @@ module.exports = function(bot, from, to, argv) {
     ['l', 'light', 'Show status on T-10, T-5 and T-2 only'],
     ['f', 'full', 'Show status on all intervals (default)'],
     ['r', 'remove', 'Remove battle from watchlist (battle id required)'],
-  ], argv, 0, 1, to, true, function(error, args) {
+  ], argv, 0, 1, to, true, (error, args) => {
     if (error) {
       bot.say(to, `Error: ${error}`);
       return;
@@ -68,7 +68,7 @@ module.exports = function(bot, from, to, argv) {
       path: 'countries',
       match: {server: args.server._id},
     });
-    query.exec(function(error, channel) {
+    query.exec((error, channel) => {
       if (error) {
         bot.say(to, `Error: ${error}`);
         return;
@@ -82,7 +82,7 @@ module.exports = function(bot, from, to, argv) {
 
       User.findOne({
         nicknames: from,
-      }, function(error, user) {
+      }, (error, user) => {
         if (error) {
           bot.say(to,
               `Failed to find user via nickname: ${error}`);
@@ -112,7 +112,7 @@ module.exports = function(bot, from, to, argv) {
         }
 
         const query = countries[0].populate('server');
-        query.populate('organizations', function(error, country) {
+        query.populate('organizations', (error, country) => {
           let j = -1;
           const l = country.channels.length;
           for (let i = 0; i < l; i++) {
@@ -165,7 +165,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
     Battle.find({
       country: country,
       channel: channel,
-    }, function(error, battles) {
+    }, (error, battles) => {
       const l = battles.length;
       if (l === 0) {
         bot.say(to, 'Watchlist is empty');
@@ -186,7 +186,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
       battleId: battleId,
       country: country,
       channel: channel,
-    }, function(error, battle) {
+    }, (error, battle) => {
       if (error) {
         bot.say(to, `Failed to watch battle: ${error}`);
         return;
@@ -199,7 +199,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
 
       if (watchlist[battle.id] !== null) {
         clearTimeout(watchlist[battle.id]);
-        battle.remove(function(error, battle) {
+        battle.remove((error, battle) => {
           bot.say(to, 'Battle deleted from watchlist');
           delete watchlist[battle.id];
         });
@@ -212,7 +212,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
       battleId: battleId,
       country: country,
       channel: channel,
-    }, function(error, battle) {
+    }, (error, battle) => {
       if (error) {
         bot.say(to, `Failed to watch battle: ${error}`);
         return;
@@ -221,7 +221,7 @@ function watchParse_(error, bot, from, to, args, country, channel) {
       if (battle) {
         if (watchlist[battle.id] !== null) {
           clearTimeout(watchlist[battle.id]);
-          battle.remove(function(error, battle) {
+          battle.remove((error, battle) => {
             delete watchlist[battle.id];
           });
         } else {
@@ -236,15 +236,15 @@ function watchParse_(error, bot, from, to, args, country, channel) {
         channel: channel,
         side: side,
         mode: mode,
-      }, function(error, battle) {
-        battle.populate('channel', function(error, battle) {
+      }, (error, battle) => {
+        battle.populate('channel', (error, battle) => {
           if (!country.organizations.length) {
             bot.say(to, 'Failed to watch battle: Organization not found.');
             return;
           }
 
           watchBattle(bot, country.organizations[0], battle,
-          function(error, result) {
+          (error, result) => {
             if (error) {
               bot.say(to, `Failed to watch battle: ${error}`);
             }
@@ -291,7 +291,7 @@ function showBattleRound(
     allies.unshift(battleInfo.attacker);
 
     server.getAttackerBonusRegion(battleInfo.id, allies,
-    function(error, region) {
+    (error, region) => {
       if (error) {
         console.log(`Error: ${error}`);
       }
@@ -363,7 +363,7 @@ function watchBattleRound(
   const timeout = function(watchpoint) {
     watchlist[battle.id] = null;
     organization.getBattleRoundInfo(battleInfo.roundId,
-      function(error, battleRoundInfo) {
+      (error, battleRoundInfo) => {
         if (error) {
           callback(error);
           return;
@@ -442,7 +442,7 @@ function watchBattleRound(
 }
 
 function watchBattle(bot, organization, battle, callback) {
-  organization.getBattleInfo(battle.battleId, function(error, battleInfo) {
+  organization.getBattleInfo(battle.battleId, (error, battleInfo) => {
     if (error) {
       callback(error);
       return;
@@ -456,7 +456,7 @@ function watchBattle(bot, organization, battle, callback) {
     }
 
     organization.getBattleRoundInfo(battleInfo.roundId,
-      function(error, battleRoundInfo) {
+      (error, battleRoundInfo) => {
         if (error) {
           callback(error);
           return;
@@ -475,7 +475,7 @@ function watchBattle(bot, organization, battle, callback) {
               `The battle has ended in favor of ${winner}`);
           callback(null);
 
-          battle.remove(function(error, battle) {
+          battle.remove((error, battle) => {
             if (watchlist.hasOwnProperty(battle.id)) {
               delete watchlist[battle.id];
             }
@@ -489,12 +489,12 @@ function watchBattle(bot, organization, battle, callback) {
         watchBattleRound(
           bot, organization, battle, battleInfo, battleRoundInfo,
           battleRoundInfo.remainingTimeInSeconds,
-          function(error) {
+          (error) => {
             if (error) {
               callback(error);
             }
 
-            watchlist[battle.id] = setTimeout(function() {
+            watchlist[battle.id] = setTimeout(() => {
               watchlist[battle.id] = null;
               watchBattle(bot, organization, battle, callback);
             }, 30000);

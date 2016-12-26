@@ -26,7 +26,7 @@ const User = require('../models/user');
 module.exports = function(bot, from, to, argv) {
   parse(bot, '!donate (citizen) (product) (quantity) [reason]', [
     ['i', 'id', 'Given citizen is a citizen id'],
-  ], argv, 3, 4, to, true, function(error, args) {
+  ], argv, 3, 4, to, true, (error, args) => {
     if (error) {
       bot.say(to, `Error: ${error}`);
       return;
@@ -38,7 +38,7 @@ module.exports = function(bot, from, to, argv) {
       path: 'countries',
       match: {server: args.server._id},
     });
-    query.exec(function(error, channel) {
+    query.exec((error, channel) => {
       if (error) {
         bot.say(to, `Error: ${error}`);
         return;
@@ -52,7 +52,7 @@ module.exports = function(bot, from, to, argv) {
 
       User.findOne({
         nicknames: from,
-      }, function(error, user) {
+      }, (error, user) => {
         if (error) {
           bot.say(to,
               `Failed to find user via nickname: ${error}`);
@@ -82,7 +82,7 @@ module.exports = function(bot, from, to, argv) {
         }
 
         const query = countries[0].populate('server');
-        query.populate('organizations', function(error, country) {
+        query.populate('organizations', (error, country) => {
           let j = -1;
           const l = country.channels.length;
           for (let i = 0; i < l; i++) {
@@ -121,7 +121,7 @@ function donateParse_(error, bot, from, to, args, country, user) {
     quantity: opt.argv[2],
     reason: reason,
     id: opt.options.id,
-  }, function(error) {
+  }, (error) => {
     if (!error) {
       const recipient = `${opt.options.id ? '#' : ''}${opt.argv[0]}`;
       bot.say(to,
@@ -134,14 +134,14 @@ function donateParse_(error, bot, from, to, args, country, user) {
 
 function donate(country, organization, user, options, callback) {
   if (!options.id) {
-    organization.createRequest(function(error, request, jar) {
+    organization.createRequest((error, request, jar) => {
       const url = `${country.server.address}/apiCitizenByName.html`;
       request(url, {
         method: 'GET',
         qs: {
           name: options.citizen.toLowerCase(),
         },
-      }, function(error, response, body) {
+      }, (error, response, body) => {
         if (!error && response.statusCode === 200) {
           const citizenInfo = JSON.parse(body);
 

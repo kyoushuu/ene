@@ -50,7 +50,7 @@ const parseArgv = function(
   options.setHelp(`Usage: ${usage}\n\n[[OPTIONS]]\n`);
 
   let error = null;
-  options.error(function(e) {
+  options.error((e) => {
     error = e;
   });
 
@@ -73,7 +73,7 @@ const parseArgv = function(
   }
 
   const query = Channel.findOne({name: to}).populate('countries');
-  query.exec(function(error, channel) {
+  query.exec((error, channel) => {
     if (error) {
       callback(error);
       return;
@@ -88,7 +88,7 @@ const parseArgv = function(
     }
 
     if (channel && channel.countries && channel.countries.length) {
-      channel.countries[0].populate('server', function(error, country) {
+      channel.countries[0].populate('server', (error, country) => {
         callback(error, {server: country.server, opt: opt});
       });
     } else {
@@ -101,7 +101,7 @@ module.exports = function(
         bot, usage, commandOptions, argv, min, max,
         to, addServerOptions, callback) {
   if (addServerOptions) {
-    Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
+    Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
       parseArgv(
           bot, servers, usage, commandOptions, argv, min, max,
           to, callback);
