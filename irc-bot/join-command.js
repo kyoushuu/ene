@@ -17,9 +17,9 @@
  */
 
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var User = require('../models/user');
+const User = require('../models/user');
 
 
 module.exports = function(bot, to, argv) {
@@ -59,7 +59,7 @@ function joinParse_(error, bot, to, args, user) {
     return;
   }
 
-  var opt = args.opt;
+  const opt = args.opt;
 
   join(bot, to, opt.argv[0] + (opt.argv.length > 1 ? ' ' + opt.argv[1] : ''));
 }

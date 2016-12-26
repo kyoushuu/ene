@@ -17,19 +17,19 @@
  */
 
 
-var irc = require('irc');
-var codes = irc.colors.codes;
-var numeral = require('numeral');
+const irc = require('irc');
+const codes = irc.colors.codes;
+const numeral = require('numeral');
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var Channel = require('../models/channel');
-var User = require('../models/user');
-var Battle = require('../models/battle');
+const Channel = require('../models/channel');
+const User = require('../models/user');
+const Battle = require('../models/battle');
 
-var call = require('./call-command');
+const call = require('./call-command');
 
-var watchpoints = {
+const watchpoints = {
   full: [
     6000, 4800, 3600,
     3000, 2400, 1800,
@@ -44,7 +44,7 @@ var watchpoints = {
     600, 300, 120, -12,
   ],
 };
-var watchlist = {};
+const watchlist = {};
 
 
 module.exports = function(bot, from, to, argv) {
@@ -64,7 +64,7 @@ module.exports = function(bot, from, to, argv) {
       return;
     }
 
-    var query = Channel.findOne({name: to}).populate({
+    const query = Channel.findOne({name: to}).populate({
       path: 'countries',
       match: {server: args.server._id},
     });
@@ -94,10 +94,10 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var countries = [];
+        const countries = [];
 
-        var l = channel.countries.length;
-        for (var i = 0; i < l; i++) {
+        const l = channel.countries.length;
+        for (let i = 0; i < l; i++) {
           if (channel.countries[i].getUserAccessLevel(user) > 0) {
             countries.push(channel.countries[i]);
           }
@@ -111,11 +111,11 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var query = countries[0].populate('server');
+        const query = countries[0].populate('server');
         query.populate('organizations', function(error, country) {
-          var j = -1;
-          var l = country.channels.length;
-          for (var i = 0; i < l; i++) {
+          let j = -1;
+          const l = country.channels.length;
+          for (let i = 0; i < l; i++) {
             if (country.channels[i].channel.equals(channel.id)) {
               j = i;
             }
@@ -141,29 +141,23 @@ function watchParse_(error, bot, from, to, args, country, channel) {
     return;
   }
 
-  var opt = args.opt;
+  const opt = args.opt;
 
-  var side = 'defender';
-  if (opt.options.defender) {
-    side = 'defender';
-  } else if (opt.options.attacker) {
-    side = 'attacker';
-  }
+  const side =
+    opt.options.defender ? 'defender' :
+    opt.options.attacker ? 'attacker' :
+    'defender';
 
-  var mode = 'full';
-  if (opt.options.light) {
-    mode = 'light';
-  } else if (opt.options.full) {
-    mode = 'full';
-  }
+  const mode =
+    opt.options.light ? 'light' :
+    opt.options.full ? 'full' :
+    'full';
 
-  var battleId = 0;
-  if (!opt.options.list && opt.argv.length > 0) {
-    battleId = parseInt(opt.argv[0]);
-    if (isNaN(battleId) || battleId < 1) {
-      bot.say(to, 'Invalid battle id');
-      return;
-    }
+  const battleId =
+    !opt.options.list && opt.argv.length > 0 ? parseInt(opt.argv[0]) : 0;
+  if (isNaN(battleId) || battleId < 1) {
+    bot.say(to, 'Invalid battle id');
+    return;
   }
 
   if (opt.options.list ||
@@ -172,13 +166,13 @@ function watchParse_(error, bot, from, to, args, country, channel) {
       country: country,
       channel: channel,
     }, function(error, battles) {
-      var l = battles.length;
+      const l = battles.length;
       if (l === 0) {
         bot.say(to, 'Watchlist is empty');
         return;
       }
 
-      for (var i = 0; i < l; i++) {
+      for (let i = 0; i < l; i++) {
         bot.say(to,
           (i + 1) + '. ' +
           country.server.address + '/battle.html?id=' + battles[i].battleId +
@@ -264,16 +258,16 @@ function watchParse_(error, bot, from, to, args, country, channel) {
 function showBattleRound(
   bot, organization, battle, battleInfo, battleRoundInfo
 ) {
-  var server = organization.country.server;
+  const server = organization.country.server;
 
-  var defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
-  var attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
-  var totalScore = defenderScore + attackerScore;
+  const defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
+  const attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
+  const totalScore = defenderScore + attackerScore;
 
-  var side = battle.side;
-  var wall = 0;
-  var percentage = 0;
-  var bonusRegion = null;
+  const side = battle.side;
+  let wall = 0;
+  let percentage = 0;
+  let bonusRegion = null;
 
   if (side === 'defender') {
     wall = defenderScore - attackerScore;
@@ -287,16 +281,13 @@ function showBattleRound(
     percentage = 0;
   }
 
-  var time = battleRoundInfo.remainingTimeInSeconds;
-  if (time < 0) {
-    time = 0;
-  }
+  const time = Math.max(0, battleRoundInfo.remainingTimeInSeconds);
 
   if (battleInfo.type === 'resistance' ||
       (battleInfo.type === 'direct' && side === 'defender')) {
     bonusRegion = battleInfo.label + ', ' + battleInfo.defender;
   } else if (battleInfo.type === 'direct' && side === 'attacker') {
-    var allies = battleInfo.attackerAllies.slice();
+    const allies = battleInfo.attackerAllies.slice();
     allies.unshift(battleInfo.attacker);
 
     server.getAttackerBonusRegion(battleInfo.id, allies,
@@ -352,7 +343,7 @@ function showBattleRound(
 function watchBattleRound(
   bot, organization, battle, battleInfo, battleRoundInfo, time, callback
 ) {
-  var timeout = function(watchpoint) {
+  const timeout = function(watchpoint) {
     watchlist[battle.id] = null;
     organization.getBattleRoundInfo(battleInfo.roundId,
       function(error, battleRoundInfo) {
@@ -361,7 +352,7 @@ function watchBattleRound(
           return;
         }
 
-        var frozen = false;
+        let frozen = false;
 
         if (battleRoundInfo.remainingTimeInSeconds === time && time > 0) {
           frozen = true;
@@ -374,11 +365,13 @@ function watchBattleRound(
             bot, battle.channel.name,
             'T-5 --- Standby --- hit at T-2 if bar is below 52%!!!');
         } else if (watchpoint === 120) {
-          var defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
-          var attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
-          var totalScore = defenderScore + attackerScore;
+          const defenderScore = numeral()
+            .unformat(battleRoundInfo.defenderScore);
+          const attackerScore = numeral()
+            .unformat(battleRoundInfo.attackerScore);
+          const totalScore = defenderScore + attackerScore;
 
-          var percentage = 0;
+          let percentage = 0;
 
           if (battle.side === 'defender') {
             percentage = defenderScore / totalScore;
@@ -407,8 +400,8 @@ function watchBattleRound(
       });
   };
 
-  var l = watchpoints[battle.mode].length;
-  for (var i = 0; i < l; i++) {
+  const l = watchpoints[battle.mode].length;
+  for (let i = 0; i < l; i++) {
     if (battleRoundInfo.remainingTimeInSeconds > watchpoints[battle.mode][i]) {
       watchlist[battle.id] = setTimeout(
           timeout,
@@ -420,8 +413,8 @@ function watchBattleRound(
     }
   }
 
-  var defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
-  var attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
+  const defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
+  const attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
 
   bot.say(battle.channel.name,
     'The round has ended in favor of ' +
@@ -455,8 +448,10 @@ function watchBattle(bot, organization, battle, callback) {
         }
 
         if (battleRoundInfo.remainingTimeInSeconds < 0) {
-          var defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
-          var attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
+          const defenderScore = numeral()
+            .unformat(battleRoundInfo.defenderScore);
+          const attackerScore = numeral()
+            .unformat(battleRoundInfo.attackerScore);
 
           bot.say(battle.channel.name,
               'The battle has ended in favor of ' +

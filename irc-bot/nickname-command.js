@@ -17,9 +17,9 @@
  */
 
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var User = require('../models/user');
+const User = require('../models/user');
 
 
 exports.add = function(bot, from, argv) {

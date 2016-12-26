@@ -17,24 +17,24 @@
  */
 
 
-var getopt = require('node-getopt');
+const getopt = require('node-getopt');
 
-var Server = require('../models/server');
-var Channel = require('../models/channel');
+const Server = require('../models/server');
+const Channel = require('../models/channel');
 
 
-var parseArgv = function(
+const parseArgv = function(
         bot, servers, usage, commandOptions, argv, min, max,
         to, callback) {
-  var command = usage.split(' ')[0];
-  var commonOptions = [
+  const command = usage.split(' ')[0];
+  const commonOptions = [
     ['h', 'help', 'Display this help'],
   ];
-  var serverOptions = [];
-  var allOptions = commandOptions;
+  const serverOptions = [];
+  let allOptions = commandOptions;
 
-  var l = servers.length;
-  for (var i = 0; i < l; i++) {
+  const l = servers.length;
+  for (let i = 0; i < l; i++) {
     serverOptions.push([
       servers[i].shortname,
       servers[i].name.toLowerCase(),
@@ -46,15 +46,15 @@ var parseArgv = function(
 
   allOptions = allOptions.concat(commonOptions);
 
-  var options = getopt.create(allOptions);
+  const options = getopt.create(allOptions);
   options.setHelp('Usage: ' + usage + '\n\n[[OPTIONS]]\n');
 
-  var error = null;
+  let error = null;
   options.error(function(e) {
     error = e;
   });
 
-  var opt = options.parse(argv.slice(1));
+  const opt = options.parse(argv.slice(1));
 
   if (error) {
     bot.say(to, error);
@@ -72,15 +72,15 @@ var parseArgv = function(
     return callback(null, null);
   }
 
-  var query = Channel.findOne({name: to}).populate('countries');
+  const query = Channel.findOne({name: to}).populate('countries');
   query.exec(function(error, channel) {
     if (error) {
       callback(error);
       return;
     }
 
-    var l = servers.length;
-    for (var i = 0; i < l; i++) {
+    const l = servers.length;
+    for (let i = 0; i < l; i++) {
       if (opt.options[servers[i].name.toLowerCase()]) {
         callback(null, {server: servers[i], opt: opt});
         return;

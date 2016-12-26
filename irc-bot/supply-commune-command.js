@@ -17,14 +17,14 @@
  */
 
 
-var cheerio = require('cheerio');
-var numeral = require('numeral');
+const cheerio = require('cheerio');
+const numeral = require('numeral');
 
-var parse = require('./parse');
-var supply = require('./supply-command');
+const parse = require('./parse');
+const supply = require('./supply-command');
 
-var Channel = require('../models/channel');
-var User = require('../models/user');
+const Channel = require('../models/channel');
+const User = require('../models/user');
 
 
 module.exports = function(bot, from, to, argv) {
@@ -42,7 +42,7 @@ module.exports = function(bot, from, to, argv) {
       return;
     }
 
-    var query = Channel.findOne({name: to}).populate({
+    const query = Channel.findOne({name: to}).populate({
       path: 'countries',
       match: {server: args.server._id},
     });
@@ -72,10 +72,10 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var countries = [];
+        const countries = [];
 
-        var l = channel.countries.length;
-        for (var i = 0; i < l; i++) {
+        const l = channel.countries.length;
+        for (let i = 0; i < l; i++) {
           if (channel.countries[i].getUserAccessLevel(user) > 0) {
             countries.push(channel.countries[i]);
           }
@@ -103,15 +103,12 @@ function supplyCommuneParse_(
     return;
   }
 
-  var opt = args.opt;
+  const opt = args.opt;
 
-  var reason = null;
-  if (opt.argv.length === 3) {
-    reason = opt.argv[2];
-  }
+  const reason = opt.argv.length === 3 ? opt.argv[2] : null;
 
-  var supplyQuantity = opt.argv[1].split('/');
-  var supplyFormat = country.supplyFormat.split('/');
+  const supplyQuantity = opt.argv[1].split('/');
+  const supplyFormat = country.supplyFormat.split('/');
   if (supplyQuantity.length > supplyFormat.length) {
     bot.say(to, 'Too many items');
     return;
@@ -126,9 +123,9 @@ function supplyCommuneParse_(
       return;
     }
 
-    var j = -1;
-    var l = country.channels.length;
-    for (var i = 0; i < l; i++) {
+    let j = -1;
+    const l = country.channels.length;
+    for (let i = 0; i < l; i++) {
       if (country.channels[i].channel.equals(channel.id)) {
         j = i;
       }
@@ -157,10 +154,10 @@ function supplyCommuneParse_(
 
 function getMembers_(country, organization, user, options, bot, to) {
   organization.createRequest(function(error, request, jar) {
-    var url = country.server.address + '/myMilitaryUnit.html';
+    const url = country.server.address + '/myMilitaryUnit.html';
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
 
         if (!$('a#userName').length) {
           organization.login(function(error) {
@@ -173,23 +170,24 @@ function getMembers_(country, organization, user, options, bot, to) {
           return;
         }
 
-        var unitId = parseInt(
+        const unitId = parseInt(
             $('div#unitStatusHead a').attr('href').split('=')[1]);
         options.unitId = unitId;
 
         if (options.reason === null) {
-          var day = numeral().unformat($('#contentDrop b').eq(1).text().trim());
+          const day = numeral().unformat($('#contentDrop b').eq(1)
+            .text().trim());
           options.reason = 'Commune Supply: Day ' + day;
         }
 
-        var membersList = $('div#militaryUnitContainer ~ div').eq(0).find('div')
-          .find('a.profileLink');
+        const membersList = $('div#militaryUnitContainer ~ div').eq(0)
+          .find('div').find('a.profileLink');
         options.membersId = [];
 
-        var l = membersList.length;
-        for (var i = 0; i < l; i++) {
-          var member = membersList.eq(i).clone().children().remove().end();
-          var citizenId = parseInt(member.attr('href').split('=')[1]);
+        const l = membersList.length;
+        for (let i = 0; i < l; i++) {
+          const member = membersList.eq(i).clone().children().remove().end();
+          const citizenId = parseInt(member.attr('href').split('=')[1]);
           options.membersId.push(citizenId);
         }
 
@@ -205,7 +203,7 @@ function getMembers_(country, organization, user, options, bot, to) {
 
 function getCompanies_(country, organization, user, options, bot, to) {
   organization.createRequest(function(error, request, jar) {
-    var url = country.server.address +
+    const url = country.server.address +
       (options.useOrgCompanies ?
         '/companies.html' :
         '/militaryUnitCompanies.html');
@@ -216,19 +214,19 @@ function getCompanies_(country, organization, user, options, bot, to) {
       },
     }, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
 
-        var companiesList = $('#myCompaniesToSortTable tr[class]');
+        const companiesList = $('#myCompaniesToSortTable tr[class]');
         options.companiesId = [];
 
-        var l = companiesList.length;
-        for (var i = 0; i < l; i++) {
+        const l = companiesList.length;
+        for (let i = 0; i < l; i++) {
           if (!parseInt(companiesList.eq(i).find('td').eq(-1).text())) {
             continue;
           }
 
-          var company = companiesList.eq(i).find('a[href*="company"]');
-          var companyId = parseInt(company.attr('href').split('=')[1]);
+          const company = companiesList.eq(i).find('a[href*="company"]');
+          const companyId = parseInt(company.attr('href').split('=')[1]);
           options.companiesId.push(companyId);
         }
 
@@ -252,11 +250,11 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
     if (options.skip) {
       options.skipIds = [];
 
-      var l = options.skip.length;
-      for (var j = 0; j < l; j++) {
-        var m = options.membersWorked.length;
-        var citizenId = -1;
-        for (var k = 0; k < m; k++) {
+      const l = options.skip.length;
+      for (let j = 0; j < l; j++) {
+        const m = options.membersWorked.length;
+        let citizenId = -1;
+        for (let k = 0; k < m; k++) {
           if (options.skip[j].toUpperCase() ===
               options.membersWorked[k].name.toUpperCase()) {
             citizenId = k;
@@ -279,15 +277,15 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
     }
 
     options.recipients = [];
-    var n = options.membersWorked.length;
-    for (var o = (options.jump ? options.jumpPos : 0); o < n; o++) {
-      if (options.skip && options.skipIds.includes(o)) {
+    const l = options.membersWorked.length;
+    for (let j = (options.jump ? options.jumpPos : 0); j < l; j++) {
+      if (options.skip && options.skipIds.includes(j)) {
         continue;
       }
 
       bot.say(to,
-        'Sending supplies to ' + options.membersWorked[o].name + '...');
-      options.recipients.push(options.membersWorked[o].id);
+        'Sending supplies to ' + options.membersWorked[j].name + '...');
+      options.recipients.push(options.membersWorked[j].id);
     }
 
     if (options.dryRun) {
@@ -300,7 +298,7 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
   }
 
   organization.createRequest(function(error, request, jar) {
-    var url = country.server.address + '/companyWorkResults.html';
+    const url = country.server.address + '/companyWorkResults.html';
     request(url, {
       method: 'GET',
       qs: {
@@ -308,26 +306,26 @@ function getWorkResults_(i, country, organization, user, options, bot, to) {
       },
     }, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
 
-        var workersList = $('#productivityTable tr:not([style])');
+        const workersList = $('#productivityTable tr:not([style])');
 
-        var l = workersList.length;
-        for (var j = 0; j < l; j++) {
-          var workerResults = workersList.eq(j).find('td');
+        const l = workersList.length;
+        for (let j = 0; j < l; j++) {
+          const workerResults = workersList.eq(j).find('td');
 
           if (!workerResults.eq(-2).find('div').length) {
             continue;
           }
 
-          var worker = workerResults.eq(0).find('a');
-          var citizenId = parseInt(worker.attr('href').split('=')[1]);
+          const worker = workerResults.eq(0).find('a');
+          const citizenId = parseInt(worker.attr('href').split('=')[1]);
 
           if (!options.membersId.includes(citizenId)) {
             continue;
           }
 
-          var name = worker.clone().children().remove().end().text().trim();
+          const name = worker.clone().children().remove().end().text().trim();
 
           if (options.jump &&
               options.jump.toUpperCase() === name.toUpperCase()) {
@@ -358,7 +356,7 @@ function sendSupplies_(i, country, organization, user, options, bot, to) {
     return;
   }
 
-  var name = options.membersWorked[i].name;
+  const name = options.membersWorked[i].name;
   options.citizen = options.membersWorked[i].id;
   options.id = true;
 
@@ -384,8 +382,8 @@ function sendSuppliesBatch_(i, country, organization, user, options, bot, to) {
     return;
   }
 
-  var product = options.supplyFormat[i].split(':')[0];
-  var quantity = parseInt(options.supplyQuantity[i]);
+  const product = options.supplyFormat[i].split(':')[0];
+  const quantity = parseInt(options.supplyQuantity[i]);
   organization.batchDonateProducts(
       user, options.recipients, product,
       quantity, options.reason,

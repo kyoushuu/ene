@@ -17,16 +17,16 @@
  */
 
 
-var cheerio = require('cheerio');
-var cron = require('cron');
+const cheerio = require('cheerio');
+const cron = require('cron');
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var Channel = require('../models/channel');
-var MotivatedCitizen = require('../models/motivated-citizen');
+const Channel = require('../models/channel');
+const MotivatedCitizen = require('../models/motivated-citizen');
 
-var motivateLock = {};
-var motivateDate = {};
+const motivateLock = {};
+const motivateDate = {};
 
 
 module.exports = function(bot, from, to, argv) {
@@ -45,7 +45,7 @@ module.exports = function(bot, from, to, argv) {
       return;
     }
 
-    var query = Channel.findOne({name: to}).populate({
+    const query = Channel.findOne({name: to}).populate({
       path: 'countries',
       match: {server: args.server._id},
     });
@@ -61,11 +61,11 @@ module.exports = function(bot, from, to, argv) {
         return;
       }
 
-      var query = channel.countries[0].populate('server');
+      const query = channel.countries[0].populate('server');
       query.populate('organizations', function(error, country) {
-        var j = -1;
-        var l = country.channels.length;
-        for (var i = 0; i < l; i++) {
+        let j = -1;
+        const l = country.channels.length;
+        for (let i = 0; i < l; i++) {
           if (country.channels[i].channel.equals(channel.id)) {
             j = i;
           }
@@ -95,15 +95,15 @@ function motivateParse_(error, bot, from, to, args, country) {
     return;
   }
 
-  var server = args.server;
-  var opt = args.opt;
+  const server = args.server;
+  const opt = args.opt;
 
   if (motivateLock[server.name] &&
       Date.now() - motivateLock[server.name].date < 120000 &&
       motivateLock[server.name].nick !== from) {
     if (motivateLock[server.name].done) {
-      var elapsedTime = Date.now() - motivateLock[server.name].date;
-      var remainingTime = (2 * 60) - (elapsedTime / 1000);
+      const elapsedTime = Date.now() - motivateLock[server.name].date;
+      const remainingTime = (2 * 60) - (elapsedTime / 1000);
       bot.say(to,
           'Command is locked in given server. Someone else used ' +
           'the command less than two minutes ago. Please try again ' +
@@ -139,28 +139,18 @@ function motivateParse_(error, bot, from, to, args, country) {
   }
   motivateDate[from][server.name] = Date.now();
 
-  var notify = true;
-  if (opt.options.message) {
-    notify = false;
-  }
+  const notify = opt.options.message;
 
-  var pack = 'food';
-  if (opt.options.weapon) {
-    pack = 'weapon';
-  } else if (opt.options.food) {
-    pack = 'food';
-  } else if (opt.options.gift) {
-    pack = 'gift';
-  }
+  const pack =
+    opt.options.weapon ? 'weapon' :
+    opt.options.food ? 'food' :
+    opt.options.gift ? 'gift' :
+    'food';
 
-  var find = 5;
-  if (opt.argv.length === 1) {
-    find = parseInt(opt.argv[0]);
-
-    if (!isFinite(opt.argv[0]) || find < 1) {
-      bot.say(to, 'Invalid find argument.');
-      return;
-    }
+  const find = opt.argv.length === 1 ? parseInt(opt.argv[0]) : 5;
+  if (!isFinite(opt.argv[0]) || find < 1) {
+    bot.say(to, 'Invalid find argument.');
+    return;
   }
 
   if (country.organizations.length === 0) {
@@ -228,10 +218,10 @@ function motivate(
         country, organization, options,
         callback, pageCallback, foundCallback) {
   organization.createRequest(function(error, request, jar) {
-    var url = country.server.address + '/newCitizens.html?countryId=0';
+    const url = country.server.address + '/newCitizens.html?countryId=0';
     request(url, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var $ = cheerio.load(body);
+        const $ = cheerio.load(body);
 
         if (!$('a#userName').length) {
           organization.login(function(error) {
@@ -245,7 +235,7 @@ function motivate(
           return;
         }
 
-        var page = $('ul#pagination li:nth-last-child(2) a');
+        let page = $('ul#pagination li:nth-last-child(2) a');
         if (page.length) {
           page = parseInt(page.text());
           motivateCheckPage_(
@@ -267,11 +257,11 @@ function motivateCheckPage_(
         callback, pageCallback, foundCallback) {
   pageCallback(page);
 
-  var url = country.server.address +
+  const url = country.server.address +
             '/newCitizens.html?countryId=0&page=' + page;
   request(url, function(error, response, body) {
     if (!error && response.statusCode === 200) {
-      var $ = cheerio.load(body);
+      const $ = cheerio.load(body);
 
       if (!$('a#userName').length) {
         organization.login(function(error) {
@@ -287,7 +277,7 @@ function motivateCheckPage_(
         return;
       }
 
-      var citizens = [];
+      const citizens = [];
       $('table.sortedTable tbody tr td:first-child a').each(function(i, elem) {
         citizens.push(parseInt($(this).attr('href').split('=')[1]));
       });
@@ -358,11 +348,11 @@ function motivateCheckCitizenFromServer_(
         country, organization, options, request,
         found, page, citizens, i, citizen,
         callback, pageCallback, foundCallback) {
-  var url = country.server.address +
+  const url = country.server.address +
             '/motivateCitizen.html?id=' + citizens[i];
   request(url, function(error, response, body) {
     if (!error && response.statusCode === 200) {
-      var $ = cheerio.load(body);
+      const $ = cheerio.load(body);
 
       if (!$('a#userName').length) {
         organization.login(function(error) {
@@ -400,17 +390,14 @@ function motivateCheckCitizenFromServer_(
         }
       }
 
-      var pack = 2;
-      if (options.pack === 'weapon') {
-        pack = 1;
-      } else if (options.pack === 'food') {
-        pack = 2;
-      } else if (options.pack === 'gift') {
-        pack = 3;
-      }
+      const pack =
+        options.pack === 'weapon' ? 1 :
+        options.pack === 'food' ? 2 :
+        options.pack === 'gift' ? 3 :
+        2;
 
       if ($('input[value=' + pack + ']').length) {
-        var motivateUrl = country.server.address +
+        const motivateUrl = country.server.address +
             '/motivateCitizen.html?id=' + citizens[i];
         foundCallback(motivateUrl);
         found++;
@@ -450,7 +437,7 @@ function motivateCheckNextCitizen_(
   }
 }
 
-var cleanJob = new cron.CronJob('00 00 00 * * *', function() {
+const cleanJob = new cron.CronJob('00 00 00 * * *', function() {
   MotivatedCitizen.remove(function(error) {
     if (!error) {
       console.log('Successfully cleared cache with a cron job.');

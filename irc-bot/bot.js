@@ -17,16 +17,16 @@
  */
 
 
-var irc = require('irc');
-var parse = require('shell-quote').parse;
+const irc = require('irc');
+const parse = require('shell-quote').parse;
 
-var Channel = require('../models/channel');
-var Battle = require('../models/battle');
+const Channel = require('../models/channel');
+const Battle = require('../models/battle');
 
-var watchBattle = require('./watch-command').watchBattle;
+const watchBattle = require('./watch-command').watchBattle;
 
 
-var commands = {
+const commands = {
   channel: {
     '!motivate': require('./motivate-command'),
     '!donate': require('./donate-command'),
@@ -47,7 +47,7 @@ var commands = {
 };
 
 
-var bot = new irc.Client(process.env.IRC_SERVER, process.env.IRC_NICKNAME, {
+const bot = new irc.Client(process.env.IRC_SERVER, process.env.IRC_NICKNAME, {
   userName: process.env.IRC_USERNAME,
   realName: process.env.IRC_REALNAME,
   channels: [],
@@ -56,9 +56,9 @@ var bot = new irc.Client(process.env.IRC_SERVER, process.env.IRC_NICKNAME, {
 });
 
 function isNickIdentified(nick, callback) {
-  var identified = false;
+  let identified = false;
 
-  var wrapper = function(message) {
+  const wrapper = function(message) {
     if (message.rawCommand === '307' &&
         message.args[1] === nick &&
                 message.args[2] === 'has identified for this nick') {
@@ -119,18 +119,18 @@ bot.addListener('registered', function(from, to, message) {
                 };
               }
 
-              var l = battles.length;
-              for (var j = 0; j < l; j++) {
-                var query = battles[j].country;
+              const l = battles.length;
+              for (let j = 0; j < l; j++) {
+                const query = battles[j].country;
                 query.populate('organizations', makePopulateCallback(j));
               }
             });
           };
         }
 
-        var l = channels.length;
-        for (var i = 0; i < l; i++) {
-          var joinArgs = channels[i].name;
+        const l = channels.length;
+        for (let i = 0; i < l; i++) {
+          let joinArgs = channels[i].name;
           if (channels[i].keyword) {
             joinArgs += ' ' + channels[i].keyword;
           }
@@ -149,7 +149,7 @@ bot.addListener('message#', function(from, to, message) {
     return;
   }
 
-  var argv = parse(message);
+  const argv = parse(message);
 
   if (commands.channel.hasOwnProperty(argv[0])) {
     isNickIdentified(from, function(identified) {
@@ -163,7 +163,7 @@ bot.addListener('message#', function(from, to, message) {
 });
 
 bot.addListener('pm', function(from, message) {
-  var argv = parse(message);
+  const argv = parse(message);
 
   if (commands.pm.hasOwnProperty(argv[0])) {
     isNickIdentified(from, function(identified) {

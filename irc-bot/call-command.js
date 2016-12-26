@@ -17,11 +17,11 @@
  */
 
 
-var irc = require('irc');
-var codes = irc.colors.codes;
+const irc = require('irc');
+const codes = irc.colors.codes;
 
-var Channel = require('../models/channel');
-var User = require('../models/user');
+const Channel = require('../models/channel');
+const User = require('../models/user');
 
 
 module.exports = function(bot, from, to, argv, raw) {
@@ -39,7 +39,7 @@ module.exports = function(bot, from, to, argv, raw) {
       return;
     }
 
-    var query = Channel.findOne({name: to}).populate({
+    const query = Channel.findOne({name: to}).populate({
       path: 'countries',
       match: {
         'accessList.account': user._id,
@@ -57,7 +57,7 @@ module.exports = function(bot, from, to, argv, raw) {
         return;
       }
 
-      var message = raw.trimLeft();
+      const message = raw.trimLeft();
       call(bot, to, message.substring(message.indexOf(' ') + 1));
     });
   });
@@ -65,7 +65,7 @@ module.exports = function(bot, from, to, argv, raw) {
 
 function call(bot, to, message) {
   bot.once('names' + to, function(nicks) {
-    var names = Object.getOwnPropertyNames(nicks);
+    const names = Object.getOwnPropertyNames(nicks);
     names.splice(names.indexOf(bot.nick), 1);
 
     bot.say(to, codes.bold + 'Listen up! ' + codes.reset + names.join(' '));

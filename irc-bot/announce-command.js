@@ -17,12 +17,12 @@
  */
 
 
-var irc = require('irc');
-var codes = irc.colors.codes;
+const irc = require('irc');
+const codes = irc.colors.codes;
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var User = require('../models/user');
+const User = require('../models/user');
 
 
 module.exports = function(bot, to, argv) {
@@ -62,16 +62,16 @@ function announceParse_(error, bot, to, args, user) {
     return;
   }
 
-  var opt = args.opt;
+  const opt = args.opt;
 
   announce(bot, to, opt.argv[0]);
 }
 
 function announce(bot, to, message) {
-  var chans = Object.getOwnPropertyNames(bot.chans);
+  const chans = Object.getOwnPropertyNames(bot.chans);
 
-  var l = chans.length;
-  for (var i = 0; i < l; i++) {
+  const l = chans.length;
+  for (let i = 0; i < l; i++) {
     bot.say(chans[i], codes.bold + 'ANNOUNCEMENT: ' + codes.reset + message);
   }
 }

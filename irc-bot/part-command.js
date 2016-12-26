@@ -17,9 +17,9 @@
  */
 
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var User = require('../models/user');
+const User = require('../models/user');
 
 
 module.exports = function(bot, to, argv) {
@@ -59,7 +59,7 @@ function partParse_(error, bot, to, args, user) {
     return;
   }
 
-  var opt = args.opt;
+  const opt = args.opt;
 
   part(bot, to, opt.argv[0]);
 }

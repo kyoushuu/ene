@@ -17,14 +17,14 @@
  */
 
 
-var irc = require('irc');
-var codes = irc.colors.codes;
-var numeral = require('numeral');
+const irc = require('irc');
+const codes = irc.colors.codes;
+const numeral = require('numeral');
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var Channel = require('../models/channel');
-var User = require('../models/user');
+const Channel = require('../models/channel');
+const User = require('../models/user');
 
 
 module.exports = function(bot, from, to, argv) {
@@ -39,7 +39,7 @@ module.exports = function(bot, from, to, argv) {
       return;
     }
 
-    var query = Channel.findOne({name: to}).populate({
+    const query = Channel.findOne({name: to}).populate({
       path: 'countries',
       match: {server: args.server._id},
     });
@@ -69,10 +69,10 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var countries = [];
+        const countries = [];
 
-        var l = channel.countries.length;
-        for (var i = 0; i < l; i++) {
+        const l = channel.countries.length;
+        for (let i = 0; i < l; i++) {
           if (channel.countries[i].getUserAccessLevel(user) > 0) {
             countries.push(channel.countries[i]);
           }
@@ -86,11 +86,11 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var query = countries[0].populate('server');
+        const query = countries[0].populate('server');
         query.populate('organizations', function(error, country) {
-          var j = -1;
-          var l = country.channels.length;
-          for (var i = 0; i < l; i++) {
+          let j = -1;
+          const l = country.channels.length;
+          for (let i = 0; i < l; i++) {
             if (country.channels[i].channel.equals(channel.id)) {
               j = i;
             }
@@ -116,16 +116,14 @@ function battleParse_(error, bot, from, to, args, country, user) {
     return;
   }
 
-  var opt = args.opt;
+  const opt = args.opt;
 
-  var side = 'defender';
-  if (opt.options.defender) {
-    side = 'defender';
-  } else if (opt.options.attacker) {
-    side = 'attacker';
-  }
+  const side =
+    opt.options.defender ? 'defender' :
+    opt.options.attacker ? 'attacker' :
+    'defender';
 
-  var battleId = parseInt(opt.argv[0]);
+  const battleId = parseInt(opt.argv[0]);
   if (isNaN(battleId) || battleId < 1) {
     bot.say(to, 'Invalid battle id');
     return;
@@ -157,13 +155,13 @@ function battleShow(country, organization, options, callback) {
           return;
         }
 
-        var defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
-        var attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
-        var totalScore = defenderScore + attackerScore;
+        const defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
+        const attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
+        const totalScore = defenderScore + attackerScore;
 
-        var side = options.side;
-        var wall = 0;
-        var percentage = 0;
+        const side = options.side;
+        let wall = 0;
+        let percentage = 0;
 
         if (side === 'defender') {
           wall = defenderScore - attackerScore;
@@ -177,10 +175,7 @@ function battleShow(country, organization, options, callback) {
           percentage = 0;
         }
 
-        var time = battleRoundInfo.remainingTimeInSeconds;
-        if (time < 0) {
-          time = 0;
-        }
+        const time = Math.max(0, battleRoundInfo.remainingTimeInSeconds);
 
         /* jshint camelcase: false */
         /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */

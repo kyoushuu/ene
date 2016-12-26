@@ -17,10 +17,10 @@
  */
 
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var Channel = require('../models/channel');
-var User = require('../models/user');
+const Channel = require('../models/channel');
+const User = require('../models/user');
 
 
 module.exports = function(bot, from, to, argv) {
@@ -34,7 +34,7 @@ module.exports = function(bot, from, to, argv) {
       return;
     }
 
-    var query = Channel.findOne({name: to}).populate({
+    const query = Channel.findOne({name: to}).populate({
       path: 'countries',
       match: {server: args.server._id},
     });
@@ -64,10 +64,10 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var countries = [];
+        const countries = [];
 
-        var l = channel.countries.length;
-        for (var i = 0; i < l; i++) {
+        const l = channel.countries.length;
+        for (let i = 0; i < l; i++) {
           if (channel.countries[i].getUserAccessLevel(user) > 0) {
             countries.push(channel.countries[i]);
           }
@@ -81,11 +81,11 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var query = countries[0].populate('server');
+        const query = countries[0].populate('server');
         query.populate('organizations', function(error, country) {
-          var j = -1;
-          var l = country.channels.length;
-          for (var i = 0; i < l; i++) {
+          let j = -1;
+          const l = country.channels.length;
+          for (let i = 0; i < l; i++) {
             if (country.channels[i].channel.equals(channel.id)) {
               j = i;
             }
@@ -111,12 +111,9 @@ function donateParse_(error, bot, from, to, args, country, user) {
     return;
   }
 
-  var opt = args.opt;
+  const opt = args.opt;
 
-  var reason = '';
-  if (opt.argv.length === 4) {
-    reason = opt.argv[3];
-  }
+  const reason = opt.argv.length === 4 ? opt.argv[3] : '';
 
   donate(country, country.organizations[0], user, {
     citizen: opt.argv[0],
@@ -138,7 +135,7 @@ function donateParse_(error, bot, from, to, args, country, user) {
 function donate(country, organization, user, options, callback) {
   if (!options.id) {
     organization.createRequest(function(error, request, jar) {
-      var url = country.server.address + '/apiCitizenByName.html';
+      const url = country.server.address + '/apiCitizenByName.html';
       request(url, {
         method: 'GET',
         qs: {
@@ -146,7 +143,7 @@ function donate(country, organization, user, options, callback) {
         },
       }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-          var citizenInfo = JSON.parse(body);
+          const citizenInfo = JSON.parse(body);
 
           if (citizenInfo.error) {
             callback(citizenInfo.error);

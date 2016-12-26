@@ -17,14 +17,14 @@
  */
 
 
-var mongoose = require('mongoose');
-var moment = require('moment-timezone');
+const mongoose = require('mongoose');
+const moment = require('moment-timezone');
 
-var parse = require('./parse');
+const parse = require('./parse');
 
-var Channel = require('../models/channel');
-var User = require('../models/user');
-var ProductDonation = require('../models/productDonation');
+const Channel = require('../models/channel');
+const User = require('../models/user');
+const ProductDonation = require('../models/productDonation');
 
 
 module.exports = function(bot, from, to, argv) {
@@ -40,7 +40,7 @@ module.exports = function(bot, from, to, argv) {
       return;
     }
 
-    var query = Channel.findOne({name: to}).populate({
+    const query = Channel.findOne({name: to}).populate({
       path: 'countries',
       match: {server: args.server._id},
     });
@@ -70,10 +70,10 @@ module.exports = function(bot, from, to, argv) {
           return;
         }
 
-        var countries = [];
+        const countries = [];
 
-        var l = channel.countries.length;
-        for (var i = 0; i < l; i++) {
+        const l = channel.countries.length;
+        for (let i = 0; i < l; i++) {
           if (channel.countries[i].getUserAccessLevel(user) > 0) {
             countries.push(channel.countries[i]);
           }
@@ -99,21 +99,18 @@ function supplyParse_(error, bot, from, to, args, channel, country, user) {
     return;
   }
 
-  var opt = args.opt;
+  const opt = args.opt;
 
-  var reason = '';
-  if (opt.argv.length === 3) {
-    reason = opt.argv[2];
-  }
+  const reason = opt.argv.length === 3 ? opt.argv[2] : '';
 
-  var supplyQuantity = opt.argv[1].split('/');
-  var supplyFormat = country.supplyFormat.split('/');
+  const supplyQuantity = opt.argv[1].split('/');
+  const supplyFormat = country.supplyFormat.split('/');
   if (supplyQuantity.length > supplyFormat.length) {
     bot.say(to, 'Too many items');
     return;
   }
 
-  var query = null;
+  let query;
   if (opt.options.from) {
     if (country.getUserAccessLevel(user) < 3) {
       bot.say(to, 'Permission denied.');
@@ -134,9 +131,9 @@ function supplyParse_(error, bot, from, to, args, channel, country, user) {
       return;
     }
 
-    var j = -1;
-    var l = country.channels.length;
-    for (var i = 0; i < l; i++) {
+    let j = -1;
+    const l = country.channels.length;
+    for (let i = 0; i < l; i++) {
       if (country.channels[i].channel.equals(channel.id)) {
         j = i;
       }
@@ -172,7 +169,7 @@ function supplyParse_(error, bot, from, to, args, channel, country, user) {
 function supply(country, organization, user, options, callback) {
   if (!options.id) {
     organization.createRequest(function(error, request, jar) {
-      var url = country.server.address + '/apiCitizenByName.html';
+      const url = country.server.address + '/apiCitizenByName.html';
       request(url, {
         method: 'GET',
         qs: {
@@ -180,7 +177,7 @@ function supply(country, organization, user, options, callback) {
         },
       }, function(error, response, body) {
         if (!error && response.statusCode === 200) {
-          var citizenInfo = JSON.parse(body);
+          const citizenInfo = JSON.parse(body);
 
           if (citizenInfo.error) {
             callback(citizenInfo.error);
@@ -201,9 +198,9 @@ function supply(country, organization, user, options, callback) {
     return;
   }
 
-  var l = options.supplyQuantity.length;
-  for (var i = 0; i < l; i++) {
-    var c = options.supplyQuantity[i];
+  const l = options.supplyQuantity.length;
+  for (let i = 0; i < l; i++) {
+    const c = options.supplyQuantity[i];
 
     if (!isFinite(c) || c < 0) {
       callback('Quantity #' + (i + 1) + ' is not a valid number');
@@ -211,8 +208,8 @@ function supply(country, organization, user, options, callback) {
     }
   }
 
-  var dayStart = moment().tz('Europe/Warsaw').startOf('day').unix();
-  var dayStartObjectId = new mongoose.Types.ObjectId(dayStart);
+  const dayStart = moment().tz('Europe/Warsaw').startOf('day').unix();
+  const dayStartObjectId = new mongoose.Types.ObjectId(dayStart);
   supplyCheckMax(organization, user, dayStartObjectId, options, 0, callback);
 }
 
@@ -223,7 +220,7 @@ function supplyCheckMax(
     return;
   }
 
-  var limit = options.supplyFormat[i].split(':');
+  const limit = options.supplyFormat[i].split(':');
   if (limit.length < 2) {
     supplyCheckMax(
         organization, user, dayStartObjectId, options, ++i, callback);
@@ -274,8 +271,8 @@ function supplyDonate(organization, user, options, i, callback) {
     return;
   }
 
-  var product = options.supplyFormat[i].split(':')[0];
-  var quantity = parseInt(options.supplyQuantity[i]);
+  const product = options.supplyFormat[i].split(':')[0];
+  const quantity = parseInt(options.supplyQuantity[i]);
   organization.donateProducts(
       user, options.citizen, product,
       quantity, options.reason,
