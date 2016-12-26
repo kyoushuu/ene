@@ -44,8 +44,8 @@ const api = require('./routes/api');
 const secret = process.env.OPENSHIFT_SECRET_TOKEN || 'your secret here';
 
 
-passport.use(new LocalStrategy(function(username, password, done) {
-  User.findOne({username: username}, function(error, user) {
+passport.use(new LocalStrategy((username, password, done) => {
+  User.findOne({username: username}, (error, user) => {
     if (error) {
       return done(error);
     }
@@ -60,12 +60,12 @@ passport.use(new LocalStrategy(function(username, password, done) {
   });
 }));
 
-passport.serializeUser(function(user, done) {
+passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
-passport.deserializeUser(function(id, done) {
-  User.findById(id, function(err, user) {
+passport.deserializeUser((id, done) => {
+  User.findById(id, (err, user) => {
     done(err, user);
   });
 });
@@ -105,7 +105,7 @@ app.use('/channel', channel);
 app.use('/api', api);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use((req, res, next) => {
   const err = new Error('Not Found');
   err.status = 404;
   next(err);
@@ -116,7 +116,7 @@ app.use(function(req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
+  app.use((err, req, res, next) => {
     res.status(err.status || 500);
     res.render('error', {
       message: err.message,
@@ -127,7 +127,7 @@ if (app.get('env') === 'development') {
 
 // production error handler
 // no stacktraces leaked to user
-app.use(function(err, req, res, next) {
+app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render('error', {
     message: err.message,
