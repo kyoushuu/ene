@@ -17,12 +17,12 @@
  */
 
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var common = require('./common');
+const common = require('./common');
 
-var Channel = require('../models/channel');
+const Channel = require('../models/channel');
 
 
 router.route('/new').get(common.ensureSignedIn, function(req, res) {

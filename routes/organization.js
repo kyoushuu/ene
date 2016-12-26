@@ -17,18 +17,18 @@
  */
 
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var common = require('./common');
+const common = require('./common');
 
-var Organization = require('../models/organization');
-var Country = require('../models/country');
-var Server = require('../models/server');
+const Organization = require('../models/organization');
+const Country = require('../models/country');
+const Server = require('../models/server');
 
 
 router.route('/new').get(common.ensureSignedIn, function(req, res) {
-  var query = Server.find({}, null, {sort: {_id: 1}});
+  const query = Server.find({}, null, {sort: {_id: 1}});
   query.populate('countries', null, null, {sort: {_id: 1}});
   query.exec(function(error, servers) {
     if (error) {
@@ -46,7 +46,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
     });
   });
 }).post(common.ensureSignedIn, function(req, res) {
-  var query = Country.findById(req.body.country).populate('server');
+  const query = Country.findById(req.body.country).populate('server');
   query.exec(function(error, country) {
     if (error) {
       console.log(error);
@@ -62,7 +62,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
       return;
     }
 
-    var organization = new Organization({
+    const organization = new Organization({
       username: req.body.username,
       password: req.body.password,
       shortname: req.body.shortname,
@@ -97,7 +97,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
 });
 
 function doCreateFailed(req, res, err) {
-  var query = Server.find({}, null, {sort: {_id: 1}});
+  const query = Server.find({}, null, {sort: {_id: 1}});
   query.populate('countries', null, null, {sort: {_id: 1}});
   query.exec(function(error, servers) {
     if (error) {
@@ -122,7 +122,7 @@ function doCreateFailed(req, res, err) {
 
 
 router.get('/:organizationId', common.ensureSignedIn, function(req, res) {
-  var query = Organization.findById(req.params.organizationId);
+  const query = Organization.findById(req.params.organizationId);
   query.populate('country');
   query.exec(function(error, organization) {
     if (error || !organization) {
@@ -158,7 +158,7 @@ router.get('/:organizationId', common.ensureSignedIn, function(req, res) {
 
 router.route('/edit/:organizationId').get(common.ensureSignedIn,
 function(req, res) {
-  var query = Organization.findById(req.params.organizationId);
+  const query = Organization.findById(req.params.organizationId);
   query.exec(function(error, organization) {
     if (error || !organization) {
       res.sendStatus(404);
@@ -171,7 +171,7 @@ function(req, res) {
     });
   });
 }).post(common.ensureSignedIn, function(req, res) {
-  var query = Organization.findById(req.params.organizationId);
+  const query = Organization.findById(req.params.organizationId);
   query.populate('country');
   query.exec(function(error, organization) {
     if (error || !organization) {
@@ -179,7 +179,7 @@ function(req, res) {
       return;
     }
 
-    var country = organization.country;
+    const country = organization.country;
 
     if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
       res.sendStatus(403);

@@ -17,15 +17,15 @@
  */
 
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var common = require('./common');
+const common = require('./common');
 
-var Server = require('../models/server');
-var Country = require('../models/country');
-var User = require('../models/user');
-var Channel = require('../models/channel');
+const Server = require('../models/server');
+const Country = require('../models/country');
+const User = require('../models/user');
+const Channel = require('../models/channel');
 
 
 router.route('/new').get(common.ensureSignedIn, function(req, res) {
@@ -113,7 +113,7 @@ function doCreateFailed(req, res, err) {
 
 
 router.get('/:countryId', common.ensureSignedIn, function(req, res) {
-  var query = Country.findById(req.params.countryId);
+  const query = Country.findById(req.params.countryId);
   query.populate('server organizations').exec(function(error, country) {
     if (error || !country) {
       res.sendStatus(404);
@@ -130,7 +130,7 @@ router.get('/:countryId', common.ensureSignedIn, function(req, res) {
 
 
 router.get('/:countryId/access', common.ensureSignedIn, function(req, res) {
-  var query = Country.findById(req.params.countryId);
+  const query = Country.findById(req.params.countryId);
   query.populate('accessList.account').exec(function(error, country) {
     if (error || !country) {
       res.sendStatus(404);
@@ -184,10 +184,10 @@ function(req, res) {
         return;
       }
 
-      var access = null;
-      var accessLevel = 0;
-      var l = country.accessList.length;
-      for (var i = 0; i < l; i++) {
+      let access = null;
+      let accessLevel = 0;
+      const l = country.accessList.length;
+      for (let i = 0; i < l; i++) {
         if (country.accessList[i].account.equals(req.user._id)) {
           accessLevel = country.accessList[i].accessLevel;
         }
@@ -255,7 +255,7 @@ function(req, res) {
       return;
     }
 
-    var access = country.accessList.id(req.params.accessId);
+    const access = country.accessList.id(req.params.accessId);
     if (!access) {
       req.flash('error', 'Access not found');
       res.redirect('/country/' + country.id + '/access');
@@ -290,7 +290,7 @@ function(req, res) {
 
 
 router.get('/:countryId/channel', common.ensureSignedIn, function(req, res) {
-  var query = Country.findById(req.params.countryId);
+  const query = Country.findById(req.params.countryId);
   query.populate('channels.channel').exec(function(error, country) {
     if (error || !country) {
       res.sendStatus(404);
@@ -348,15 +348,15 @@ function(req, res) {
         return;
       }
 
-      var l = country.channels.length;
-      for (var i = 0; i < l; i++) {
+      const l = country.channels.length;
+      for (let i = 0; i < l; i++) {
         if (country.channels[i].channel.equals(channel._id)) {
           doAddChannelFailed(req, res, 'Channel already exists');
           return;
         }
       }
 
-      var types = [];
+      const types = [];
 
       if (req.body.general) {
         types.push('general');
@@ -427,7 +427,7 @@ function(req, res) {
       return;
     }
 
-    var _channel = country.channels.id(req.params.channelId);
+    const _channel = country.channels.id(req.params.channelId);
     if (!_channel) {
       req.flash('error', 'Channel not found in country');
       res.redirect('/country/' + country.id + '/channel');
@@ -440,7 +440,7 @@ function(req, res) {
         return;
       }
 
-      var countryId = channel.countries.indexOf(country.id);
+      const countryId = channel.countries.indexOf(country.id);
       if (countryId < 0) {
         req.flash('error', 'Country not found in channel');
         res.redirect('/country/' + country.id + '/channel');

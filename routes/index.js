@@ -17,10 +17,10 @@
  */
 
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var Country = require('../models/country');
+const Country = require('../models/country');
 
 /* GET home page. */
 router.get('/', function(req, res) {

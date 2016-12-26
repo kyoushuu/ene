@@ -17,11 +17,11 @@
  */
 
 
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var Server = require('../models/server');
-var Organization = require('../models/organization');
+const Server = require('../models/server');
+const Organization = require('../models/organization');
 
 
 router.get('/:server/battle/:battleId', function(req, res) {
@@ -59,7 +59,7 @@ router.get('/:server/battle/:battleId', function(req, res) {
         return;
       }
 
-      var battleId = parseInt(req.params.battleId);
+      const battleId = parseInt(req.params.battleId);
       if (isNaN(battleId) || battleId < 1) {
         res.end(JSON.stringify({
           'error': 'Invalid battle id',
@@ -71,8 +71,9 @@ router.get('/:server/battle/:battleId', function(req, res) {
         return;
       }
 
-      var l = server.countries.length;
-      for (var i = 0; i < l; i++) {
+      let i;
+      const l = server.countries.length;
+      for (i = 0; i < l; i++) {
         if (server.countries[i].organizations.length) {
           break;
         }

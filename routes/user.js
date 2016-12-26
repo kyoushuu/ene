@@ -17,22 +17,22 @@
  */
 
 
-var express = require('express');
-var router = express.Router();
-var nodemailer = require('nodemailer');
-var passport = require('passport');
+const express = require('express');
+const router = express.Router();
+const nodemailer = require('nodemailer');
+const passport = require('passport');
 
-var common = require('./common');
+const common = require('./common');
 
-var User = require('../models/user');
-var Server = require('../models/server');
+const User = require('../models/user');
+const Server = require('../models/server');
 
 
 function sendEmail(user, subject, body, callback) {
-  var domain = process.env.DOMAIN ||
+  const domain = process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost';
-  var sender = process.env.SMTP_SENDER || 'no-reply@' + domain;
-  var transport = nodemailer.createTransport(process.env.SMTP_URL);
+  const sender = process.env.SMTP_SENDER || 'no-reply@' + domain;
+  const transport = nodemailer.createTransport(process.env.SMTP_URL);
 
   transport.sendMail({
     from: {name: 'Ene Project', address: sender},
@@ -73,7 +73,7 @@ router.route('/new').get(function(req, res) {
 });
 
 function sendConfirmEmail(user, callback) {
-  var address = process.env.ADDRESS || process.env.DOMAIN ||
+  const address = process.env.ADDRESS || process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
 
   sendEmail(user, 'New account confirmation',
@@ -193,7 +193,7 @@ function doRecoverFailed(res, user, email, error) {
 }
 
 function sendRecoverEmail(user, callback) {
-  var address = process.env.ADDRESS || process.env.DOMAIN ||
+  const address = process.env.ADDRESS || process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
 
   sendEmail(user, 'Account Recovery',
@@ -306,8 +306,8 @@ function(req, res) {
       return;
     }
 
-    var l = req.user.citizens.length;
-    for (var i = 0; i < l; i++) {
+    const l = req.user.citizens.length;
+    for (let i = 0; i < l; i++) {
       if (req.user.citizens[i].name === req.body.name &&
           req.user.citizens[i].server.equals(server._id)) {
         doAddCitizenFailed(req, res, 'Citizen already exists');
