@@ -54,7 +54,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
     }
 
     req.flash('info', 'Channel successfully created');
-    res.redirect('/channel/' + channel.id);
+    res.redirect(`/channel/${channel.id}`);
   });
 });
 

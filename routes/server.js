@@ -55,7 +55,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
     }
 
     req.flash('info', 'Server successfully created');
-    res.redirect('/server/' + server.id);
+    res.redirect(`/server/${server.id}`);
   });
 });
 
@@ -120,7 +120,7 @@ router.route('/edit/:serverId').get(common.ensureSignedIn, function(req, res) {
       }
 
       req.flash('info', 'Server successfully saved');
-      res.redirect('/server/' + server.id);
+      res.redirect(`/server/${server.id}`);
     });
   });
 });

@@ -83,7 +83,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
         }
 
         req.flash('info', 'Country successfully created');
-        res.redirect('/country/' + country.id);
+        res.redirect(`/country/${country.id}`);
       });
     });
   });
@@ -231,7 +231,7 @@ function(req, res) {
         }
 
         req.flash('info', 'Access successfully added');
-        res.redirect('/country/' + country.id + '/access');
+        res.redirect(`/country/${country.id}/access`);
       });
     });
   });
@@ -258,7 +258,7 @@ function(req, res) {
     const access = country.accessList.id(req.params.accessId);
     if (!access) {
       req.flash('error', 'Access not found');
-      res.redirect('/country/' + country.id + '/access');
+      res.redirect(`/country/${country.id}/access`);
       return;
     }
 
@@ -283,7 +283,7 @@ function(req, res) {
       }
 
       req.flash('info', 'Access successfully removed');
-      res.redirect('/country/' + country.id + '/access');
+      res.redirect(`/country/${country.id}/access`);
     });
   });
 });
@@ -399,7 +399,7 @@ function(req, res) {
           }
 
           req.flash('info', 'Channel successfully added');
-          res.redirect('/country/' + country.id);
+          res.redirect(`/country/${country.id}`);
         });
       });
     });
@@ -430,7 +430,7 @@ function(req, res) {
     const _channel = country.channels.id(req.params.channelId);
     if (!_channel) {
       req.flash('error', 'Channel not found in country');
-      res.redirect('/country/' + country.id + '/channel');
+      res.redirect(`/country/${country.id}/channel`);
       return;
     }
 
@@ -443,7 +443,7 @@ function(req, res) {
       const countryId = channel.countries.indexOf(country.id);
       if (countryId < 0) {
         req.flash('error', 'Country not found in channel');
-        res.redirect('/country/' + country.id + '/channel');
+        res.redirect(`/country/${country.id}/channel`);
         return;
       }
 
@@ -470,7 +470,7 @@ function(req, res) {
           }
 
           req.flash('info', 'Channel successfully removed');
-          res.redirect('/country/' + country.id + '/channel');
+          res.redirect(`/country/${country.id}/channel`);
         });
       });
     });

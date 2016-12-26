@@ -31,7 +31,7 @@ const Server = require('../models/server');
 function sendEmail(user, subject, body, callback) {
   const domain = process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost';
-  const sender = process.env.SMTP_SENDER || 'no-reply@' + domain;
+  const sender = process.env.SMTP_SENDER || `no-reply@${domain}`;
   const transport = nodemailer.createTransport(process.env.SMTP_URL);
 
   transport.sendMail({
@@ -57,7 +57,7 @@ router.route('/new').get(function(req, res) {
     if (!error) {
       sendConfirmEmail(user, function(error) {
         if (error) {
-          console.log('Failed to send confirmation email: ' + error);
+          console.log(`Failed to send confirmation email: ${error}`);
         }
         res.render('welcome', {title: 'Welcome'});
       });
@@ -77,9 +77,10 @@ function sendConfirmEmail(user, callback) {
       process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
 
   sendEmail(user, 'New account confirmation',
-            'Welcome ' + user.username + ',\n\n' +
-            'You can confirm your account through this link:\n' +
-            'http://' + address + '/user/confirm/' + user.confirmCode,
+`Welcome ${user.username},
+
+You can confirm your account through this link:
+http://${address}/user/confirm/${user.confirmCode}`,
             function(error, response) {
               if (!error) {
                 callback(null);
@@ -98,7 +99,7 @@ router.route('/confirm').get(common.ensureSignedIn, function(req, res) {
 }).post(common.ensureSignedIn, function(req, res) {
   sendConfirmEmail(req.user, function(error) {
     if (error) {
-      console.log('Failed to send confirmation email: ' + error);
+      console.log(`Failed to send confirmation email: ${error}`);
     }
     res.render('confirm', {
       title: 'Email Resent',
@@ -172,7 +173,7 @@ router.route('/recover').get(function(req, res) {
 
       sendRecoverEmail(user, function(error) {
         if (error) {
-          console.log('Failed to send recovery email: ' + error);
+          console.log(`Failed to send recovery email: ${error}`);
         }
 
         res.render('recover', {
@@ -197,9 +198,10 @@ function sendRecoverEmail(user, callback) {
       process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
 
   sendEmail(user, 'Account Recovery',
-            'Hello ' + user.username + ',\n\n' +
-            'You can recover your account through this link:\n' +
-            'http://' + address + '/user/recover/' + user.recoverCode,
+`Hello ${user.username},
+
+You can recover your account through this link:
+http://${address}/user/recover/${user.recoverCode}`,
             function(error, response) {
               if (!error) {
                 callback(null);
@@ -327,7 +329,7 @@ function(req, res) {
       }
 
       req.flash('info', 'Citizen successfully added');
-      res.redirect('/user/' + req.user.id);
+      res.redirect(`/user/${req.user.id}`);
     });
   });
 });

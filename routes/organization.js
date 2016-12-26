@@ -71,25 +71,25 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
 
     organization.login(function(error) {
       if (error) {
-        doCreateFailed(req, res, 'Failed to login: ' + error);
+        doCreateFailed(req, res, `Failed to login: ${error}`);
         return;
       }
 
       organization.save(function(error) {
         if (error) {
-          doCreateFailed(req, res, 'Failed to save organization: ' + error);
+          doCreateFailed(req, res, `Failed to save organization: ${error}`);
           return;
         }
 
         country.organizations.push(organization);
         country.save(function(error) {
           if (error) {
-            doCreateFailed(req, res, 'Failed to save country: ' + error);
+            doCreateFailed(req, res, `Failed to save country: ${error}`);
             return;
           }
 
           req.flash('info', 'Organization successfully created');
-          res.redirect('/organization/' + organization.id);
+          res.redirect(`/organization/${organization.id}`);
         });
       });
     });
@@ -207,7 +207,7 @@ function(req, res) {
         }
 
         req.flash('info', 'Organization successfully saved');
-        res.redirect('/organization/' + organization.id);
+        res.redirect(`/organization/${organization.id}`);
       });
     });
   });
