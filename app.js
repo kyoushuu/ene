@@ -17,31 +17,31 @@
  */
 
 
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var session = require('express-session');
-var bodyParser = require('body-parser');
+const express = require('express');
+const path = require('path');
+const favicon = require('serve-favicon');
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const bodyParser = require('body-parser');
 
-var MongoStore = require('connect-mongo')(session);
-var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
-var flash = require('connect-flash');
+const MongoStore = require('connect-mongo')(session);
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const flash = require('connect-flash');
 
-var db = require('./models/db');
-var User = require('./models/user');
+const db = require('./models/db');
+const User = require('./models/user');
 
-var routes = require('./routes/index');
-var user = require('./routes/user');
-var server = require('./routes/server');
-var country = require('./routes/country');
-var organization = require('./routes/organization');
-var channel = require('./routes/channel');
-var api = require('./routes/api');
+const routes = require('./routes/index');
+const user = require('./routes/user');
+const server = require('./routes/server');
+const country = require('./routes/country');
+const organization = require('./routes/organization');
+const channel = require('./routes/channel');
+const api = require('./routes/api');
 
-var secret = process.env.OPENSHIFT_SECRET_TOKEN || 'your secret here';
+const secret = process.env.OPENSHIFT_SECRET_TOKEN || 'your secret here';
 
 
 passport.use(new LocalStrategy(function(username, password, done) {
@@ -71,7 +71,7 @@ passport.deserializeUser(function(id, done) {
 });
 
 
-var app = express();
+const app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -106,7 +106,7 @@ app.use('/api', api);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  var err = new Error('Not Found');
+  const err = new Error('Not Found');
   err.status = 404;
   next(err);
 });
