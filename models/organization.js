@@ -83,7 +83,7 @@ organizationSchema.path('username').validate(function(value, respond) {
     _id: {$ne: this._id},
     username: value,
     country: this.country,
-  }, function(error, organizations) {
+  }, (error, organizations) => {
     if (error) {
       console.log(error);
       return respond(false);
@@ -102,7 +102,7 @@ organizationSchema.path('shortname').validate(function(value, respond) {
     _id: {$ne: this._id},
     shortname: value,
     country: this.country,
-  }, function(error, organizations) {
+  }, (error, organizations) => {
     if (error) {
       console.log(error);
       return respond(false);
@@ -124,7 +124,7 @@ function populateCountry(self, callback) {
 
 function populateServer(self, callback) {
   if (!self.country._id) {
-    populateCountry(self, function(error) {
+    populateCountry(self, (error) => {
       if (error) {
         callback(error);
         return;
@@ -162,7 +162,7 @@ organizationSchema.methods.createRequest = function(callback) {
       },
     });
 
-    callback(null, function(uri, options, c) {
+    callback(null, (uri, options, c) => {
       if (typeof c === 'undefined') {
         c = options;
         options = {};
@@ -170,21 +170,21 @@ organizationSchema.methods.createRequest = function(callback) {
 
       const r = req(uri, options);
 
-      r.on('response', function(res) {
+      r.on('response', (res) => {
         const chunks = [];
-        res.on('data', function(chunk) {
+        res.on('data', (chunk) => {
           chunks.push(chunk);
         });
 
-        res.on('end', function() {
+        res.on('end', () => {
           const buffer = Buffer.concat(chunks);
           const encoding = res.headers['content-encoding'];
           if (encoding === 'gzip') {
-            zlib.gunzip(buffer, function(error, decoded) {
+            zlib.gunzip(buffer, (error, decoded) => {
               c(error, res, decoded && decoded.toString());
             });
           } else if (encoding === 'deflate') {
-            zlib.inflate(buffer, function(error, decoded) {
+            zlib.inflate(buffer, (error, decoded) => {
               c(error, res, decoded && decoded.toString());
             });
           } else {
@@ -193,7 +193,7 @@ organizationSchema.methods.createRequest = function(callback) {
         });
       });
 
-      r.on('error', function(error) {
+      r.on('error', (error) => {
         c(error);
       });
     }, jar);
@@ -202,7 +202,7 @@ organizationSchema.methods.createRequest = function(callback) {
   if (this.country._id && this.country.server._id) {
     createRequest();
   } else {
-    populateServer(self, function(error) {
+    populateServer(self, (error) => {
       if (error) {
         callback(error);
         return;
@@ -226,13 +226,13 @@ organizationSchema.methods.login = function(callback) {
         remember: 'true',
         submit: 'Login',
       },
-    }, function(error, response, body) {
+    }, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
         if ($('a#userName').length) {
           self.cookies =
               jar.getCookieString(self.country.server.address);
-          self.save(function(error) {
+          self.save((error) => {
             callback(error);
           });
         } else if (retries) {
@@ -243,7 +243,7 @@ organizationSchema.methods.login = function(callback) {
           if (msg ===
               'Wrong password. Please pay attention to upper and lower case!') {
             self.lock = moment().add(1, 'days').toDate();
-            self.save(function(error) {
+            self.save((error) => {
               callback('Failed to login, locked');
             });
             return;
@@ -266,13 +266,13 @@ organizationSchema.methods.login = function(callback) {
     return;
   }
 
-  this.createRequest(function(error, request, jar) {
+  this.createRequest((error, request, jar) => {
     if (error) {
       callback(error);
     }
 
     const url = self.country.server.address;
-    request(url, function(error, response, body) {
+    request(url, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
         if ($('a#userName').length) {
@@ -290,13 +290,13 @@ organizationSchema.methods.login = function(callback) {
 organizationSchema.methods.logout = function(callback) {
   const self = this;
 
-  this.createRequest(function(error, request, jar) {
+  this.createRequest((error, request, jar) => {
     if (error) {
       callback(error);
     }
 
     const url = `${self.country.server.address}/logout.html`;
-    request(url, function(error, response, body) {
+    request(url, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
         if ($('div#loginContainer').length) {
@@ -315,7 +315,7 @@ organizationSchema.methods.donateProducts = function(
         sender, citizenId, product, quantity, reason, callback) {
   const self = this;
 
-  this.createRequest(function(error, request, jar) {
+  this.createRequest((error, request, jar) => {
     if (error) {
       callback(error);
     }
@@ -337,11 +337,11 @@ organizationSchema.methods.donateProducts = function(
         reason: reason,
         submit: 'Donate',
       },
-    }, function(error, response, body) {
+    }, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
         if (!$('a#userName').length) {
-          self.login(function(error) {
+          self.login((error) => {
             if (error) {
               callback(error);
               return;
@@ -359,7 +359,7 @@ organizationSchema.methods.donateProducts = function(
             product: product,
             quantity: quantity,
             reason: reason,
-          }, function(error, donation) {
+          }, (error, donation) => {
             callback(error);
           });
         } else if ($('#citizenMessage div').length) {
@@ -378,7 +378,7 @@ organizationSchema.methods.batchDonateProducts = function(
         sender, citizenIds, product, quantity, reason, callback) {
   const self = this;
 
-  this.createRequest(function(error, request, jar) {
+  this.createRequest((error, request, jar) => {
     if (error) {
       callback(error);
     }
@@ -404,11 +404,11 @@ organizationSchema.methods.batchDonateProducts = function(
     request(url, {
       method: 'POST',
       form: form,
-    }, function(error, response, body) {
+    }, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
         if (!$('a#userName').length) {
-          self.login(function(error) {
+          self.login((error) => {
             if (error) {
               callback(error);
               return;
@@ -427,7 +427,7 @@ organizationSchema.methods.batchDonateProducts = function(
             product: product,
             quantity: quantity,
             reason: reason,
-          }, function(error, donation) {
+          }, (error, donation) => {
             callback(error);
           });
         } else if ($('#citizenMessage div').length) {
@@ -445,17 +445,17 @@ organizationSchema.methods.batchDonateProducts = function(
 organizationSchema.methods.getInventory = function(callback) {
   const self = this;
 
-  this.createRequest(function(error, request, jar) {
+  this.createRequest((error, request, jar) => {
     if (error) {
       callback(error);
     }
 
     const url = `${self.country.server.address}/militaryUnitStorage.html`;
-    request(url, function(error, response, body) {
+    request(url, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
         if (!$('a#userName').length) {
-          self.login(function(error) {
+          self.login((error) => {
             if (error) {
               callback(error);
               return;
@@ -522,7 +522,7 @@ organizationSchema.methods.getInventory = function(callback) {
 organizationSchema.methods.getBattleInfo = function(battleId, callback) {
   const self = this;
 
-  this.createRequest(function(error, request, jar) {
+  this.createRequest((error, request, jar) => {
     if (error) {
       callback(error);
     }
@@ -533,7 +533,7 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
       qs: {
         id: battleId,
       },
-    }, function(error, response, body) {
+    }, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const $ = cheerio.load(body);
 
@@ -598,7 +598,7 @@ organizationSchema.methods.getBattleInfo = function(battleId, callback) {
               .trim().split(/\s{2,}/g),
           });
         } else if (!$('a#userName').length) {
-          self.login(function(error) {
+          self.login((error) => {
             if (error) {
               callback(error);
               return;
@@ -622,7 +622,7 @@ organizationSchema.methods.getBattleRoundInfo =
 function(battleRoundId, callback) {
   const self = this;
 
-  this.createRequest(function(error, request, jar) {
+  this.createRequest((error, request, jar) => {
     if (error) {
       callback(error);
     }
@@ -635,7 +635,7 @@ function(battleRoundId, callback) {
         at: 0,
         ci: 0,
       },
-    }, function(error, response, body) {
+    }, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         try {
           const battleRoundInfo = JSON.parse(body);

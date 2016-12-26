@@ -51,7 +51,7 @@ channelSchema.path('name').validate(function(value, respond) {
   Channel.find({
     _id: {$ne: this._id},
     name: value,
-  }, function(error, channels) {
+  }, (error, channels) => {
     if (error) {
       console.log(error);
       return respond(false);

@@ -56,7 +56,7 @@ countrySchema.path('name').validate(function(value, respond) {
     _id: {$ne: this._id},
     name: value,
     server: this.server,
-  }, function(error, countries) {
+  }, (error, countries) => {
     if (error) {
       console.log(error);
       return respond(false);
@@ -75,7 +75,7 @@ countrySchema.path('shortname').validate(function(value, respond) {
     _id: {$ne: this._id},
     shortname: value,
     server: this.server,
-  }, function(error, countries) {
+  }, (error, countries) => {
     if (error) {
       console.log(error);
       return respond(false);

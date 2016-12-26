@@ -44,7 +44,7 @@ serverSchema.path('name').validate(function(value, respond) {
   Server.find({
     _id: {$ne: this._id},
     name: value,
-  }, function(error, servers) {
+  }, (error, servers) => {
     if (error) {
       console.log(error);
       return respond(false);
@@ -62,7 +62,7 @@ serverSchema.path('shortname').validate(function(value, respond) {
   Server.find({
     _id: {$ne: this._id},
     shortname: value,
-  }, function(error, servers) {
+  }, (error, servers) => {
     if (error) {
       console.log(error);
       return respond(false);
@@ -80,7 +80,7 @@ serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
   const self = this;
 
   if (!self.countriesList) {
-    getCountriesList(function(error) {
+    getCountriesList((error) => {
       if (error) {
         callback(error);
         return;
@@ -108,7 +108,7 @@ serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
 
   function getCountriesList(callback) {
     const address = `${self.address}/apiCountries.html`;
-    request(address, function(error, response, body) {
+    request(address, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         self.countriesList = JSON.parse(body);
         callback(null);
@@ -123,7 +123,7 @@ serverSchema.methods.getRegionInfo = function(regionId, callback) {
   const self = this;
 
   if (!self.regionsList) {
-    getRegionsList(function(error) {
+    getRegionsList((error) => {
       if (error) {
         callback(error);
         return;
@@ -150,7 +150,7 @@ serverSchema.methods.getRegionInfo = function(regionId, callback) {
 
   function getRegionsList(callback) {
     const address = `${self.address}/apiRegions.html`;
-    request(address, function(error, response, body) {
+    request(address, (error, response, body) => {
       if (!error && response.statusCode === 200) {
         self.regionsList = JSON.parse(body);
         callback(null);
@@ -165,7 +165,7 @@ serverSchema.methods.getRegionStatus = function(regionId, callback) {
   const self = this;
 
   const address = `${self.address}/apiMap.html`;
-  request(address, function(error, response, body) {
+  request(address, (error, response, body) => {
     if (!error && response.statusCode === 200) {
       try {
         const regionsStatusList = JSON.parse(body);
@@ -202,7 +202,7 @@ function(regionId, countries, callback) {
 
   function getCountriesId(i) {
     if (i >= countries.length) {
-      self.getRegionInfo(regionId, function(error, region) {
+      self.getRegionInfo(regionId, (error, region) => {
         if (error) {
           callback(`Failed to lookup region information: ${error}`);
           return;
@@ -214,7 +214,7 @@ function(regionId, countries, callback) {
       return;
     }
 
-    self.getCountryInfoByName(countries[i], function(error, country) {
+    self.getCountryInfoByName(countries[i], (error, country) => {
       countriesId.push(error ? 0 : country.id);
       getCountriesId(++i);
     });
@@ -232,7 +232,7 @@ function(regionId, countries, callback) {
       return;
     }
 
-    self.getRegionStatus(neighbours[i], function(error, status) {
+    self.getRegionStatus(neighbours[i], (error, status) => {
       if (error) {
         callback(`Failed to lookup region status: ${error}`);
         return;
@@ -253,7 +253,7 @@ function(regionId, countries, callback) {
   }
 
   function getFullName(regionStatus, country) {
-    self.getRegionInfo(regionStatus.regionId, function(error, region) {
+    self.getRegionInfo(regionStatus.regionId, (error, region) => {
       if (error) {
         callback(`Failed to lookup region information: ${error}`);
         return;

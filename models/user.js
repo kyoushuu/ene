@@ -65,7 +65,7 @@ userSchema.methods.isValidPassword = function(password) {
 
 userSchema.methods.recover = function(callback) {
   this.recoverCode = createConfirmCode();
-  this.save(function(error) {
+  this.save((error) => {
     callback(error);
   });
 };
@@ -74,7 +74,7 @@ userSchema.path('username').validate(function(value, respond) {
   User.find({
     _id: {$ne: this._id},
     username: value,
-  }, function(error, users) {
+  }, (error, users) => {
     if (error) {
       console.log(error);
       return respond(false);
@@ -92,7 +92,7 @@ userSchema.path('email').validate(function(value, respond) {
   User.find({
     _id: {$ne: this._id},
     email: value,
-  }, function(error, users) {
+  }, (error, users) => {
     if (error) {
       console.log(error);
       return respond(false);
@@ -118,7 +118,7 @@ userSchema.path('nicknames').validate(function(value, respond) {
     User.find({
       _id: {$ne: self._id},
       nicknames: value[i],
-    }, function(error, users) {
+    }, (error, users) => {
       if (error) {
         console.log(error);
         return respond(false);
