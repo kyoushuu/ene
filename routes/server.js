@@ -25,14 +25,14 @@ const common = require('./common');
 const Server = require('../models/server');
 
 
-router.route('/new').get(common.ensureSignedIn, function(req, res) {
+router.route('/new').get(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
   res.render('server-create', {title: 'Create Server'});
-}).post(common.ensureSignedIn, function(req, res) {
+}).post(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
@@ -42,7 +42,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
     name: req.body.name,
     shortname: req.body.shortname,
     port: req.body.port,
-  }, function(error, server) {
+  }, (error, server) => {
     if (error) {
       res.render('server-create', {
         title: 'Create Server',
@@ -60,8 +60,8 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
 });
 
 
-router.get('/:serverId', common.ensureSignedIn, function(req, res) {
-  Server.findById(req.params.serverId, function(error, server) {
+router.get('/:serverId', common.ensureSignedIn, (req, res) => {
+  Server.findById(req.params.serverId, (error, server) => {
     if (error || !server) {
       res.sendStatus(404);
       return;
@@ -76,13 +76,13 @@ router.get('/:serverId', common.ensureSignedIn, function(req, res) {
 });
 
 
-router.route('/edit/:serverId').get(common.ensureSignedIn, function(req, res) {
+router.route('/edit/:serverId').get(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Server.findById(req.params.serverId, function(error, server) {
+  Server.findById(req.params.serverId, (error, server) => {
     if (error || !server) {
       res.sendStatus(404);
       return;
@@ -93,13 +93,13 @@ router.route('/edit/:serverId').get(common.ensureSignedIn, function(req, res) {
       server: server,
     });
   });
-}).post(common.ensureSignedIn, function(req, res) {
+}).post(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Server.findById(req.params.serverId, function(error, server) {
+  Server.findById(req.params.serverId, (error, server) => {
     if (error || !server) {
       res.sendStatus(404);
       return;
@@ -109,7 +109,7 @@ router.route('/edit/:serverId').get(common.ensureSignedIn, function(req, res) {
     server.shortname = req.body.shortname;
     server.port = req.body.port;
 
-    server.save(function(error) {
+    server.save((error) => {
       if (error) {
         res.render('server-edit', {
           title: 'Edit Server',

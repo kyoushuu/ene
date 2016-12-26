@@ -28,13 +28,13 @@ const User = require('../models/user');
 const Channel = require('../models/channel');
 
 
-router.route('/new').get(common.ensureSignedIn, function(req, res) {
+router.route('/new').get(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
+  Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -49,13 +49,13 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
       servers: servers,
     });
   });
-}).post(common.ensureSignedIn, function(req, res) {
+}).post(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Server.findById(req.body.server, function(error, server) {
+  Server.findById(req.body.server, (error, server) => {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -69,14 +69,14 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
       name: req.body.name,
       shortname: req.body.shortname,
       server: server._id,
-    }, function(error, country) {
+    }, (error, country) => {
       if (error) {
         doCreateFailed(req, res, error);
         return;
       }
 
       server.countries.push(country);
-      server.save(function(error) {
+      server.save((error) => {
         if (error) {
           doCreateFailed(req, res, error);
           return;
@@ -90,7 +90,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
 });
 
 function doCreateFailed(req, res, err) {
-  Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
+  Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -112,9 +112,9 @@ function doCreateFailed(req, res, err) {
 }
 
 
-router.get('/:countryId', common.ensureSignedIn, function(req, res) {
+router.get('/:countryId', common.ensureSignedIn, (req, res) => {
   const query = Country.findById(req.params.countryId);
-  query.populate('server organizations').exec(function(error, country) {
+  query.populate('server organizations').exec((error, country) => {
     if (error || !country) {
       res.sendStatus(404);
       return;
@@ -129,9 +129,9 @@ router.get('/:countryId', common.ensureSignedIn, function(req, res) {
 });
 
 
-router.get('/:countryId/access', common.ensureSignedIn, function(req, res) {
+router.get('/:countryId/access', common.ensureSignedIn, (req, res) => {
   const query = Country.findById(req.params.countryId);
-  query.populate('accessList.account').exec(function(error, country) {
+  query.populate('accessList.account').exec((error, country) => {
     if (error || !country) {
       res.sendStatus(404);
       return;
@@ -154,8 +154,8 @@ router.get('/:countryId/access', common.ensureSignedIn, function(req, res) {
 
 
 router.route('/:countryId/access/new').get(common.ensureSignedIn,
-function(req, res) {
-  Country.findById(req.params.countryId, function(error, country) {
+(req, res) => {
+  Country.findById(req.params.countryId, (error, country) => {
     if (error || !country) {
       res.sendStatus(404);
       return;
@@ -171,14 +171,14 @@ function(req, res) {
       title: 'New Country Access',
     });
   });
-}).post(common.ensureSignedIn, function(req, res) {
-  User.findOne({username: req.body.username}, function(error, user) {
+}).post(common.ensureSignedIn, (req, res) => {
+  User.findOne({username: req.body.username}, (error, user) => {
     if (error || !user) {
       doAddAccessFailed(req, res, 'Username not found');
       return;
     }
 
-    Country.findById(req.params.countryId, function(error, country) {
+    Country.findById(req.params.countryId, (error, country) => {
       if (error || !country) {
         res.sendStatus(404);
         return;
@@ -224,7 +224,7 @@ function(req, res) {
         });
       }
 
-      country.save(function(error) {
+      country.save((error) => {
         if (error) {
           doAddAccessFailed(req, res, error);
           return;
@@ -248,8 +248,8 @@ function doAddAccessFailed(req, res, err) {
 
 
 router.get('/:countryId/access/remove/:accessId', common.ensureSignedIn,
-function(req, res) {
-  Country.findById(req.params.countryId, function(error, country) {
+(req, res) => {
+  Country.findById(req.params.countryId, (error, country) => {
     if (error || !country) {
       res.sendStatus(404);
       return;
@@ -276,7 +276,7 @@ function(req, res) {
 
     access.remove();
 
-    country.save(function(error) {
+    country.save((error) => {
       if (error) {
         doAddAccessFailed(req, res, error);
         return;
@@ -289,9 +289,9 @@ function(req, res) {
 });
 
 
-router.get('/:countryId/channel', common.ensureSignedIn, function(req, res) {
+router.get('/:countryId/channel', common.ensureSignedIn, (req, res) => {
   const query = Country.findById(req.params.countryId);
-  query.populate('channels.channel').exec(function(error, country) {
+  query.populate('channels.channel').exec((error, country) => {
     if (error || !country) {
       res.sendStatus(404);
       return;
@@ -314,13 +314,13 @@ router.get('/:countryId/channel', common.ensureSignedIn, function(req, res) {
 
 
 router.route('/:countryId/channel/new').get(common.ensureSignedIn,
-function(req, res) {
+(req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Country.findById(req.params.countryId, function(error, country) {
+  Country.findById(req.params.countryId, (error, country) => {
     if (error || !country) {
       res.sendStatus(404);
       return;
@@ -330,8 +330,8 @@ function(req, res) {
       title: 'New Country Channel',
     });
   });
-}).post(common.ensureSignedIn, function(req, res) {
-  Channel.findOne({name: req.body.name}, function(error, channel) {
+}).post(common.ensureSignedIn, (req, res) => {
+  Channel.findOne({name: req.body.name}, (error, channel) => {
     if (error || !channel) {
       doAddChannelFailed(req, res, 'Channel not found');
       return;
@@ -342,7 +342,7 @@ function(req, res) {
       return;
     }
 
-    Country.findById(req.params.countryId, function(error, country) {
+    Country.findById(req.params.countryId, (error, country) => {
       if (error || !country) {
         res.sendStatus(404);
         return;
@@ -384,7 +384,7 @@ function(req, res) {
         types: types,
       });
 
-      country.save(function(error) {
+      country.save((error) => {
         if (error) {
           doAddChannelFailed(req, res, error);
           return;
@@ -392,7 +392,7 @@ function(req, res) {
 
         channel.countries.push(country._id);
 
-        channel.save(function(error) {
+        channel.save((error) => {
           if (error) {
             doAddChannelFailed(req, res, error);
             return;
@@ -420,8 +420,8 @@ function doAddChannelFailed(req, res, error) {
 
 
 router.get('/:countryId/channel/remove/:channelId', common.ensureSignedIn,
-function(req, res) {
-  Country.findById(req.params.countryId, function(error, country) {
+(req, res) => {
+  Country.findById(req.params.countryId, (error, country) => {
     if (error || !country) {
       res.sendStatus(404);
       return;
@@ -434,7 +434,7 @@ function(req, res) {
       return;
     }
 
-    Channel.findById(_channel.channel, function(error, channel) {
+    Channel.findById(_channel.channel, (error, channel) => {
       if (error || !channel) {
         res.sendStatus(404);
         return;
@@ -457,13 +457,13 @@ function(req, res) {
       _channel.remove();
       channel.countries.splice(countryId, 1);
 
-      country.save(function(error) {
+      country.save((error) => {
         if (error) {
           doAddAccessFailed(req, res, error);
           return;
         }
 
-        channel.save(function(error) {
+        channel.save((error) => {
           if (error) {
             doAddAccessFailed(req, res, error);
             return;

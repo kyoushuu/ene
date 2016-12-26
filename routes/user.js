@@ -39,23 +39,23 @@ function sendEmail(user, subject, body, callback) {
     to: {name: user.username, address: user.email},
     subject: subject,
     text: body,
-  }, function(error, response) {
+  }, (error, response) => {
     callback(error, response);
     transport.close();
   });
 }
 
 
-router.route('/new').get(function(req, res) {
+router.route('/new').get((req, res) => {
   res.render('signup', {title: 'Sign Up'});
-}).post(function(req, res) {
+}).post((req, res) => {
   User.create({
     username: req.body.username,
     password: req.body.password,
     email: req.body.email,
-  }, function(error, user) {
+  }, (error, user) => {
     if (!error) {
-      sendConfirmEmail(user, function(error) {
+      sendConfirmEmail(user, (error) => {
         if (error) {
           console.log(`Failed to send confirmation email: ${error}`);
         }
@@ -81,7 +81,7 @@ function sendConfirmEmail(user, callback) {
 
 You can confirm your account through this link:
 http://${address}/user/confirm/${user.confirmCode}`,
-            function(error, response) {
+            (error, response) => {
               if (!error) {
                 callback(null);
               } else {
@@ -91,13 +91,13 @@ http://${address}/user/confirm/${user.confirmCode}`,
 }
 
 
-router.route('/confirm').get(common.ensureSignedIn, function(req, res) {
+router.route('/confirm').get(common.ensureSignedIn, (req, res) => {
   res.render('confirm', {
     title: 'Confirm your account',
     user: req.user,
   });
-}).post(common.ensureSignedIn, function(req, res) {
-  sendConfirmEmail(req.user, function(error) {
+}).post(common.ensureSignedIn, (req, res) => {
+  sendConfirmEmail(req.user, (error) => {
     if (error) {
       console.log(`Failed to send confirmation email: ${error}`);
     }
@@ -110,13 +110,13 @@ router.route('/confirm').get(common.ensureSignedIn, function(req, res) {
 });
 
 
-router.get('/confirm/:confirmCode', function(req, res) {
+router.get('/confirm/:confirmCode', (req, res) => {
   User.findOne({
     confirmCode: req.params.confirmCode,
-  }, function(error, user) {
+  }, (error, user) => {
     if (!error && user) {
       user.confirmCode = null;
-      user.save(function(error) {
+      user.save((error) => {
         if (!error) {
           res.render('confirm', {
             title: 'Account confirmed',
@@ -139,7 +139,7 @@ function confirmFailed(res) {
 }
 
 
-router.route('/recover').get(function(req, res) {
+router.route('/recover').get((req, res) => {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
@@ -148,7 +148,7 @@ router.route('/recover').get(function(req, res) {
   res.render('recover', {
     title: 'Recover your account',
   });
-}).post(function(req, res) {
+}).post((req, res) => {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
@@ -156,7 +156,7 @@ router.route('/recover').get(function(req, res) {
 
   User.findOne({
     email: req.body.email.toLowerCase(),
-  }, function(error, user) {
+  }, (error, user) => {
     if (error) {
       res.sendStatus(500);
       return;
@@ -165,13 +165,13 @@ router.route('/recover').get(function(req, res) {
       return;
     }
 
-    user.recover(function(error) {
+    user.recover((error) => {
       if (error) {
         doRecoverFailed(res, user, req.body.email, error);
         return;
       }
 
-      sendRecoverEmail(user, function(error) {
+      sendRecoverEmail(user, (error) => {
         if (error) {
           console.log(`Failed to send recovery email: ${error}`);
         }
@@ -202,7 +202,7 @@ function sendRecoverEmail(user, callback) {
 
 You can recover your account through this link:
 http://${address}/user/recover/${user.recoverCode}`,
-            function(error, response) {
+            (error, response) => {
               if (!error) {
                 callback(null);
               } else {
@@ -212,7 +212,7 @@ http://${address}/user/recover/${user.recoverCode}`,
 }
 
 
-router.route('/recover/:recoverCode').get(function(req, res) {
+router.route('/recover/:recoverCode').get((req, res) => {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
@@ -220,7 +220,7 @@ router.route('/recover/:recoverCode').get(function(req, res) {
 
   User.findOne({
     recoverCode: req.params.recoverCode,
-  }, function(error, user) {
+  }, (error, user) => {
     if (error) {
       res.sendStatus(500);
       return;
@@ -233,7 +233,7 @@ router.route('/recover/:recoverCode').get(function(req, res) {
       title: 'Create new password',
     });
   });
-}).post(function(req, res) {
+}).post((req, res) => {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
@@ -241,7 +241,7 @@ router.route('/recover/:recoverCode').get(function(req, res) {
 
   User.findOne({
     recoverCode: req.params.recoverCode,
-  }, function(error, user) {
+  }, (error, user) => {
     if (error) {
       res.sendStatus(500);
       return;
@@ -252,13 +252,13 @@ router.route('/recover/:recoverCode').get(function(req, res) {
 
     user.recoverCode = null;
     user.password = req.body.password;
-    user.save(function(error) {
+    user.save((error) => {
       if (error) {
         doRecoverCodeFailed(res, user, error);
         return;
       }
 
-      req.logIn(user, function(error) {
+      req.logIn(user, (error) => {
         res.redirect('/');
       });
     });
@@ -275,13 +275,13 @@ function doRecoverCodeFailed(res, user, error) {
 
 
 router.route('/:userId/citizen/new').get(common.ensureSignedIn,
-function(req, res) {
+(req, res) => {
   if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
     res.sendStatus(403);
     return;
   }
 
-  Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
+  Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -296,13 +296,13 @@ function(req, res) {
       servers: servers,
     });
   });
-}).post(common.ensureSignedIn, function(req, res) {
+}).post(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
     res.sendStatus(403);
     return;
   }
 
-  Server.findById(req.body.server, function(error, server) {
+  Server.findById(req.body.server, (error, server) => {
     if (error || !server) {
       res.status(404).send('Server Not Found');
       return;
@@ -322,7 +322,7 @@ function(req, res) {
       name: req.body.name,
     });
 
-    req.user.save(function(error) {
+    req.user.save((error) => {
       if (error) {
         doAddCitizenFailed(req, res, error);
         return;
@@ -335,7 +335,7 @@ function(req, res) {
 });
 
 function doAddCitizenFailed(req, res, err) {
-  Server.find({}, null, {sort: {_id: 1}}, function(error, servers) {
+  Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -356,7 +356,7 @@ function doAddCitizenFailed(req, res, err) {
 }
 
 
-router.route('/signin').get(function(req, res) {
+router.route('/signin').get((req, res) => {
   res.render('signin', {
     title: 'Sign In',
     error: req.flash('error'),
@@ -368,7 +368,7 @@ router.route('/signin').get(function(req, res) {
 }));
 
 
-router.get('/signout', function(req, res) {
+router.get('/signout', (req, res) => {
   req.logOut();
   res.redirect('/');
 });

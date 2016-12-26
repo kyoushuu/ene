@@ -27,10 +27,10 @@ const Country = require('../models/country');
 const Server = require('../models/server');
 
 
-router.route('/new').get(common.ensureSignedIn, function(req, res) {
+router.route('/new').get(common.ensureSignedIn, (req, res) => {
   const query = Server.find({}, null, {sort: {_id: 1}});
   query.populate('countries', null, null, {sort: {_id: 1}});
-  query.exec(function(error, servers) {
+  query.exec((error, servers) => {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -45,9 +45,9 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
       servers: servers,
     });
   });
-}).post(common.ensureSignedIn, function(req, res) {
+}).post(common.ensureSignedIn, (req, res) => {
   const query = Country.findById(req.body.country).populate('server');
-  query.exec(function(error, country) {
+  query.exec((error, country) => {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -69,20 +69,20 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
       country: country._id,
     });
 
-    organization.login(function(error) {
+    organization.login((error) => {
       if (error) {
         doCreateFailed(req, res, `Failed to login: ${error}`);
         return;
       }
 
-      organization.save(function(error) {
+      organization.save((error) => {
         if (error) {
           doCreateFailed(req, res, `Failed to save organization: ${error}`);
           return;
         }
 
         country.organizations.push(organization);
-        country.save(function(error) {
+        country.save((error) => {
           if (error) {
             doCreateFailed(req, res, `Failed to save country: ${error}`);
             return;
@@ -99,7 +99,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
 function doCreateFailed(req, res, err) {
   const query = Server.find({}, null, {sort: {_id: 1}});
   query.populate('countries', null, null, {sort: {_id: 1}});
-  query.exec(function(error, servers) {
+  query.exec((error, servers) => {
     if (error) {
       console.log(error);
       res.sendStatus(500);
@@ -121,10 +121,10 @@ function doCreateFailed(req, res, err) {
 }
 
 
-router.get('/:organizationId', common.ensureSignedIn, function(req, res) {
+router.get('/:organizationId', common.ensureSignedIn, (req, res) => {
   const query = Organization.findById(req.params.organizationId);
   query.populate('country');
-  query.exec(function(error, organization) {
+  query.exec((error, organization) => {
     if (error || !organization) {
       res.sendStatus(404);
       return;
@@ -135,7 +135,7 @@ router.get('/:organizationId', common.ensureSignedIn, function(req, res) {
 
     Server.populate(organization, {
       path: 'country.server',
-    }, function(error, organization) {
+    }, (error, organization) => {
       if (error) {
         console.log(error);
         res.sendStatus(500);
@@ -157,9 +157,9 @@ router.get('/:organizationId', common.ensureSignedIn, function(req, res) {
 
 
 router.route('/edit/:organizationId').get(common.ensureSignedIn,
-function(req, res) {
+(req, res) => {
   const query = Organization.findById(req.params.organizationId);
-  query.exec(function(error, organization) {
+  query.exec((error, organization) => {
     if (error || !organization) {
       res.sendStatus(404);
       return;
@@ -170,10 +170,10 @@ function(req, res) {
       organization: organization,
     });
   });
-}).post(common.ensureSignedIn, function(req, res) {
+}).post(common.ensureSignedIn, (req, res) => {
   const query = Organization.findById(req.params.organizationId);
   query.populate('country');
-  query.exec(function(error, organization) {
+  query.exec((error, organization) => {
     if (error || !organization) {
       res.sendStatus(404);
       return;
@@ -194,13 +194,13 @@ function(req, res) {
       organization.password = req.body.password;
     }
 
-    organization.login(function(error) {
+    organization.login((error) => {
       if (error) {
         doEditFailed(res, error, organization);
         return;
       }
 
-      organization.save(function(error) {
+      organization.save((error) => {
         if (error) {
           doEditFailed(res, error, organization);
           return;

@@ -25,7 +25,7 @@ const common = require('./common');
 const Channel = require('../models/channel');
 
 
-router.route('/new').get(common.ensureSignedIn, function(req, res) {
+router.route('/new').get(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
@@ -34,7 +34,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
   res.render('channel-create', {
     title: 'Create Channel',
   });
-}).post(common.ensureSignedIn, function(req, res) {
+}).post(common.ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
@@ -43,7 +43,7 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
   Channel.create({
     name: req.body.name,
     keyword: req.body.keyword,
-  }, function(error, channel) {
+  }, (error, channel) => {
     if (error) {
       res.render('channel-create', {
         title: 'Create Channel',
@@ -59,8 +59,8 @@ router.route('/new').get(common.ensureSignedIn, function(req, res) {
 });
 
 
-router.get('/:channelId', common.ensureSignedIn, function(req, res) {
-  Channel.findById(req.params.channelId, function(error, channel) {
+router.get('/:channelId', common.ensureSignedIn, (req, res) => {
+  Channel.findById(req.params.channelId, (error, channel) => {
     if (error || !channel) {
       res.sendStatus(404);
       return;

@@ -24,10 +24,10 @@ const Server = require('../models/server');
 const Organization = require('../models/organization');
 
 
-router.get('/:server/battle/:battleId', function(req, res) {
+router.get('/:server/battle/:battleId', (req, res) => {
   Server.findOne({
     name: {$regex: new RegExp(req.params.server, 'i')},
-  }).populate('countries').exec(function(error, server) {
+  }).populate('countries').exec((error, server) => {
     if (error) {
       res.end(JSON.stringify({
         'error': error,
@@ -51,7 +51,7 @@ router.get('/:server/battle/:battleId', function(req, res) {
 
     Organization.populate(server, {
       path: 'countries.organizations',
-    }, function(error, server) {
+    }, (error, server) => {
       if (error) {
         res.end(JSON.stringify({
           'error': error,
@@ -84,7 +84,7 @@ router.get('/:server/battle/:battleId', function(req, res) {
       }
 
       server.countries[i].organizations[0].getBattleInfo(battleId,
-        function(error, battleInfo) {
+        (error, battleInfo) => {
           if (error) {
             res.end(JSON.stringify({
               'error': error,

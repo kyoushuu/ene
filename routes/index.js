@@ -23,7 +23,7 @@ const router = express.Router();
 const Country = require('../models/country');
 
 /* GET home page. */
-router.get('/', function(req, res) {
+router.get('/', (req, res) => {
   if (!req.user) {
     res.render('index', {title: 'Ene Project'});
     return;
@@ -31,7 +31,7 @@ router.get('/', function(req, res) {
 
   Country.find((req.user.accessLevel < 4 ? {
     'accessList.account': req.user,
-  } : {})).populate('server').exec(function(error, countries) {
+  } : {})).populate('server').exec((error, countries) => {
     res.render('index', {
       title: 'Ene Project',
       user: req.user,
