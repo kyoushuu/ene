@@ -25,33 +25,33 @@ const Country = require('../../models/country');
 const Server = require('../../models/server');
 const User = require('../../models/user');
 
-describe('Country model', function() {
-  before(function(done) {
+describe('Country model', () => {
+  before((done) => {
     mongoose.Promise = global.Promise;
-    mockgoose(mongoose).then(function() {
-      mongoose.connect('mongodb://localhost/TestingDB', function(err) {
+    mockgoose(mongoose).then(() => {
+      mongoose.connect('mongodb://localhost/TestingDB', (err) => {
         done(err);
       });
     });
   });
 
-  after(function(done) {
-    mongoose.connection.close(function(err) {
+  after((done) => {
+    mongoose.connection.close((err) => {
       done(err);
     });
   });
 
-  afterEach(function() {
+  afterEach(() => {
     mockgoose.reset();
   });
 
   let testServer;
 
-  before(function(done) {
+  before((done) => {
     Server.create({
       name: 'test',
       shortname: 't',
-    }, function(error, server) {
+    }, (error, server) => {
       should.exist(
           server,
           'Test server does not exist');
@@ -61,12 +61,12 @@ describe('Country model', function() {
     });
   });
 
-  describe('create', function() {
-    it('should fail if the server is undefined', function(done) {
+  describe('create', () => {
+    it('should fail if the server is undefined', (done) => {
       Country.create({
         name: 'Philippines',
         shortname: 'ph',
-      }, function(error, country) {
+      }, (error, country) => {
         should.exist(
             error,
             'No error even though server is undefined');
@@ -81,12 +81,12 @@ describe('Country model', function() {
       });
     });
 
-    it('should fail if the name is empty', function(done) {
+    it('should fail if the name is empty', (done) => {
       Country.create({
         server: testServer,
         name: '',
         shortname: 'ph',
-      }, function(error, country) {
+      }, (error, country) => {
         should.exist(
             error,
             'No error even though name is empty');
@@ -101,11 +101,11 @@ describe('Country model', function() {
       });
     });
 
-    it('should work if name exists in another server', function(done) {
+    it('should work if name exists in another server', (done) => {
       Server.create({
         name: 'test2',
         shortname: 'u',
-      }, function(error, server) {
+      }, (error, server) => {
         should.exist(
             server,
             'Test server does not exist');
@@ -119,7 +119,7 @@ describe('Country model', function() {
           server: server,
           name: 'Philippines',
           shortname: 'ph',
-        }, function(error, country) {
+        }, (error, country) => {
           should.exist(
               country,
               'Test country does not exist');
@@ -133,7 +133,7 @@ describe('Country model', function() {
             server: testServer,
             name: 'Philippines',
             shortname: 'my',
-          }, function(error, country) {
+          }, (error, country) => {
             should.exist(
                 country,
                 'Country was not created even though there is no error');
@@ -144,12 +144,12 @@ describe('Country model', function() {
       });
     });
 
-    it('should fail if name exists in the server', function(done) {
+    it('should fail if name exists in the server', (done) => {
       Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'ph',
-      }, function(error, country) {
+      }, (error, country) => {
         should.exist(
             country,
             'Test country does not exist');
@@ -163,7 +163,7 @@ describe('Country model', function() {
           server: testServer,
           name: 'Philippines',
           shortname: 'my',
-        }, function(error, country) {
+        }, (error, country) => {
           should.exist(
               error,
               'No error even though name already exists');
@@ -179,12 +179,12 @@ describe('Country model', function() {
       });
     });
 
-    it('should fail if the shortname is empty', function(done) {
+    it('should fail if the shortname is empty', (done) => {
       Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: '',
-      }, function(error, country) {
+      }, (error, country) => {
         should.exist(
             error,
             'No error even though shortname is empty');
@@ -199,12 +199,12 @@ describe('Country model', function() {
       });
     });
 
-    it('should fail if the shortname is too long', function(done) {
+    it('should fail if the shortname is too long', (done) => {
       Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'php',
-      }, function(error, country) {
+      }, (error, country) => {
         should.exist(
             error,
             'No error even though shortname is too long');
@@ -219,11 +219,11 @@ describe('Country model', function() {
       });
     });
 
-    it('should work if shortname exists in another server', function(done) {
+    it('should work if shortname exists in another server', (done) => {
       Server.create({
         name: 'test2',
         shortname: 'u',
-      }, function(error, server) {
+      }, (error, server) => {
         should.exist(
             server,
             'Test server does not exist');
@@ -237,7 +237,7 @@ describe('Country model', function() {
           server: server,
           name: 'Philippines',
           shortname: 'ph',
-        }, function(error, country) {
+        }, (error, country) => {
           should.exist(
               country,
               'Test country does not exist');
@@ -251,7 +251,7 @@ describe('Country model', function() {
             server: testServer,
             name: 'Pilipinas',
             shortname: 'ph',
-          }, function(error, country) {
+          }, (error, country) => {
             should.exist(
                 country,
                 'Country was not created even though there is no error');
@@ -262,12 +262,12 @@ describe('Country model', function() {
       });
     });
 
-    it('should fail if shortname exists in the server', function(done) {
+    it('should fail if shortname exists in the server', (done) => {
       Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'ph',
-      }, function(error, country) {
+      }, (error, country) => {
         should.exist(
             country,
             'Test country does not exist');
@@ -281,7 +281,7 @@ describe('Country model', function() {
           server: testServer,
           name: 'Pilipinas',
           shortname: 'ph',
-        }, function(error, country) {
+        }, (error, country) => {
           should.exist(
               error,
               'No error even though shortname already exists');
@@ -299,18 +299,18 @@ describe('Country model', function() {
     });
   });
 
-  describe('getUserAccessLevel', function() {
+  describe('getUserAccessLevel', () => {
     let testCountry;
     let testUser1;
     let testUser2;
     const testAccessLevel = 7;
 
-    before(function(done) {
+    before((done) => {
       Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'ph',
-      }, function(error, country) {
+      }, (error, country) => {
         should.exist(
             country,
             'Test country does not exist');
@@ -325,7 +325,7 @@ describe('Country model', function() {
           username: 'test1',
           password: 'secret',
           email: 'test1@example.com',
-        }, function(error, user) {
+        }, (error, user) => {
           should.exist(
               user,
               'First test user does not exist');
@@ -345,7 +345,7 @@ describe('Country model', function() {
             username: 'test2',
             password: 'secret',
             email: 'test2@example.com',
-          }, function(error, user) {
+          }, (error, user) => {
             should.exist(
                 user,
                 'Second test user does not exist');
@@ -358,14 +358,14 @@ describe('Country model', function() {
       });
     });
 
-    it('should return zero if user is not in the access list', function() {
+    it('should return zero if user is not in the access list', () => {
       const accessLevel = testCountry.getUserAccessLevel(testUser2);
       accessLevel.should.be.equal(
           0,
           'Access level is not zero');
     });
 
-    it('should return access level if user is in the access list', function() {
+    it('should return access level if user is in the access list', () => {
       const accessLevel = testCountry.getUserAccessLevel(testUser1);
       accessLevel.should.be.equal(
           testAccessLevel,

@@ -24,32 +24,32 @@ const nock = require('nock');
 
 const Server = require('../../models/server');
 
-describe('Server model', function() {
-  before(function(done) {
+describe('Server model', () => {
+  before((done) => {
     mongoose.Promise = global.Promise;
-    mockgoose(mongoose).then(function() {
-      mongoose.connect('mongodb://localhost/TestingDB', function(err) {
+    mockgoose(mongoose).then(() => {
+      mongoose.connect('mongodb://localhost/TestingDB', (err) => {
         done(err);
       });
     });
   });
 
-  after(function(done) {
-    mongoose.connection.close(function(err) {
+  after((done) => {
+    mongoose.connection.close((err) => {
       done(err);
     });
   });
 
-  afterEach(function() {
+  afterEach(() => {
     mockgoose.reset();
   });
 
-  describe('create', function() {
-    it('should fail if the name is empty', function(done) {
+  describe('create', () => {
+    it('should fail if the name is empty', (done) => {
       Server.create({
         name: '',
         shortname: 'p',
-      }, function(error, server) {
+      }, (error, server) => {
         should.exist(
             error,
             'No error even though name is empty');
@@ -63,15 +63,15 @@ describe('Server model', function() {
       });
     });
 
-    it('should fail if the name already exists', function(done) {
+    it('should fail if the name already exists', (done) => {
       Server.create({
         name: 'test',
         shortname: 'a',
-      }, function(error, server) {
+      }, (error, server) => {
         Server.create({
           name: 'test',
           shortname: 'b',
-        }, function(error, server) {
+        }, (error, server) => {
           should.exist(
               error,
               'No error even though name already exists');
@@ -86,11 +86,11 @@ describe('Server model', function() {
       });
     });
 
-    it('should fail if the shortname is empty', function(done) {
+    it('should fail if the shortname is empty', (done) => {
       Server.create({
         name: 'test',
         shortname: '',
-      }, function(error, server) {
+      }, (error, server) => {
         should.exist(
             error,
             'No error even though shortname is empty');
@@ -104,11 +104,11 @@ describe('Server model', function() {
       });
     });
 
-    it('should fail if the shortname is too long', function(done) {
+    it('should fail if the shortname is too long', (done) => {
       Server.create({
         name: 'test',
         shortname: 'ab',
-      }, function(error, server) {
+      }, (error, server) => {
         should.exist(
             error,
             'No error even though shortname is too long');
@@ -122,15 +122,15 @@ describe('Server model', function() {
       });
     });
 
-    it('should fail if the shortname already exists', function(done) {
+    it('should fail if the shortname already exists', (done) => {
       Server.create({
         name: 'test',
         shortname: 'a',
-      }, function(error, server) {
+      }, (error, server) => {
         Server.create({
           name: 'test2',
           shortname: 'a',
-        }, function(error, server) {
+        }, (error, server) => {
           should.exist(
               error,
               'No error even though shortname already exists');
@@ -146,20 +146,20 @@ describe('Server model', function() {
     });
   });
 
-  describe('getCountryInfoByName', function() {
+  describe('getCountryInfoByName', () => {
     let testServer;
 
-    before(function(done) {
+    before((done) => {
       Server.create({
         name: 'primera',
         shortname: 'p',
-      }, function(error, server) {
+      }, (error, server) => {
         testServer = server;
         done(error);
       });
     });
 
-    beforeEach(function() {
+    beforeEach(() => {
       nock(
           'http://primera.e-sim.org'
       ).get(
@@ -170,8 +170,8 @@ describe('Server model', function() {
       );
     });
 
-    it('should fail if the country does not exists', function(done) {
-      testServer.getCountryInfoByName('Mali', function(error, country) {
+    it('should fail if the country does not exists', (done) => {
+      testServer.getCountryInfoByName('Mali', (error, country) => {
         should.exist(
             error,
             'No error even though country does not exists');
@@ -185,8 +185,8 @@ describe('Server model', function() {
       });
     });
 
-    it('should work if the country exists', function(done) {
-      testServer.getCountryInfoByName('Philippines', function(error, country) {
+    it('should work if the country exists', (done) => {
+      testServer.getCountryInfoByName('Philippines', (error, country) => {
         country.capitalName.should.be.equal(
             'Manila',
             'Country capitalName does not match');
@@ -210,20 +210,20 @@ describe('Server model', function() {
     });
   });
 
-  describe('getRegionInfo', function() {
+  describe('getRegionInfo', () => {
     let testServer;
 
-    before(function(done) {
+    before((done) => {
       Server.create({
         name: 'primera',
         shortname: 'p',
-      }, function(error, server) {
+      }, (error, server) => {
         testServer = server;
         done(error);
       });
     });
 
-    beforeEach(function() {
+    beforeEach(() => {
       nock(
           'http://primera.e-sim.org'
       ).get(
@@ -234,8 +234,8 @@ describe('Server model', function() {
       );
     });
 
-    it('should fail if the region does not exists', function(done) {
-      testServer.getRegionInfo(1000, function(error, region) {
+    it('should fail if the region does not exists', (done) => {
+      testServer.getRegionInfo(1000, (error, region) => {
         should.exist(
             error,
             'No error even though region does not exists');
@@ -249,8 +249,8 @@ describe('Server model', function() {
       });
     });
 
-    it('should work if the region exists', function(done) {
-      testServer.getRegionInfo(320, function(error, region) {
+    it('should work if the region exists', (done) => {
+      testServer.getRegionInfo(320, (error, region) => {
         region.capital.should.be.equal(
             true,
             'Region capital does not match');
@@ -274,20 +274,20 @@ describe('Server model', function() {
     });
   });
 
-  describe('getRegionStatus', function() {
+  describe('getRegionStatus', () => {
     let testServer;
 
-    before(function(done) {
+    before((done) => {
       Server.create({
         name: 'primera',
         shortname: 'p',
-      }, function(error, server) {
+      }, (error, server) => {
         testServer = server;
         done(error);
       });
     });
 
-    beforeEach(function() {
+    beforeEach(() => {
       nock(
           'http://primera.e-sim.org'
       ).get(
@@ -298,8 +298,8 @@ describe('Server model', function() {
       );
     });
 
-    it('should fail if the region does not exists', function(done) {
-      testServer.getRegionStatus(1000, function(error, region) {
+    it('should fail if the region does not exists', (done) => {
+      testServer.getRegionStatus(1000, (error, region) => {
         should.exist(
             error,
             'No error even though region does not exists');
@@ -313,8 +313,8 @@ describe('Server model', function() {
       });
     });
 
-    it('should work if the region exists', function(done) {
-      testServer.getRegionStatus(320, function(error, region) {
+    it('should work if the region exists', (done) => {
+      testServer.getRegionStatus(320, (error, region) => {
         region.battle.should.be.equal(
             false,
             'Region battle does not match');
@@ -347,20 +347,20 @@ describe('Server model', function() {
     });
   });
 
-  describe('getAttackerBonusRegion', function() {
+  describe('getAttackerBonusRegion', () => {
     let testServer;
 
-    before(function(done) {
+    before((done) => {
       Server.create({
         name: 'primera',
         shortname: 'p',
-      }, function(error, server) {
+      }, (error, server) => {
         testServer = server;
         done(error);
       });
     });
 
-    beforeEach(function() {
+    beforeEach(() => {
       nock(
           'http://primera.e-sim.org'
       ).get(
@@ -383,10 +383,10 @@ describe('Server model', function() {
       );
     });
 
-    it('should fail if the region does not exists', function(done) {
+    it('should fail if the region does not exists', (done) => {
       testServer.getAttackerBonusRegion(1000, [
         'Philippines',
-      ], function(error, region) {
+      ], (error, region) => {
         should.exist(
             error,
             'No error even though region does not exists');
@@ -400,10 +400,10 @@ describe('Server model', function() {
       });
     });
 
-    it('should fail if no neighbour region occuppied by ally', function(done) {
+    it('should fail if no neighbour region occuppied by ally', (done) => {
       testServer.getAttackerBonusRegion(121, [
         'Philippines',
-      ], function(error, region) {
+      ], (error, region) => {
         should.not.exist(
             region,
             'Region data returned even though region does not exists');
@@ -411,10 +411,10 @@ describe('Server model', function() {
       });
     });
 
-    it('should pick first neighbour region occupied', function(done) {
+    it('should pick first neighbour region occupied', (done) => {
       testServer.getAttackerBonusRegion(121, [
         'Philippines', 'China',
-      ], function(error, region) {
+      ], (error, region) => {
         region.should.be.equal(
             'Gotaland, China',
             'Region does not match');
@@ -422,10 +422,10 @@ describe('Server model', function() {
       });
     });
 
-    it('should prefer a region with on-going battle', function(done) {
+    it('should prefer a region with on-going battle', (done) => {
       testServer.getAttackerBonusRegion(121, [
         'Philippines', 'China', 'Finland',
-      ], function(error, region) {
+      ], (error, region) => {
         region.should.be.equal(
             'Aland, Finland',
             'Region does not match');

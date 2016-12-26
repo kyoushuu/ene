@@ -23,33 +23,33 @@ const mockgoose = require('mockgoose');
 
 const User = require('../../models/user');
 
-describe('User model', function() {
-  before(function(done) {
+describe('User model', () => {
+  before((done) => {
     mongoose.Promise = global.Promise;
-    mockgoose(mongoose).then(function() {
-      mongoose.connect('mongodb://localhost/TestingDB', function(err) {
+    mockgoose(mongoose).then(() => {
+      mongoose.connect('mongodb://localhost/TestingDB', (err) => {
         done(err);
       });
     });
   });
 
-  after(function(done) {
-    mongoose.connection.close(function(err) {
+  after((done) => {
+    mongoose.connection.close((err) => {
       done(err);
     });
   });
 
-  afterEach(function() {
+  afterEach(() => {
     mockgoose.reset();
   });
 
-  describe('create', function() {
-    it('should create a confirm code', function(done) {
+  describe('create', () => {
+    it('should create a confirm code', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         user.confirmCode.should.not.be.empty().and.have.lengthOf(
             32,
             'Confirm code is empty');
@@ -57,12 +57,12 @@ describe('User model', function() {
       });
     });
 
-    it('should fail if the username is empty', function(done) {
+    it('should fail if the username is empty', (done) => {
       User.create({
         username: '',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         should.exist(
             error,
             'No error even though username is empty');
@@ -76,17 +76,17 @@ describe('User model', function() {
       });
     });
 
-    it('should fail if the username already exists', function(done) {
+    it('should fail if the username already exists', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         User.create({
           username: 'test',
           password: 'secret',
           email: 'test2@example.com',
-        }, function(error, user) {
+        }, (error, user) => {
           should.exist(
               error,
               'No error even though username already exists');
@@ -101,12 +101,12 @@ describe('User model', function() {
       });
     });
 
-    it('should fail if the password is empty', function(done) {
+    it('should fail if the password is empty', (done) => {
       User.create({
         username: 'test',
         password: '',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         should.exist(
             error,
             'No error even though password is empty');
@@ -120,12 +120,12 @@ describe('User model', function() {
       });
     });
 
-    it('should fail if the e-mail is empty', function(done) {
+    it('should fail if the e-mail is empty', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: '',
-      }, function(error, user) {
+      }, (error, user) => {
         should.exist(
             error,
             'No error even though e-mail is empty');
@@ -139,17 +139,17 @@ describe('User model', function() {
       });
     });
 
-    it('should fail if the e-mail is already registered', function(done) {
+    it('should fail if the e-mail is already registered', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         User.create({
           username: 'test2',
           password: 'secret',
           email: 'test@example.com',
-        }, function(error, user) {
+        }, (error, user) => {
           should.exist(
               error,
               'No error even though e-mail is already registered');
@@ -164,12 +164,12 @@ describe('User model', function() {
       });
     });
 
-    it('should fail if the e-mail is invalid', function(done) {
+    it('should fail if the e-mail is invalid', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example',
-      }, function(error, user) {
+      }, (error, user) => {
         should.exist(
             error,
             'No error even though e-mail is invalid');
@@ -183,19 +183,19 @@ describe('User model', function() {
       });
     });
 
-    it('should fail if the nickname is already in use', function(done) {
+    it('should fail if the nickname is already in use', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
         nicknames: ['nick1', 'nick2'],
-      }, function(error, user) {
+      }, (error, user) => {
         User.create({
           username: 'test2',
           password: 'secret',
           email: 'test2@example.com',
           nicknames: ['nick2', 'nick3'],
-        }, function(error, user) {
+        }, (error, user) => {
           should.exist(
               error,
               'No error even though nickname is already in use');
@@ -211,13 +211,13 @@ describe('User model', function() {
     });
   });
 
-  describe('setPassword', function() {
-    it('should change the password', function(done) {
+  describe('setPassword', () => {
+    it('should change the password', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         user.password = 'newsecret';
 
         user.isValidPassword('secret').should.be.equal(
@@ -230,12 +230,12 @@ describe('User model', function() {
       });
     });
 
-    it('should change the salt', function(done) {
+    it('should change the salt', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         const oldSalt = user.salt;
         user.password = 'secret';
 
@@ -246,17 +246,17 @@ describe('User model', function() {
       });
     });
 
-    it('should fail if the password is empty', function(done) {
+    it('should fail if the password is empty', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         user.password = '';
-        user.save(function(error) {
+        user.save((error) => {
           User.findOne({
             username: user.username,
-          }, function(error, user) {
+          }, (error, user) => {
             user.isValidPassword('secret').should.be.equal(
                 true,
                 'Current password is not the old password');
@@ -267,13 +267,13 @@ describe('User model', function() {
     });
   });
 
-  describe('isValidPassword', function() {
-    it('should return true if the password is the same', function(done) {
+  describe('isValidPassword', () => {
+    it('should return true if the password is the same', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         user.isValidPassword('secret').should.be.equal(
             true,
             'Returned false even though password is the same');
@@ -281,12 +281,12 @@ describe('User model', function() {
       });
     });
 
-    it('should return false if the password is not the same', function(done) {
+    it('should return false if the password is not the same', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         user.isValidPassword('').should.be.equal(
             false,
             'Returned true even though password is not the same');
@@ -295,15 +295,15 @@ describe('User model', function() {
     });
   });
 
-  describe('recover', function() {
-    it('should create a recovery code', function(done) {
+  describe('recover', () => {
+    it('should create a recovery code', (done) => {
       User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
-      }, function(error, user) {
+      }, (error, user) => {
         should.not.exist(user.recoverCode, 'Recover code exists');
-        user.recover(function(error) {
+        user.recover((error) => {
           user.recoverCode.should.not.be.empty().and.have.lengthOf(
               32,
               'Recover code is empty');
