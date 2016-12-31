@@ -29,7 +29,5 @@ const battleSchema = new mongoose.Schema({
   mode: {type: String, default: 'full'},
 });
 
-/* jshint -W003 */
 const Battle = mongoose.model('Battle', battleSchema);
-/* jshint +W003 */
 module.exports = Battle;

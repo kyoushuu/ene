@@ -264,7 +264,5 @@ function(regionId, countries, callback) {
   }
 };
 
-/* jshint -W003 */
 const Server = mongoose.model('Server', serverSchema);
-/* jshint +W003 */
 module.exports = Server;

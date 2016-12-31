@@ -660,7 +660,5 @@ function(battleRoundId, callback) {
   });
 };
 
-/* jshint -W003 */
 const Organization = mongoose.model('Organization', organizationSchema);
-/* jshint +W003 */
 module.exports = Organization;

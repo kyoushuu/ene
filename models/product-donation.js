@@ -29,8 +29,6 @@ const productDonationSchema = new mongoose.Schema({
   reason: {type: String},
 });
 
-/* jshint -W003 */
 const ProductDonation =
   mongoose.model('ProductDonation', productDonationSchema);
-/* jshint +W003 */
 module.exports = ProductDonation;

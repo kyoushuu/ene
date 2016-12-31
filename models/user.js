@@ -135,7 +135,5 @@ userSchema.path('nicknames').validate(function(value, respond) {
   checkNickname(0);
 }, 'Nickname is already in use');
 
-/* jshint -W003 */
 const User = mongoose.model('User', userSchema);
-/* jshint +W003 */
 module.exports = User;

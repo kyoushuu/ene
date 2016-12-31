@@ -65,7 +65,5 @@ channelSchema.path('name').validate(function(value, respond) {
   });
 }, 'Channel name already exists');
 
-/* jshint -W003 */
 const Channel = mongoose.model('Channel', channelSchema);
-/* jshint +W003 */
 module.exports = Channel;

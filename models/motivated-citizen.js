@@ -28,8 +28,6 @@ const motivatedCitizenSchema = new mongoose.Schema({
   gift: {type: Boolean},
 });
 
-/* jshint -W003 */
 const MotivatedCitizen = mongoose.model(
     'MotivatedCitizen', motivatedCitizenSchema);
-/* jshint +W003 */
 module.exports = MotivatedCitizen;

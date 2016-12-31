@@ -309,13 +309,11 @@ function showBattleRound(
     const bold = codes.bold;
     const reset = codes.reset;
 
-    /* jshint camelcase: false */
     /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
     const dr = codes.dark_red;
     const dg = codes.dark_green;
     const or = codes.orange;
     /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
-    /* jshint camelcase: true */
 
     const defSide = side === 'defender';
     const rnd = battleInfo.round;

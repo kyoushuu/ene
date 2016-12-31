@@ -29,8 +29,6 @@ const batchProductDonationSchema = new mongoose.Schema({
   reason: {type: String},
 });
 
-/* jshint -W003 */
 const BatchProductDonation =
   mongoose.model('BatchProductDonation', batchProductDonationSchema);
-/* jshint +W003 */
 module.exports = BatchProductDonation;

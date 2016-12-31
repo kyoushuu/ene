@@ -105,7 +105,5 @@ countrySchema.methods.getUserAccessLevel = function(user) {
   return 0;
 };
 
-/* jshint -W003 */
 const Country = mongoose.model('Country', countrySchema);
-/* jshint +W003 */
 module.exports = Country;

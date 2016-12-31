@@ -7,7 +7,7 @@
   "main": "./bin/www",
   "scripts": {
     "start": "node ./bin/www",
-    "test": "jscs . bin/www && jshint . bin/www && mocha"
+    "test": "jscs . bin/www && mocha"
   },
   "dependencies": {
     "express": "^4.10.6",
@@ -37,7 +37,6 @@
   },
   "devDependencies": {
     "jscs": "^3.0.7",
-    "jshint": "^2.5.10",
     "mocha": "^3.2.0",
     "mockgoose": "^6.0.8",
     "should": "^11.1.2",
