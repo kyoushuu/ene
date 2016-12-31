@@ -17,7 +17,6 @@
  */
 
 
-const should = require('should');
 const mongoose = require('mongoose');
 const mockgoose = require('mockgoose');
 
@@ -26,275 +25,162 @@ const Server = require('../../models/server');
 const User = require('../../models/user');
 
 describe('Country model', () => {
-  before((done) => {
+  before(async () => {
     mongoose.Promise = global.Promise;
-    mockgoose(mongoose).then(() => {
-      mongoose.connect('mongodb://localhost/TestingDB', (err) => {
-        done(err);
-      });
-    });
+    await mockgoose(mongoose);
+    return mongoose.connect('mongodb://localhost/TestingDB');
   });
 
-  after((done) => {
-    mongoose.connection.close((err) => {
-      done(err);
-    });
-  });
+  after(() => mongoose.connection.close());
 
-  afterEach(() => {
-    mockgoose.reset();
-  });
+  afterEach(() => mockgoose.reset());
 
   let testServer;
 
-  before((done) => {
-    Server.create({
+  before(async () => {
+    testServer = await Server.create({
       name: 'test',
       shortname: 't',
-    }, (error, server) => {
-      should.exist(
-          server,
-          'Test server does not exist');
-      testServer = server;
-
-      done(error);
     });
   });
 
   describe('create', () => {
-    it('should fail if the server is undefined', (done) => {
-      Country.create({
+    it('should fail if the server is undefined', () => {
+      return Country.create({
         name: 'Philippines',
         shortname: 'ph',
-      }, (error, country) => {
-        should.exist(
-            error,
-            'No error even though server is undefined');
-        error.toString().should.be.equal(
-            'ValidationError: Path `server` is required.',
-            'New country with undefined server created');
-        should.not.exist(
-            country,
-            'Country was created even though there is an error');
-
-        done();
+      }).should.be.rejectedWith({
+        errors: {
+          server: {
+            name: 'ValidatorError',
+            message: 'Path `server` is required.',
+          },
+        },
       });
     });
 
-    it('should fail if the name is empty', (done) => {
-      Country.create({
+    it('should fail if the name is empty', () => {
+      return Country.create({
         server: testServer,
         name: '',
         shortname: 'ph',
-      }, (error, country) => {
-        should.exist(
-            error,
-            'No error even though name is empty');
-        error.toString().should.be.equal(
-            'ValidationError: Path `name` is required.',
-            'New country with empty name created');
-        should.not.exist(
-            country,
-            'Country was created even though there is an error');
-
-        done();
+      }).should.be.rejectedWith({
+        errors: {
+          name: {
+            name: 'ValidatorError',
+            message: 'Path `name` is required.',
+          },
+        },
       });
     });
 
-    it('should work if name exists in another server', (done) => {
-      Server.create({
+    it('should work if name exists in another server', async () => {
+      const server = await Server.create({
         name: 'test2',
         shortname: 'u',
-      }, (error, server) => {
-        should.exist(
-            server,
-            'Test server does not exist');
-
-        if (error) {
-          done(error);
-          return;
-        }
-
-        Country.create({
-          server: server,
-          name: 'Philippines',
-          shortname: 'ph',
-        }, (error, country) => {
-          should.exist(
-              country,
-              'Test country does not exist');
-
-          if (error) {
-            done(error);
-            return;
-          }
-
-          Country.create({
-            server: testServer,
-            name: 'Philippines',
-            shortname: 'my',
-          }, (error, country) => {
-            should.exist(
-                country,
-                'Country was not created even though there is no error');
-
-            done(error);
-          });
-        });
       });
+
+      await Country.create({
+        server: server,
+        name: 'Philippines',
+        shortname: 'ph',
+      });
+
+      return Country.create({
+        server: testServer,
+        name: 'Philippines',
+        shortname: 'my',
+      }).should.finally.be.an.Object();
     });
 
-    it('should fail if name exists in the server', (done) => {
-      Country.create({
+    it('should fail if name exists in the server', async () => {
+      await Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'ph',
-      }, (error, country) => {
-        should.exist(
-            country,
-            'Test country does not exist');
+      });
 
-        if (error) {
-          done(error);
-          return;
-        }
-
-        Country.create({
-          server: testServer,
-          name: 'Philippines',
-          shortname: 'my',
-        }, (error, country) => {
-          should.exist(
-              error,
-              'No error even though name already exists');
-          error.toString().should.be.equal(
-              'ValidationError: Country name with the same server already exists',
-              'New country with same name created');
-          should.not.exist(
-              country,
-              'Country was created even though there is an error');
-
-          done();
-        });
+      return Country.create({
+        server: testServer,
+        name: 'Philippines',
+        shortname: 'my',
+      }).should.be.rejectedWith({
+        errors: {
+          name: {
+            name: 'ValidatorError',
+            message: 'Country name with the same server already exists',
+          },
+        },
       });
     });
 
-    it('should fail if the shortname is empty', (done) => {
-      Country.create({
+    it('should fail if the shortname is empty', () => {
+      return Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: '',
-      }, (error, country) => {
-        should.exist(
-            error,
-            'No error even though shortname is empty');
-        error.toString().should.be.equal(
-            'ValidationError: Path `shortname` is required.',
-            'New country with empty shortname created');
-        should.not.exist(
-            country,
-            'Country was created even though there is an error');
-
-        done();
+      }).should.be.rejectedWith({
+        errors: {
+          shortname: {
+            name: 'ValidatorError',
+            message: 'Path `shortname` is required.',
+          },
+        },
       });
     });
 
-    it('should fail if the shortname is too long', (done) => {
-      Country.create({
+    it('should fail if the shortname is too long', () => {
+      return Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'php',
-      }, (error, country) => {
-        should.exist(
-            error,
-            'No error even though shortname is too long');
-        error.toString().should.be.equal(
-            'ValidationError: Short name should be two letters',
-            'New country with empty shortname created');
-        should.not.exist(
-            country,
-            'Country was created even though there is an error');
-
-        done();
+      }).should.be.rejectedWith({
+        errors: {
+          shortname: {
+            name: 'ValidatorError',
+            message: 'Short name should be two letters',
+          },
+        },
       });
     });
 
-    it('should work if shortname exists in another server', (done) => {
-      Server.create({
+    it('should work if shortname exists in another server', async () => {
+      const server = await Server.create({
         name: 'test2',
         shortname: 'u',
-      }, (error, server) => {
-        should.exist(
-            server,
-            'Test server does not exist');
-
-        if (error) {
-          done(error);
-          return;
-        }
-
-        Country.create({
-          server: server,
-          name: 'Philippines',
-          shortname: 'ph',
-        }, (error, country) => {
-          should.exist(
-              country,
-              'Test country does not exist');
-
-          if (error) {
-            done(error);
-            return;
-          }
-
-          Country.create({
-            server: testServer,
-            name: 'Pilipinas',
-            shortname: 'ph',
-          }, (error, country) => {
-            should.exist(
-                country,
-                'Country was not created even though there is no error');
-
-            done(error);
-          });
-        });
       });
+
+      await Country.create({
+        server: server,
+        name: 'Philippines',
+        shortname: 'ph',
+      });
+
+      return Country.create({
+        server: testServer,
+        name: 'Pilipinas',
+        shortname: 'ph',
+      }).should.finally.be.an.Object();
     });
 
-    it('should fail if shortname exists in the server', (done) => {
-      Country.create({
+    it('should fail if shortname exists in the server', async () => {
+      await Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'ph',
-      }, (error, country) => {
-        should.exist(
-            country,
-            'Test country does not exist');
+      });
 
-        if (error) {
-          done(error);
-          return;
-        }
-
-        Country.create({
-          server: testServer,
-          name: 'Pilipinas',
-          shortname: 'ph',
-        }, (error, country) => {
-          should.exist(
-              error,
-              'No error even though shortname already exists');
-          error.toString().should.be.equal(
-              'ValidationError: Country short name ' +
-            'with the same server already exists',
-              'New country with same shortname created');
-          should.not.exist(
-              country,
-              'Country was created even though there is an error');
-
-          done();
-        });
+      return Country.create({
+        server: testServer,
+        name: 'Pilipinas',
+        shortname: 'ph',
+      }).should.be.rejectedWith({
+        errors: {
+          shortname: {
+            name: 'ValidatorError',
+            message: 'Country short name with the same server already exists',
+          },
+        },
       });
     });
   });
@@ -305,56 +191,27 @@ describe('Country model', () => {
     let testUser2;
     const testAccessLevel = 7;
 
-    before((done) => {
-      Country.create({
+    before(async () => {
+      testCountry = await Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'ph',
-      }, (error, country) => {
-        should.exist(
-            country,
-            'Test country does not exist');
-        testCountry = country;
+      });
 
-        if (error) {
-          done(error);
-          return;
-        }
+      testUser1 = await User.create({
+        username: 'test1',
+        password: 'secret',
+        email: 'test1@example.com',
+      });
+      testCountry.accessList.push({
+        account: testUser1._id,
+        accessLevel: testAccessLevel,
+      });
 
-        User.create({
-          username: 'test1',
-          password: 'secret',
-          email: 'test1@example.com',
-        }, (error, user) => {
-          should.exist(
-              user,
-              'First test user does not exist');
-
-          if (error) {
-            done(error);
-            return;
-          }
-
-          testUser1 = user;
-          testCountry.accessList.push({
-            account: testUser1._id,
-            accessLevel: testAccessLevel,
-          });
-
-          User.create({
-            username: 'test2',
-            password: 'secret',
-            email: 'test2@example.com',
-          }, (error, user) => {
-            should.exist(
-                user,
-                'Second test user does not exist');
-
-            testUser2 = user;
-
-            done(error);
-          });
-        });
+      testUser2 = await User.create({
+        username: 'test2',
+        password: 'secret',
+        email: 'test2@example.com',
       });
     });
 

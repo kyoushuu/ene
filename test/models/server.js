@@ -25,123 +25,94 @@ const nock = require('nock');
 const Server = require('../../models/server');
 
 describe('Server model', () => {
-  before((done) => {
+  before(async () => {
     mongoose.Promise = global.Promise;
-    mockgoose(mongoose).then(() => {
-      mongoose.connect('mongodb://localhost/TestingDB', (err) => {
-        done(err);
-      });
-    });
+    await mockgoose(mongoose);
+    return mongoose.connect('mongodb://localhost/TestingDB');
   });
 
-  after((done) => {
-    mongoose.connection.close((err) => {
-      done(err);
-    });
-  });
+  after(() => mongoose.connection.close());
 
-  afterEach(() => {
-    mockgoose.reset();
-  });
+  afterEach(() => mockgoose.reset());
 
   describe('create', () => {
-    it('should fail if the name is empty', (done) => {
-      Server.create({
+    it('should fail if the name is empty', () => {
+      return Server.create({
         name: '',
         shortname: 'p',
-      }, (error, server) => {
-        should.exist(
-            error,
-            'No error even though name is empty');
-        error.toString().should.be.equal(
-            'ValidationError: Path `name` is required.',
-            'New server with empty name created');
-        should.not.exist(
-            server,
-            'Server was created even though there is an error');
-        done();
+      }).should.be.rejectedWith({
+        errors: {
+          name: {
+            name: 'ValidatorError',
+            message: 'Path `name` is required.',
+          },
+        },
       });
     });
 
-    it('should fail if the name already exists', (done) => {
-      Server.create({
+    it('should fail if the name already exists', async () => {
+      await Server.create({
         name: 'test',
         shortname: 'a',
-      }, (error, server) => {
-        Server.create({
-          name: 'test',
-          shortname: 'b',
-        }, (error, server) => {
-          should.exist(
-              error,
-              'No error even though name already exists');
-          error.toString().should.be.equal(
-              'ValidationError: Server name already exists',
-              'New server with same name created');
-          should.not.exist(
-              server,
-              'Server was created even though there is an error');
-          done();
-        });
+      });
+
+      return Server.create({
+        name: 'test',
+        shortname: 'b',
+      }).should.be.rejectedWith({
+        errors: {
+          name: {
+            name: 'ValidatorError',
+            message: 'Server name already exists',
+          },
+        },
       });
     });
 
-    it('should fail if the shortname is empty', (done) => {
-      Server.create({
+    it('should fail if the shortname is empty', () => {
+      return Server.create({
         name: 'test',
         shortname: '',
-      }, (error, server) => {
-        should.exist(
-            error,
-            'No error even though shortname is empty');
-        error.toString().should.be.equal(
-            'ValidationError: Path `shortname` is required.',
-            'New server with empty shortname created');
-        should.not.exist(
-            server,
-            'Server was created even though there is an error');
-        done();
+      }).should.be.rejectedWith({
+        errors: {
+          shortname: {
+            name: 'ValidatorError',
+            message: 'Path `shortname` is required.',
+          },
+        },
       });
     });
 
-    it('should fail if the shortname is too long', (done) => {
-      Server.create({
+    it('should fail if the shortname is too long', () => {
+      return Server.create({
         name: 'test',
         shortname: 'ab',
-      }, (error, server) => {
-        should.exist(
-            error,
-            'No error even though shortname is too long');
-        error.toString().should.be.equal(
-            'ValidationError: Short name should be a single letter',
-            'New server with empty shortname created');
-        should.not.exist(
-            server,
-            'Server was created even though there is an error');
-        done();
+      }).should.be.rejectedWith({
+        errors: {
+          shortname: {
+            name: 'ValidatorError',
+            message: 'Short name should be a single letter',
+          },
+        },
       });
     });
 
-    it('should fail if the shortname already exists', (done) => {
-      Server.create({
+    it('should fail if the shortname already exists', async () => {
+      await Server.create({
         name: 'test',
         shortname: 'a',
-      }, (error, server) => {
-        Server.create({
-          name: 'test2',
-          shortname: 'a',
-        }, (error, server) => {
-          should.exist(
-              error,
-              'No error even though shortname already exists');
-          error.toString().should.be.equal(
-              'ValidationError: Server short name already exists',
-              'New server with same shortname created');
-          should.not.exist(
-              server,
-              'Server was created even though there is an error');
-          done();
-        });
+      });
+
+      return Server.create({
+        name: 'test2',
+        shortname: 'a',
+      }).should.be.rejectedWith({
+        errors: {
+          shortname: {
+            name: 'ValidatorError',
+            message: 'Server short name already exists',
+          },
+        },
       });
     });
   });
@@ -149,13 +120,10 @@ describe('Server model', () => {
   describe('getCountryInfoByName', () => {
     let testServer;
 
-    before((done) => {
-      Server.create({
+    before(async () => {
+      testServer = await Server.create({
         name: 'primera',
         shortname: 'p',
-      }, (error, server) => {
-        testServer = server;
-        done(error);
       });
     });
 
@@ -213,13 +181,10 @@ describe('Server model', () => {
   describe('getRegionInfo', () => {
     let testServer;
 
-    before((done) => {
-      Server.create({
+    before(async () => {
+      testServer = await Server.create({
         name: 'primera',
         shortname: 'p',
-      }, (error, server) => {
-        testServer = server;
-        done(error);
       });
     });
 
