@@ -135,6 +135,27 @@ describe('User model', () => {
       });
     });
 
+    it('should be case insensitive in e-mail', async () => {
+      await User.create({
+        username: 'test',
+        password: 'secret',
+        email: 'test@example.com',
+      });
+
+      return User.create({
+        username: 'test2',
+        password: 'secret',
+        email: 'Test@example.com',
+      }).should.be.rejectedWith({
+        errors: {
+          email: {
+            name: 'ValidatorError',
+            message: 'E-mail is already registered',
+          },
+        },
+      });
+    });
+
     it('should fail if the e-mail is invalid', () => {
       return User.create({
         username: 'test',
