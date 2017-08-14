@@ -27,7 +27,9 @@ describe('User model', () => {
   before(async () => {
     mongoose.Promise = global.Promise;
     await mockgoose(mongoose);
-    return mongoose.connect('mongodb://localhost/TestingDB');
+    return mongoose.connect('mongodb://localhost/TestingDB', {
+      useMongoClient: true,
+    });
   });
 
   after(() => mongoose.connection.close());
