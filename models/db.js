@@ -23,7 +23,9 @@ const dburl = process.env.DB_URL || process.env.OPENSHIFT_MONGODB_DB_URL ||
     'mongodb://localhost/';
 const dbname = process.env.DB_NAME || process.env.OPENSHIFT_APP_NAME || 'ene';
 
-mongoose.connect(dburl + dbname);
+mongoose.connect(dburl + dbname, {
+  useMongoClient: true,
+});
 
 exports.url = dburl;
 exports.name = dbname;
