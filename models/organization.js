@@ -51,7 +51,7 @@ function decipherValue(value) {
 }
 
 const organizationSchema = new mongoose.Schema({
-  country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country'},
+  country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country', required: true},
   username: {type: String, required: true},
   password: {
     type: String,
