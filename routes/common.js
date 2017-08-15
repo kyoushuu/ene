@@ -26,4 +26,11 @@ function ensureSignedIn(req, res, next) {
   next();
 }
 
+function asyncWrap(fn) {
+  return (req, res, next) => {
+    fn(req, res, next).catch(next);
+  };
+}
+
 exports.ensureSignedIn = ensureSignedIn;
+exports.asyncWrap = asyncWrap;
