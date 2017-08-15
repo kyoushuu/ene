@@ -47,22 +47,13 @@ const channelSchema = new mongoose.Schema({
   countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
 });
 
-channelSchema.path('name').validate(function(value, respond) {
-  Channel.find({
+channelSchema.path('name').validate(async function(value) {
+  const channels = await Channel.find({
     _id: {$ne: this._id},
     name: value,
-  }, (error, channels) => {
-    if (error) {
-      console.log(error);
-      return respond(false);
-    }
-
-    if (channels.length) {
-      respond(false);
-    } else {
-      respond(true);
-    }
   });
+
+  return channels.length === 0;
 }, 'Channel name already exists');
 
 const Channel = mongoose.model('Channel', channelSchema);

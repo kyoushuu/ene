@@ -63,76 +63,42 @@ userSchema.methods.isValidPassword = function(password) {
   return this.password === hash(password, this.salt);
 };
 
-userSchema.methods.recover = function(callback) {
+userSchema.methods.recover = async function() {
   this.recoverCode = createConfirmCode();
-  this.save((error) => {
-    callback(error);
-  });
+  await this.save();
 };
 
-userSchema.path('username').validate(function(value, respond) {
-  User.find({
+userSchema.path('username').validate(async function(value) {
+  const users = await User.find({
     _id: {$ne: this._id},
     username: value,
-  }, (error, users) => {
-    if (error) {
-      console.log(error);
-      return respond(false);
-    }
-
-    if (users.length) {
-      respond(false);
-    } else {
-      respond(true);
-    }
   });
+
+  return users.length === 0;
 }, 'Username already exists');
 
-userSchema.path('email').validate(function(value, respond) {
-  User.find({
+userSchema.path('email').validate(async function(value) {
+  const users = await User.find({
     _id: {$ne: this._id},
     email: value,
-  }, (error, users) => {
-    if (error) {
-      console.log(error);
-      return respond(false);
-    }
-
-    if (users.length) {
-      respond(false);
-    } else {
-      respond(true);
-    }
   });
+
+  return users.length === 0;
 }, 'E-mail is already registered');
 
-userSchema.path('nicknames').validate(function(value, respond) {
-  const self = this;
-  const l = value.length;
-
-  function checkNickname(i) {
-    if (i >= l) {
-      return respond(true);
-    }
-
-    User.find({
-      _id: {$ne: self._id},
-      nicknames: value[i],
-    }, (error, users) => {
-      if (error) {
-        console.log(error);
-        return respond(false);
-      }
-
-      if (users.length) {
-        respond(false);
-      } else {
-        checkNickname(++i);
-      }
+userSchema.path('nicknames').validate(async function(value) {
+  for (const nickname of value) {
+    const users = await User.find({
+      _id: {$ne: this._id},
+      nicknames: nickname,
     });
+
+    if (users.length) {
+      return false;
+    }
   }
 
-  checkNickname(0);
+  return true;
 }, 'Nickname is already in use');
 
 const User = mongoose.model('User', userSchema);

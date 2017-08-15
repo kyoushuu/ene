@@ -18,7 +18,7 @@
 
 
 const mongoose = require('mongoose');
-const request = require('request');
+const request = require('request-promise-native');
 
 
 const serverSchema = new mongoose.Schema({
@@ -40,228 +40,118 @@ serverSchema.virtual('address').get(function() {
     `${this.port !== 80 ? `:${this.port}` : ''}`;
 });
 
-serverSchema.path('name').validate(function(value, respond) {
-  Server.find({
+serverSchema.path('name').validate(async function(value) {
+  const servers = await Server.find({
     _id: {$ne: this._id},
     name: value,
-  }, (error, servers) => {
-    if (error) {
-      console.log(error);
-      return respond(false);
-    }
-
-    if (servers.length) {
-      respond(false);
-    } else {
-      respond(true);
-    }
   });
+
+  return servers.length === 0;
 }, 'Server name already exists');
 
-serverSchema.path('shortname').validate(function(value, respond) {
-  Server.find({
+serverSchema.path('shortname').validate(async function(value) {
+  const servers = await Server.find({
     _id: {$ne: this._id},
     shortname: value,
-  }, (error, servers) => {
-    if (error) {
-      console.log(error);
-      return respond(false);
-    }
-
-    if (servers.length) {
-      respond(false);
-    } else {
-      respond(true);
-    }
   });
+
+  return servers.length === 0;
 }, 'Server short name already exists');
 
-serverSchema.methods.getCountryInfoByName = function(countryName, callback) {
-  const self = this;
-
-  if (!self.countriesList) {
-    getCountriesList((error) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-
-      getCountryInfoByName();
+serverSchema.methods.getCountryInfoByName = async function(countryName) {
+  if (!this.countriesList) {
+    this.countriesList = await request({
+      uri: `${this.address}/apiCountries.html`,
+      simple: true,
+      json: true,
     });
-    return;
   }
 
-  getCountryInfoByName();
-
-  function getCountryInfoByName() {
-    const l = self.countriesList.length;
-    for (let i = 0; i < l; i++) {
-      if (self.countriesList[i].name.toLowerCase() ===
-          countryName.toLowerCase()) {
-        callback(null, self.countriesList[i]);
-        return;
-      }
+  for (const country of this.countriesList) {
+    if (country.name.toLowerCase() ===
+        countryName.toLowerCase()) {
+      return country;
     }
-
-    callback('Country not found');
   }
 
-  function getCountriesList(callback) {
-    const address = `${self.address}/apiCountries.html`;
-    request(address, (error, response, body) => {
-      if (!error && response.statusCode === 200) {
-        self.countriesList = JSON.parse(body);
-        callback(null);
-      } else {
-        callback(error || `HTTP Error: ${response.statusCode}`);
-      }
-    });
-  }
+  throw new Error('Country not found');
 };
 
-serverSchema.methods.getRegionInfo = function(regionId, callback) {
-  const self = this;
-
-  if (!self.regionsList) {
-    getRegionsList((error) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-
-      getRegionInfo();
+serverSchema.methods.getRegionInfo = async function(regionId) {
+  if (!this.regionsList) {
+    this.regionsList = await request({
+      uri: `${this.address}/apiRegions.html`,
+      simple: true,
+      json: true,
     });
-    return;
   }
 
-  getRegionInfo();
-
-  function getRegionInfo() {
-    const l = self.regionsList.length;
-    for (let i = 0; i < l; i++) {
-      if (self.regionsList[i].id === regionId) {
-        callback(null, self.regionsList[i]);
-        return;
-      }
+  for (const region of this.regionsList) {
+    if (region.id === regionId) {
+      return region;
     }
-
-    callback('Region not found');
   }
 
-  function getRegionsList(callback) {
-    const address = `${self.address}/apiRegions.html`;
-    request(address, (error, response, body) => {
-      if (!error && response.statusCode === 200) {
-        self.regionsList = JSON.parse(body);
-        callback(null);
-      } else {
-        callback(error || `HTTP Error: ${response.statusCode}`);
-      }
-    });
-  }
+  throw new Error('Region not found');
 };
 
-serverSchema.methods.getRegionStatus = function(regionId, callback) {
-  const self = this;
-
-  const address = `${self.address}/apiMap.html`;
-  request(address, (error, response, body) => {
-    if (!error && response.statusCode === 200) {
-      try {
-        const regionsStatusList = JSON.parse(body);
-
-        const l = regionsStatusList.length;
-        for (let i = 0; i < l; i++) {
-          if (regionsStatusList[i].regionId === regionId) {
-            callback(null, regionsStatusList[i]);
-            return;
-          }
-        }
-
-        callback('Region not found');
-      } catch (e) {
-        console.log(`Error: ${e}`);
-        console.log(`Stack: ${e.stack}`);
-        console.log(`Address: ${address}`);
-        callback('Internal Error Occured');
-      }
-    } else {
-      callback(error || `HTTP Error: ${response.statusCode}`);
-    }
+serverSchema.methods.getRegionStatus = async function(regionId) {
+  const regionsStatusList = await request({
+    uri: `${this.address}/apiMap.html`,
+    simple: true,
+    json: true,
   });
+
+  for (const regionStatus of regionsStatusList) {
+    if (regionStatus.regionId === regionId) {
+      return regionStatus;
+    }
+  }
+
+  throw new Error('Region not found');
 };
 
 serverSchema.methods.getAttackerBonusRegion =
-function(regionId, countries, callback) {
-  const self = this;
-
+async function(regionId, countries) {
   const bonusRegions = [];
   const countriesId = [];
 
-  getCountriesId(0);
+  for (const countryName of countries) {
+    let countryId;
 
-  function getCountriesId(i) {
-    if (i >= countries.length) {
-      self.getRegionInfo(regionId, (error, region) => {
-        if (error) {
-          callback(`Failed to lookup region information: ${error}`);
-          return;
-        }
-
-        checkBonusRegion(region.neighbours, 0);
-      });
-
-      return;
+    try {
+      const country = await this.getCountryInfoByName(countryName);
+      countryId = country.id;
+    } catch (error) {
+      countryId = 0;
     }
 
-    self.getCountryInfoByName(countries[i], (error, country) => {
-      countriesId.push(error ? 0 : country.id);
-      getCountriesId(++i);
-    });
+    countriesId.push(countryId);
   }
 
-  function checkBonusRegion(neighbours, i) {
-    if (i >= neighbours.length) {
-      if (bonusRegions.length) {
-        getFullName(bonusRegions[0],
-                    countries[countriesId.indexOf(bonusRegions[0].occupantId)]);
-      } else {
-        callback(null, null);
+  const region = await this.getRegionInfo(regionId);
+
+  for (const neighbour of region.neighbours) {
+    const status = await this.getRegionStatus(neighbour);
+
+    if (countriesId.includes(status.occupantId)) {
+      if (status.battle === true) {
+        const region = await this.getRegionInfo(status.regionId);
+        const country = countries[countriesId.indexOf(status.occupantId)];
+        return `${region.name}, ${country}`;
       }
 
-      return;
+      bonusRegions.push(status);
     }
-
-    self.getRegionStatus(neighbours[i], (error, status) => {
-      if (error) {
-        callback(`Failed to lookup region status: ${error}`);
-        return;
-      }
-
-      if (countriesId.includes(status.occupantId)) {
-        if (status.battle === true) {
-          getFullName(status,
-                      countries[countriesId.indexOf(status.occupantId)]);
-          return;
-        }
-
-        bonusRegions.push(status);
-      }
-
-      checkBonusRegion(neighbours, ++i);
-    });
   }
 
-  function getFullName(regionStatus, country) {
-    self.getRegionInfo(regionStatus.regionId, (error, region) => {
-      if (error) {
-        callback(`Failed to lookup region information: ${error}`);
-        return;
-      }
-
-      callback(null, `${region.name}, ${country}`);
-    });
+  if (bonusRegions.length) {
+    const region = await this.getRegionInfo(bonusRegions[0].regionId);
+    const country = countries[countriesId.indexOf(bonusRegions[0].occupantId)];
+    return `${region.name}, ${country}`;
   }
+
+  return null;
 };
 
 const Server = mongoose.model('Server', serverSchema);

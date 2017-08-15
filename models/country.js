@@ -51,54 +51,34 @@ const countrySchema = new mongoose.Schema({
   },
 });
 
-countrySchema.path('name').validate(function(value, respond) {
-  Country.find({
+countrySchema.path('name').validate(async function(value) {
+  const countries = await Country.find({
     _id: {$ne: this._id},
     name: value,
     server: this.server,
-  }, (error, countries) => {
-    if (error) {
-      console.log(error);
-      return respond(false);
-    }
-
-    if (countries.length) {
-      respond(false);
-    } else {
-      respond(true);
-    }
   });
+
+  return countries.length === 0;
 }, 'Country name with the same server already exists');
 
-countrySchema.path('shortname').validate(function(value, respond) {
-  Country.find({
+countrySchema.path('shortname').validate(async function(value) {
+  const countries = await Country.find({
     _id: {$ne: this._id},
     shortname: value,
     server: this.server,
-  }, (error, countries) => {
-    if (error) {
-      console.log(error);
-      return respond(false);
-    }
-
-    if (countries.length) {
-      respond(false);
-    } else {
-      respond(true);
-    }
   });
+
+  return countries.length === 0;
 }, 'Country short name with the same server already exists');
 
 countrySchema.methods.getUserAccessLevel = function(user) {
-  const self = this;
-
-  const l = self.accessList.length;
+  const l = this.accessList.length;
   for (let i = 0; i < l; i++) {
-    const accountId = self.accessList[i].account._id ||
-      self.accessList[i].account;
+    const accountId = this.accessList[i].account._id ||
+      this.accessList[i].account;
 
     if (accountId.equals(user._id)) {
-      return self.accessList[i].accessLevel;
+      return this.accessList[i].accessLevel;
     }
   }
 
