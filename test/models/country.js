@@ -146,6 +146,21 @@ describe('Country model', () => {
       });
     });
 
+    it('should fail if the shortname is too short', () => {
+      return Country.create({
+        server: testServer,
+        name: 'Philippines',
+        shortname: 'p',
+      }).should.be.rejectedWith({
+        errors: {
+          shortname: {
+            name: 'ValidatorError',
+            message: 'Short name should be two letters',
+          },
+        },
+      });
+    });
+
     it('should work if shortname exists in another server', async () => {
       const server = await Server.create({
         name: 'test2',
