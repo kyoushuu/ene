@@ -140,43 +140,31 @@ describe('Server model', () => {
       );
     });
 
-    it('should fail if the country does not exists', (done) => {
-      testServer.getCountryInfoByName('Mali', (error, country) => {
-        should.exist(
-            error,
-            'No error even though country does not exists');
-        error.toString().should.be.equal(
-            'Country not found',
-            'No error even though country does not exists');
-        should.not.exist(
-            country,
-            'Country data returned even though country does not exists');
-        done();
-      });
+    it('should fail if the country does not exists', () => {
+      testServer.getCountryInfoByName('Mali')
+          .should.be.rejectedWith('Country not found');
     });
 
-    it('should work if the country exists', (done) => {
-      testServer.getCountryInfoByName('Philippines', (error, country) => {
-        country.capitalName.should.be.equal(
-            'Manila',
-            'Country capitalName does not match');
-        country.currencyName.should.be.equal(
-            'PHP',
-            'Country currencyName does not match');
-        country.name.should.be.equal(
-            'Philippines',
-            'Country name does not match');
-        country.id.should.be.equal(
-            54,
-            'Country id does not match');
-        country.shortName.should.be.equal(
-            'PH',
-            'Country shortName does not match');
-        country.capitalRegionId.should.be.equal(
-            320,
-            'Country capitalRegionId does not match');
-        done(error);
-      });
+    it('should work if the country exists', async () => {
+      const country = await testServer.getCountryInfoByName('Philippines');
+      country.capitalName.should.be.equal(
+          'Manila',
+          'Country capitalName does not match');
+      country.currencyName.should.be.equal(
+          'PHP',
+          'Country currencyName does not match');
+      country.name.should.be.equal(
+          'Philippines',
+          'Country name does not match');
+      country.id.should.be.equal(
+          54,
+          'Country id does not match');
+      country.shortName.should.be.equal(
+          'PH',
+          'Country shortName does not match');
+      country.capitalRegionId.should.be.equal(
+          320,
+          'Country capitalRegionId does not match');
     });
   });
 
@@ -201,56 +189,40 @@ describe('Server model', () => {
       );
     });
 
-    it('should fail if the region does not exists', (done) => {
-      testServer.getRegionInfo(1000, (error, region) => {
-        should.exist(
-            error,
-            'No error even though region does not exists');
-        error.toString().should.be.equal(
-            'Region not found',
-            'No error even though region does not exists');
-        should.not.exist(
-            region,
-            'Region data returned even though region does not exists');
-        done();
-      });
+    it('should fail if the region does not exists', () => {
+      testServer.getRegionInfo(1000).should.be.rejectedWith('Region not found');
     });
 
-    it('should work if the region exists', (done) => {
-      testServer.getRegionInfo(320, (error, region) => {
-        region.capital.should.be.equal(
-            true,
-            'Region capital does not match');
-        region.name.should.be.equal(
-            'Manila',
-            'Region name does not match');
-        region.neighbours.toString().should.be.equal(
-            '319,323,324',
-            'Region neighbours does not match');
-        region.id.should.be.equal(
-            320,
-            'Region id does not match');
-        region.homeCountry.should.be.equal(
-            54,
-            'Region homeCountry does not match');
-        region.rawRichness.should.be.equal(
-            'NONE',
-            'Region rawRichness does not match');
-        done(error);
-      });
+    it('should work if the region exists', async () => {
+      const region = await testServer.getRegionInfo(320);
+      region.capital.should.be.equal(
+          true,
+          'Region capital does not match');
+      region.name.should.be.equal(
+          'Manila',
+          'Region name does not match');
+      region.neighbours.toString().should.be.equal(
+          '319,323,324',
+          'Region neighbours does not match');
+      region.id.should.be.equal(
+          320,
+          'Region id does not match');
+      region.homeCountry.should.be.equal(
+          54,
+          'Region homeCountry does not match');
+      region.rawRichness.should.be.equal(
+          'NONE',
+          'Region rawRichness does not match');
     });
   });
 
   describe('getRegionStatus', () => {
     let testServer;
 
-    before((done) => {
-      Server.create({
+    before(async () => {
+      testServer = await Server.create({
         name: 'primera',
         shortname: 'p',
-      }, (error, server) => {
-        testServer = server;
-        done(error);
       });
     });
 
@@ -265,65 +237,50 @@ describe('Server model', () => {
       );
     });
 
-    it('should fail if the region does not exists', (done) => {
-      testServer.getRegionStatus(1000, (error, region) => {
-        should.exist(
-            error,
-            'No error even though region does not exists');
-        error.toString().should.be.equal(
-            'Region not found',
-            'No error even though region does not exists');
-        should.not.exist(
-            region,
-            'Region data returned even though region does not exists');
-        done();
-      });
+    it('should fail if the region does not exists', () => {
+      testServer.getRegionStatus(1000)
+          .should.be.rejectedWith('Region not found');
     });
 
-    it('should work if the region exists', (done) => {
-      testServer.getRegionStatus(320, (error, region) => {
-        region.battle.should.be.equal(
-            false,
-            'Region battle does not match');
-        region.capital.should.be.equal(
-            true,
-            'Region capital does not match');
-        region.companies.should.be.equal(
-            126,
-            'Region companies does not match');
-        region.regionId.should.be.equal(
-            320,
-            'Region regionId does not match');
-        region.defensiveBuildings.should.be.equal(
-            7,
-            'Region defensiveBuildings does not match');
-        region.openWaterAccess.should.be.equal(
-            true,
-            'Region openWaterAccess does not match');
-        region.occupantId.should.be.equal(
-            54,
-            'Region occupantId does not match');
-        region.rawRichness.should.be.equal(
-            'NONE',
-            'Region rawRichness does not match');
-        region.population.should.be.equal(
-            45,
-            'Region population does not match');
-        done(error);
-      });
+    it('should work if the region exists', async () => {
+      const region = await testServer.getRegionStatus(320);
+      region.battle.should.be.equal(
+          false,
+          'Region battle does not match');
+      region.capital.should.be.equal(
+          true,
+          'Region capital does not match');
+      region.companies.should.be.equal(
+          126,
+          'Region companies does not match');
+      region.regionId.should.be.equal(
+          320,
+          'Region regionId does not match');
+      region.defensiveBuildings.should.be.equal(
+          7,
+          'Region defensiveBuildings does not match');
+      region.openWaterAccess.should.be.equal(
+          true,
+          'Region openWaterAccess does not match');
+      region.occupantId.should.be.equal(
+          54,
+          'Region occupantId does not match');
+      region.rawRichness.should.be.equal(
+          'NONE',
+          'Region rawRichness does not match');
+      region.population.should.be.equal(
+          45,
+          'Region population does not match');
     });
   });
 
   describe('getAttackerBonusRegion', () => {
     let testServer;
 
-    before((done) => {
-      Server.create({
+    before(async () => {
+      testServer = await Server.create({
         name: 'primera',
         shortname: 'p',
-      }, (error, server) => {
-        testServer = server;
-        done(error);
       });
     });
 
@@ -350,54 +307,40 @@ describe('Server model', () => {
       );
     });
 
-    it('should fail if the region does not exists', (done) => {
+    it('should fail if the region does not exists', () => {
       testServer.getAttackerBonusRegion(1000, [
         'Philippines',
-      ], (error, region) => {
-        should.exist(
-            error,
-            'No error even though region does not exists');
-        error.toString().should.be.equal(
-            'Failed to lookup region information: Region not found',
-            'No error even though region does not exists');
-        should.not.exist(
-            region,
-            'Region data returned even though region does not exists');
-        done();
-      });
+      ]).should.be.rejectedWith('Region not found');
     });
 
-    it('should fail if no neighbour region occuppied by ally', (done) => {
-      testServer.getAttackerBonusRegion(121, [
+    it('should fail if no neighbour region occuppied by ally', async () => {
+      const region = await testServer.getAttackerBonusRegion(121, [
         'Philippines',
-      ], (error, region) => {
-        should.not.exist(
-            region,
-            'Region data returned even though region does not exists');
-        done(error);
-      });
+      ]);
+
+      should.not.exist(
+          region,
+          'Region data returned even though region does not exists');
     });
 
-    it('should pick first neighbour region occupied', (done) => {
-      testServer.getAttackerBonusRegion(121, [
+    it('should pick first neighbour region occupied', async () => {
+      const region = await testServer.getAttackerBonusRegion(121, [
         'Philippines', 'China',
-      ], (error, region) => {
-        region.should.be.equal(
-            'Gotaland, China',
-            'Region does not match');
-        done(error);
-      });
+      ]);
+
+      region.should.be.equal(
+          'Gotaland, China',
+          'Region does not match');
     });
 
-    it('should prefer a region with on-going battle', (done) => {
-      testServer.getAttackerBonusRegion(121, [
+    it('should prefer a region with on-going battle', async () => {
+      const region = await testServer.getAttackerBonusRegion(121, [
         'Philippines', 'China', 'Finland',
-      ], (error, region) => {
-        region.should.be.equal(
-            'Aland, Finland',
-            'Region does not match');
-        done(error);
-      });
+      ]);
+
+      region.should.be.equal(
+          'Aland, Finland',
+          'Region does not match');
     });
   });
 });

@@ -290,14 +290,12 @@ describe('User model', () => {
       });
     });
 
-    it('should create a recovery code', (done) => {
+    it('should create a recovery code', async () => {
       should.not.exist(user.recoverCode, 'Recover code exists');
-      user.recover((error) => {
-        user.recoverCode.should.not.be.empty().and.have.lengthOf(
-            32,
-            'Recover code is empty');
-        done(error);
-      });
+      await user.recover();
+      user.recoverCode.should.not.be.empty().and.have.lengthOf(
+          32,
+          'Recover code is empty');
     });
   });
 });
