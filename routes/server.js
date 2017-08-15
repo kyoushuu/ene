@@ -20,110 +20,105 @@
 const express = require('express');
 const router = express.Router();
 
-const common = require('./common');
+const {ensureSignedIn, asyncWrap} = require('./common');
 
 const Server = require('../models/server');
 
 
-router.route('/new').get(common.ensureSignedIn, (req, res) => {
+router.route('/new').get(ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
   res.render('server-create', {title: 'Create Server'});
-}).post(common.ensureSignedIn, (req, res) => {
+}).post(ensureSignedIn, asyncWrap(async (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Server.create({
-    name: req.body.name,
-    shortname: req.body.shortname,
-    port: req.body.port,
-  }, (error, server) => {
-    if (error) {
-      res.render('server-create', {
-        title: 'Create Server',
-        error: error,
-        name: req.body.name,
-        shortname: req.body.shortname,
-        port: req.body.port,
-      });
-      return;
-    }
+  try {
+    const server = await Server.create({
+      name: req.body.name,
+      shortname: req.body.shortname,
+      port: req.body.port,
+    });
 
     req.flash('info', 'Server successfully created');
     res.redirect(`/server/${server.id}`);
-  });
-});
-
-
-router.get('/:serverId', common.ensureSignedIn, (req, res) => {
-  Server.findById(req.params.serverId, (error, server) => {
-    if (error || !server) {
-      res.sendStatus(404);
-      return;
-    }
-
-    res.render('server', {
-      title: 'Server Information',
-      server: server,
-      info: req.flash('info'),
+  } catch (error) {
+    res.render('server-create', {
+      title: 'Create Server',
+      error: error,
+      name: req.body.name,
+      shortname: req.body.shortname,
+      port: req.body.port,
     });
+  }
+}));
+
+
+router.get('/:serverId', ensureSignedIn, asyncWrap(async (req, res) => {
+  const server = await Server.findById(req.params.serverId);
+  if (!server) {
+    res.sendStatus(404);
+    return;
+  }
+
+  res.render('server', {
+    title: 'Server Information',
+    server: server,
+    info: req.flash('info'),
   });
-});
+}));
 
 
-router.route('/edit/:serverId').get(common.ensureSignedIn, (req, res) => {
+router.route('/edit/:serverId').get(ensureSignedIn, asyncWrap(async (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Server.findById(req.params.serverId, (error, server) => {
-    if (error || !server) {
-      res.sendStatus(404);
-      return;
-    }
+  const server = await Server.findById(req.params.serverId);
+  if (!server) {
+    res.sendStatus(404);
+    return;
+  }
 
+  res.render('server-edit', {
+    title: 'Edit Server',
+    server: server,
+  });
+})).post(ensureSignedIn, asyncWrap(async (req, res) => {
+  if (req.user.accessLevel < 6) {
+    res.sendStatus(403);
+    return;
+  }
+
+  const server = await Server.findById(req.params.serverId);
+  if (!server) {
+    res.sendStatus(404);
+    return;
+  }
+
+  server.name = req.body.name;
+  server.shortname = req.body.shortname;
+  server.port = req.body.port;
+
+  try {
+    await server.save();
+
+    req.flash('info', 'Server successfully saved');
+    res.redirect(`/server/${server.id}`);
+  } catch (error) {
     res.render('server-edit', {
       title: 'Edit Server',
+      error: error,
       server: server,
     });
-  });
-}).post(common.ensureSignedIn, (req, res) => {
-  if (req.user.accessLevel < 6) {
-    res.sendStatus(403);
-    return;
   }
-
-  Server.findById(req.params.serverId, (error, server) => {
-    if (error || !server) {
-      res.sendStatus(404);
-      return;
-    }
-
-    server.name = req.body.name;
-    server.shortname = req.body.shortname;
-    server.port = req.body.port;
-
-    server.save((error) => {
-      if (error) {
-        res.render('server-edit', {
-          title: 'Edit Server',
-          error: error,
-          server: server,
-        });
-        return;
-      }
-
-      req.flash('info', 'Server successfully saved');
-      res.redirect(`/server/${server.id}`);
-    });
-  });
-});
+}));
 
 
 module.exports = router;

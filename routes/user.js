@@ -22,122 +22,114 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const passport = require('passport');
 
-const common = require('./common');
+const {ensureSignedIn, asyncWrap} = require('./common');
 
 const User = require('../models/user');
 const Server = require('../models/server');
 
 
-function sendEmail(user, subject, body, callback) {
+async function sendEmail(user, subject, body) {
   const domain = process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost';
   const sender = process.env.SMTP_SENDER || `no-reply@${domain}`;
   const transport = nodemailer.createTransport(process.env.SMTP_URL);
 
-  transport.sendMail({
+  const response = await transport.sendMail({
     from: {name: 'Ene Project', address: sender},
     to: {name: user.username, address: user.email},
     subject: subject,
     text: body,
-  }, (error, response) => {
-    callback(error, response);
-    transport.close();
   });
+
+  transport.close();
+
+  return response;
 }
 
 
-router.route('/new').get((req, res) => {
-  res.render('signup', {title: 'Sign Up'});
-}).post((req, res) => {
-  User.create({
-    username: req.body.username,
-    password: req.body.password,
-    email: req.body.email,
-  }, (error, user) => {
-    if (!error) {
-      sendConfirmEmail(user, (error) => {
-        if (error) {
-          console.log(`Failed to send confirmation email: ${error}`);
-        }
-        res.render('welcome', {title: 'Welcome'});
-      });
-    } else {
-      res.render('signup', {
-        title: 'Sign Up',
-        error: error,
-        username: req.body.username,
-        email: req.body.email,
-      });
-    }
-  });
-});
-
-function sendConfirmEmail(user, callback) {
+async function sendConfirmEmail(user) {
   const address = process.env.ADDRESS || process.env.DOMAIN ||
       process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
 
-  sendEmail(user, 'New account confirmation',
-`Welcome ${user.username},
+  await sendEmail(user, 'New account confirmation',
+      `Welcome ${user.username},
 
 You can confirm your account through this link:
-http://${address}/user/confirm/${user.confirmCode}`,
-            (error, response) => {
-              if (!error) {
-                callback(null);
-              } else {
-                callback(error);
-              }
-            });
+http://${address}/user/confirm/${user.confirmCode}`);
 }
 
+router.route('/new').get((req, res) => {
+  res.render('signup', {title: 'Sign Up'});
+}).post(asyncWrap(async (req, res) => {
+  try {
+    const user = await User.create({
+      username: req.body.username,
+      password: req.body.password,
+      email: req.body.email,
+    });
 
-router.route('/confirm').get(common.ensureSignedIn, (req, res) => {
+    await sendConfirmEmail(user);
+
+    res.render('welcome', {title: 'Welcome'});
+  } catch (error) {
+    res.render('signup', {
+      title: 'Sign Up',
+      error: error,
+      username: req.body.username,
+      email: req.body.email,
+    });
+  }
+}));
+
+
+router.route('/confirm').get(ensureSignedIn, (req, res) => {
   res.render('confirm', {
     title: 'Confirm your account',
     user: req.user,
   });
-}).post(common.ensureSignedIn, (req, res) => {
-  sendConfirmEmail(req.user, (error) => {
-    if (error) {
-      console.log(`Failed to send confirmation email: ${error}`);
-    }
-    res.render('confirm', {
-      title: 'Email Resent',
-      user: req.user,
-      resent: true,
-    });
-  });
-});
+}).post(ensureSignedIn, asyncWrap(async (req, res) => {
+  await sendConfirmEmail(req.user);
 
-
-router.get('/confirm/:confirmCode', (req, res) => {
-  User.findOne({
-    confirmCode: req.params.confirmCode,
-  }, (error, user) => {
-    if (!error && user) {
-      user.confirmCode = null;
-      user.save((error) => {
-        if (!error) {
-          res.render('confirm', {
-            title: 'Account confirmed',
-            user: user,
-          });
-        } else {
-          confirmFailed(res);
-        }
-      });
-    } else {
-      confirmFailed(res);
-    }
-  });
-});
-
-function confirmFailed(res) {
   res.render('confirm', {
-    title: 'Account confirmation failed',
+    title: 'Email Resent',
+    user: req.user,
+    resent: true,
+  });
+}));
+
+
+router.get('/confirm/:confirmCode', asyncWrap(async (req, res) => {
+  const user = await User.findOne({
+    confirmCode: req.params.confirmCode,
+  });
+
+  try {
+    if (!user) {
+      throw new Error('User with given confirm code not found');
+    }
+
+    user.confirmCode = null;
+    await user.save();
+
+    res.render('confirm', {
+      title: 'Account confirmed',
+      user: user,
+    });
+  } catch (error) {
+    res.render('confirm', {
+      title: 'Account confirmation failed',
+    });
+  }
+}));
+
+
+function doRecoverFailed(res, user, email, error) {
+  res.render('recover', {
+    title: 'Recover your account',
+    user: user,
+    email: email,
   });
 }
-
 
 router.route('/recover').get((req, res) => {
   if (req.isAuthenticated()) {
@@ -148,172 +140,125 @@ router.route('/recover').get((req, res) => {
   res.render('recover', {
     title: 'Recover your account',
   });
-}).post((req, res) => {
+}).post(asyncWrap(async (req, res) => {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
   }
 
-  User.findOne({
+  const user = await User.findOne({
     email: req.body.email.toLowerCase(),
-  }, (error, user) => {
-    if (error) {
-      res.sendStatus(500);
-      return;
-    } else if (!user) {
-      doRecoverFailed(res, user, req.body.email, 'Email not registered');
-      return;
+  });
+
+  try {
+    if (!user) {
+      throw new Error('Email not registered');
     }
 
-    user.recover((error) => {
-      if (error) {
-        doRecoverFailed(res, user, req.body.email, error);
-        return;
-      }
+    await user.recover();
 
-      sendRecoverEmail(user, (error) => {
-        if (error) {
-          console.log(`Failed to send recovery email: ${error}`);
-        }
+    const address = process.env.ADDRESS || process.env.DOMAIN ||
+        process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
 
-        res.render('recover', {
-          title: 'Email Sent',
-          sent: true,
-        });
-      });
-    });
-  });
-});
-
-function doRecoverFailed(res, user, email, error) {
-  res.render('recover', {
-    title: 'Recover your account',
-    user: user,
-    email: email,
-  });
-}
-
-function sendRecoverEmail(user, callback) {
-  const address = process.env.ADDRESS || process.env.DOMAIN ||
-      process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
-
-  sendEmail(user, 'Account Recovery',
-`Hello ${user.username},
+    await sendEmail(user, 'Account Recovery',
+        `Hello ${user.username},
 
 You can recover your account through this link:
-http://${address}/user/recover/${user.recoverCode}`,
-            (error, response) => {
-              if (!error) {
-                callback(null);
-              } else {
-                callback(error);
-              }
-            });
-}
+http://${address}/user/recover/${user.recoverCode}`);
 
-
-router.route('/recover/:recoverCode').get((req, res) => {
-  if (req.isAuthenticated()) {
-    res.redirect('/');
-    return;
-  }
-
-  User.findOne({
-    recoverCode: req.params.recoverCode,
-  }, (error, user) => {
-    if (error) {
-      res.sendStatus(500);
-      return;
-    } else if (!user) {
-      doRecoverFailed(res, null, 'Invalid code');
-      return;
-    }
-
-    res.render('recover-code', {
-      title: 'Create new password',
+    res.render('recover', {
+      title: 'Email Sent',
+      sent: true,
     });
-  });
-}).post((req, res) => {
+  } catch (error) {
+    doRecoverFailed(res, user, req.body.email, error);
+  }
+}));
+
+
+router.route('/recover/:recoverCode').get(asyncWrap(async (req, res) => {
   if (req.isAuthenticated()) {
     res.redirect('/');
     return;
   }
 
-  User.findOne({
+  const user = await User.findOne({
     recoverCode: req.params.recoverCode,
-  }, (error, user) => {
-    if (error) {
-      res.sendStatus(500);
-      return;
-    } else if (!user) {
-      doRecoverCodeFailed(res, null, 'Invalid code');
-      return;
+  });
+
+  if (!user) {
+    doRecoverFailed(res, null, 'Invalid code');
+    return;
+  }
+
+  res.render('recover-code', {
+    title: 'Create new password',
+  });
+})).post(asyncWrap(async (req, res) => {
+  if (req.isAuthenticated()) {
+    res.redirect('/');
+    return;
+  }
+
+  const user = await User.findOne({
+    recoverCode: req.params.recoverCode,
+  });
+
+  try {
+    if (!user) {
+      throw new Error('Invalid code');
     }
 
     user.recoverCode = null;
     user.password = req.body.password;
-    user.save((error) => {
-      if (error) {
-        doRecoverCodeFailed(res, user, error);
-        return;
-      }
+    await user.save();
 
-      req.logIn(user, (error) => {
-        res.redirect('/');
-      });
+    req.logIn(user, (error) => {
+      res.redirect('/');
     });
-  });
-});
-
-function doRecoverCodeFailed(res, user, error) {
-  res.render('recover-code', {
-    title: 'Account recovery failed',
-    user: user,
-    error: error,
-  });
-}
+  } catch (error) {
+    res.render('recover-code', {
+      title: 'Account recovery failed',
+      user: user,
+      error: error,
+    });
+  }
+}));
 
 
-router.route('/:userId/citizen/new').get(common.ensureSignedIn,
-(req, res) => {
+router.route('/:userId/citizen/new').get(ensureSignedIn, asyncWrap(async (req, res) => {
   if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
     res.sendStatus(403);
     return;
   }
 
-  Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
-    if (error) {
-      console.log(error);
-      res.sendStatus(500);
-      return;
-    } else if (!servers || !servers.length) {
-      res.status(404).send('No Servers Found');
-      return;
-    }
+  const servers = await Server.find({}, null, {sort: {_id: 1}});
+  if (!servers || !servers.length) {
+    res.status(404).send('No Servers Found');
+    return;
+  }
 
-    res.render('user-add-citizen', {
-      title: 'New User Citizen',
-      servers: servers,
-    });
+  res.render('user-add-citizen', {
+    title: 'New User Citizen',
+    servers: servers,
   });
-}).post(common.ensureSignedIn, (req, res) => {
+})).post(ensureSignedIn, asyncWrap(async (req, res) => {
   if (req.user.accessLevel < 6 && req.user.id !== req.params.userId) {
     res.sendStatus(403);
     return;
   }
 
-  Server.findById(req.body.server, (error, server) => {
-    if (error || !server) {
-      res.status(404).send('Server Not Found');
-      return;
-    }
+  const server = await Server.findById(req.body.server);
+  if (!server) {
+    res.status(404).send('Server Not Found');
+    return;
+  }
 
-    const l = req.user.citizens.length;
-    for (let i = 0; i < l; i++) {
-      if (req.user.citizens[i].name === req.body.name &&
-          req.user.citizens[i].server.equals(server._id)) {
-        doAddCitizenFailed(req, res, 'Citizen already exists');
-        return;
+  try {
+    for (const citizen of req.user.citizens) {
+      if (citizen.name === req.body.name &&
+          citizen.server.equals(server._id)) {
+        throw new Error('Citizen already exists');
       }
     }
 
@@ -322,38 +267,26 @@ router.route('/:userId/citizen/new').get(common.ensureSignedIn,
       name: req.body.name,
     });
 
-    req.user.save((error) => {
-      if (error) {
-        doAddCitizenFailed(req, res, error);
-        return;
-      }
+    await req.user.save();
 
-      req.flash('info', 'Citizen successfully added');
-      res.redirect(`/user/${req.user.id}`);
-    });
-  });
-});
-
-function doAddCitizenFailed(req, res, err) {
-  Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
-    if (error) {
-      console.log(error);
-      res.sendStatus(500);
-      return;
-    } else if (!servers || !servers.length) {
+    req.flash('info', 'Citizen successfully added');
+    res.redirect(`/user/${req.user.id}`);
+  } catch (error) {
+    const servers = await Server.find({}, null, {sort: {_id: 1}});
+    if (!servers || !servers.length) {
       res.status(404).send('No Servers Found');
       return;
     }
 
     res.render('user-add-citizen', {
       title: 'New User Citizen',
-      error: err,
+      error: error,
       servers: servers,
       server: req.body.server,
       name: req.body.name,
     });
-  });
-}
+  }
+}));
 
 
 router.route('/signin').get((req, res) => {

@@ -20,7 +20,7 @@
 const express = require('express');
 const router = express.Router();
 
-const common = require('./common');
+const {ensureSignedIn, asyncWrap} = require('./common');
 
 const Server = require('../models/server');
 const Country = require('../models/country');
@@ -28,74 +28,49 @@ const User = require('../models/user');
 const Channel = require('../models/channel');
 
 
-router.route('/new').get(common.ensureSignedIn, (req, res) => {
+router.route('/new').get(ensureSignedIn, asyncWrap(async (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
-    if (error) {
-      console.log(error);
-      res.sendStatus(500);
-      return;
-    } else if (!servers || servers.length < 1) {
-      res.status(404).send('No Servers Found');
-      return;
-    }
+  const servers = await Server.find({}, null, {sort: {_id: 1}});
+  if (!servers || servers.length < 1) {
+    res.status(404).send('No Servers Found');
+    return;
+  }
 
-    res.render('country-create', {
-      title: 'Create Country',
-      servers: servers,
-    });
+  res.render('country-create', {
+    title: 'Create Country',
+    servers: servers,
   });
-}).post(common.ensureSignedIn, (req, res) => {
+})).post(ensureSignedIn, asyncWrap(async (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Server.findById(req.body.server, (error, server) => {
-    if (error) {
-      console.log(error);
-      res.sendStatus(500);
-      return;
-    } else if (!server) {
-      res.status(404).send('Server Not Found');
-      return;
-    }
+  const server = await Server.findById(req.body.server);
+  if (!server) {
+    res.status(404).send('Server Not Found');
+    return;
+  }
 
-    Country.create({
+  try {
+    const country = await Country.create({
       name: req.body.name,
       shortname: req.body.shortname,
       server: server._id,
-    }, (error, country) => {
-      if (error) {
-        doCreateFailed(req, res, error);
-        return;
-      }
-
-      server.countries.push(country);
-      server.save((error) => {
-        if (error) {
-          doCreateFailed(req, res, error);
-          return;
-        }
-
-        req.flash('info', 'Country successfully created');
-        res.redirect(`/country/${country.id}`);
-      });
     });
-  });
-});
 
-function doCreateFailed(req, res, err) {
-  Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
-    if (error) {
-      console.log(error);
-      res.sendStatus(500);
-      return;
-    } else if (!servers || servers.length < 1) {
+    server.countries.push(country);
+    await server.save();
+
+    req.flash('info', 'Country successfully created');
+    res.redirect(`/country/${country.id}`);
+  } catch (error) {
+    const servers = await Server.find({}, null, {sort: {_id: 1}});
+    if (!servers || servers.length < 1) {
       res.status(404).send('No Servers Found');
       return;
     }
@@ -103,139 +78,53 @@ function doCreateFailed(req, res, err) {
     res.render('country-create', {
       title: 'Create Country',
       servers: servers,
-      error: err,
+      error: error,
       name: req.body.name,
       shortname: req.body.shortname,
       server: req.body.server,
     });
-  });
-}
+  }
+}));
 
 
-router.get('/:countryId', common.ensureSignedIn, (req, res) => {
+router.get('/:countryId', ensureSignedIn, asyncWrap(async (req, res) => {
   const query = Country.findById(req.params.countryId);
-  query.populate('server organizations').exec((error, country) => {
-    if (error || !country) {
-      res.sendStatus(404);
-      return;
-    }
+  const country = await query.populate('server organizations').exec();
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
 
-    res.render('country', {
-      title: 'Country Information',
-      country: country,
-      info: req.flash('info'),
-    });
+  res.render('country', {
+    title: 'Country Information',
+    country: country,
+    info: req.flash('info'),
   });
-});
+}));
 
 
-router.get('/:countryId/access', common.ensureSignedIn, (req, res) => {
+router.get('/:countryId/access', ensureSignedIn, asyncWrap(async (req, res) => {
   const query = Country.findById(req.params.countryId);
-  query.populate('accessList.account').exec((error, country) => {
-    if (error || !country) {
-      res.sendStatus(404);
-      return;
-    }
+  const country = await query.populate('accessList.account').exec();
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
 
-    /* Only site and country admins could get access list */
-    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
-      res.sendStatus(403);
-      return;
-    }
+  /* Only site and country admins could get access list */
+  if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+    res.sendStatus(403);
+    return;
+  }
 
-    res.render('country-access', {
-      title: 'Country Access List',
-      country: country,
-      info: req.flash('info'),
-      error: req.flash('error'),
-    });
+  res.render('country-access', {
+    title: 'Country Access List',
+    country: country,
+    info: req.flash('info'),
+    error: req.flash('error'),
   });
-});
+}));
 
-
-router.route('/:countryId/access/new').get(common.ensureSignedIn,
-(req, res) => {
-  Country.findById(req.params.countryId, (error, country) => {
-    if (error || !country) {
-      res.sendStatus(404);
-      return;
-    }
-
-    /* Only site and country admins could change access */
-    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
-      res.sendStatus(403);
-      return;
-    }
-
-    res.render('country-access-add', {
-      title: 'New Country Access',
-    });
-  });
-}).post(common.ensureSignedIn, (req, res) => {
-  User.findOne({username: req.body.username}, (error, user) => {
-    if (error || !user) {
-      doAddAccessFailed(req, res, 'Username not found');
-      return;
-    }
-
-    Country.findById(req.params.countryId, (error, country) => {
-      if (error || !country) {
-        res.sendStatus(404);
-        return;
-      }
-
-      let access = null;
-      let accessLevel = 0;
-      const l = country.accessList.length;
-      for (let i = 0; i < l; i++) {
-        if (country.accessList[i].account.equals(req.user._id)) {
-          accessLevel = country.accessList[i].accessLevel;
-        }
-
-        if (country.accessList[i].account.equals(user._id)) {
-          access = country.accessList[i];
-        }
-      }
-
-      /* Only site and country admins could change access */
-      if (req.user.accessLevel < 6 && accessLevel < 3) {
-        res.sendStatus(403);
-        return;
-      }
-
-      /* Only site admins could add country admins */
-      if (req.user.accessLevel < 6 && req.body.accessLevel >= 3) {
-        res.sendStatus(403);
-        return;
-      }
-
-      if (access) {
-        /* Prevent country admins to remove another country admin */
-        if (req.user.accessLevel < 6 && access.accessLevel >= 3) {
-          res.sendStatus(403);
-          return;
-        }
-
-        access.accessLevel = req.body.accessLevel;
-      } else {
-        country.accessList.push({
-          account: user._id,
-          accessLevel: req.body.accessLevel,
-        });
-      }
-
-      country.save((error) => {
-        if (error) {
-          doAddAccessFailed(req, res, error);
-          return;
-        }
-
-        req.flash('info', 'Access successfully added');
-        res.redirect(`/country/${country.id}/access`);
-      });
-    });
-  });
-});
 
 function doAddAccessFailed(req, res, err) {
   res.render('country-access-add', {
@@ -246,165 +135,147 @@ function doAddAccessFailed(req, res, err) {
   });
 }
 
+router.route('/:countryId/access/new').get(ensureSignedIn, asyncWrap(async (req, res) => {
+  const country = await Country.findById(req.params.countryId);
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
 
-router.get('/:countryId/access/remove/:accessId', common.ensureSignedIn,
-(req, res) => {
-  Country.findById(req.params.countryId, (error, country) => {
-    if (error || !country) {
-      res.sendStatus(404);
-      return;
+  /* Only site and country admins could change access */
+  if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+    res.sendStatus(403);
+    return;
+  }
+
+  res.render('country-access-add', {
+    title: 'New Country Access',
+  });
+})).post(ensureSignedIn, asyncWrap(async (req, res) => {
+  const country = await Country.findById(req.params.countryId);
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
+
+  const user = await User.findOne({username: req.body.username});
+  if (!user) {
+    doAddAccessFailed(req, res, 'Username not found');
+    return;
+  }
+
+  let access = null;
+  let accessLevel = 0;
+  const l = country.accessList.length;
+  for (let i = 0; i < l; i++) {
+    if (country.accessList[i].account.equals(req.user._id)) {
+      ({accessLevel} = country.accessList[i]);
     }
 
-    const access = country.accessList.id(req.params.accessId);
-    if (!access) {
-      req.flash('error', 'Access not found');
-      res.redirect(`/country/${country.id}/access`);
-      return;
+    if (country.accessList[i].account.equals(user._id)) {
+      access = country.accessList[i];
     }
+  }
 
-    /* Only site and country admins could remove access */
-    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
-      res.sendStatus(403);
-      return;
-    }
+  /* Only site and country admins could change access */
+  if (req.user.accessLevel < 6 && accessLevel < 3) {
+    res.sendStatus(403);
+    return;
+  }
 
-    /* Only site admins could remove country admins */
+  /* Only site admins could add country admins */
+  if (req.user.accessLevel < 6 && req.body.accessLevel >= 3) {
+    res.sendStatus(403);
+    return;
+  }
+
+  if (access) {
+    /* Prevent country admins to remove another country admin */
     if (req.user.accessLevel < 6 && access.accessLevel >= 3) {
       res.sendStatus(403);
       return;
     }
 
-    access.remove();
-
-    country.save((error) => {
-      if (error) {
-        doAddAccessFailed(req, res, error);
-        return;
-      }
-
-      req.flash('info', 'Access successfully removed');
-      res.redirect(`/country/${country.id}/access`);
+    access.accessLevel = req.body.accessLevel;
+  } else {
+    country.accessList.push({
+      account: user._id,
+      accessLevel: req.body.accessLevel,
     });
-  });
-});
+  }
+
+  try {
+    await country.save();
+
+    req.flash('info', 'Access successfully added');
+    res.redirect(`/country/${country.id}/access`);
+  } catch (error) {
+    doAddAccessFailed(req, res, error);
+  }
+}));
 
 
-router.get('/:countryId/channel', common.ensureSignedIn, (req, res) => {
-  const query = Country.findById(req.params.countryId);
-  query.populate('channels.channel').exec((error, country) => {
-    if (error || !country) {
-      res.sendStatus(404);
-      return;
-    }
+router.get('/:countryId/access/remove/:accessId', ensureSignedIn, asyncWrap(async (req, res) => {
+  const country = await Country.findById(req.params.countryId);
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
 
-    /* Only site and country admins could get channel list */
-    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
-      res.sendStatus(403);
-      return;
-    }
+  const access = country.accessList.id(req.params.accessId);
+  if (!access) {
+    req.flash('error', 'Access not found');
+    res.redirect(`/country/${country.id}/access`);
+    return;
+  }
 
-    res.render('country-channel', {
-      title: 'Country Channels',
-      country: country,
-      info: req.flash('info'),
-      error: req.flash('error'),
-    });
-  });
-});
-
-
-router.route('/:countryId/channel/new').get(common.ensureSignedIn,
-(req, res) => {
-  if (req.user.accessLevel < 6) {
+  /* Only site and country admins could remove access */
+  if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
     res.sendStatus(403);
     return;
   }
 
-  Country.findById(req.params.countryId, (error, country) => {
-    if (error || !country) {
-      res.sendStatus(404);
-      return;
-    }
+  /* Only site admins could remove country admins */
+  if (req.user.accessLevel < 6 && access.accessLevel >= 3) {
+    res.sendStatus(403);
+    return;
+  }
 
-    res.render('country-channel-add', {
-      title: 'New Country Channel',
-    });
+  access.remove();
+
+  try {
+    await country.save();
+
+    req.flash('info', 'Access successfully removed');
+    res.redirect(`/country/${country.id}/access`);
+  } catch (error) {
+    doAddAccessFailed(req, res, error);
+  }
+}));
+
+
+router.get('/:countryId/channel', ensureSignedIn, asyncWrap(async (req, res) => {
+  const query = Country.findById(req.params.countryId);
+  const country = await query.populate('channels.channel').exec();
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
+
+  /* Only site and country admins could get channel list */
+  if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+    res.sendStatus(403);
+    return;
+  }
+
+  res.render('country-channel', {
+    title: 'Country Channels',
+    country: country,
+    info: req.flash('info'),
+    error: req.flash('error'),
   });
-}).post(common.ensureSignedIn, (req, res) => {
-  Channel.findOne({name: req.body.name}, (error, channel) => {
-    if (error || !channel) {
-      doAddChannelFailed(req, res, 'Channel not found');
-      return;
-    }
+}));
 
-    if (req.user.accessLevel < 6) {
-      res.sendStatus(403);
-      return;
-    }
-
-    Country.findById(req.params.countryId, (error, country) => {
-      if (error || !country) {
-        res.sendStatus(404);
-        return;
-      }
-
-      const l = country.channels.length;
-      for (let i = 0; i < l; i++) {
-        if (country.channels[i].channel.equals(channel._id)) {
-          doAddChannelFailed(req, res, 'Channel already exists');
-          return;
-        }
-      }
-
-      const types = [];
-
-      if (req.body.general) {
-        types.push('general');
-      }
-
-      if (req.body.military) {
-        types.push('military');
-      }
-
-      if (req.body.political) {
-        types.push('political');
-      }
-
-      if (req.body.motivation) {
-        types.push('motivation');
-      }
-
-      if (types.length < 1) {
-        doAddChannelFailed(req, res, 'No type selected');
-        return;
-      }
-
-      country.channels.push({
-        channel: channel._id,
-        types: types,
-      });
-
-      country.save((error) => {
-        if (error) {
-          doAddChannelFailed(req, res, error);
-          return;
-        }
-
-        channel.countries.push(country._id);
-
-        channel.save((error) => {
-          if (error) {
-            doAddChannelFailed(req, res, error);
-            return;
-          }
-
-          req.flash('info', 'Channel successfully added');
-          res.redirect(`/country/${country.id}`);
-        });
-      });
-    });
-  });
-});
 
 function doAddChannelFailed(req, res, error) {
   res.render('country-channel-add', {
@@ -418,64 +289,138 @@ function doAddChannelFailed(req, res, error) {
   });
 }
 
+router.route('/:countryId/channel/new').get(ensureSignedIn, asyncWrap(async (req, res) => {
+  if (req.user.accessLevel < 6) {
+    res.sendStatus(403);
+    return;
+  }
 
-router.get('/:countryId/channel/remove/:channelId', common.ensureSignedIn,
-(req, res) => {
-  Country.findById(req.params.countryId, (error, country) => {
-    if (error || !country) {
-      res.sendStatus(404);
-      return;
-    }
+  const country = await Country.findById(req.params.countryId);
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
 
-    const _channel = country.channels.id(req.params.channelId);
-    if (!_channel) {
-      req.flash('error', 'Channel not found in country');
-      res.redirect(`/country/${country.id}/channel`);
-      return;
-    }
-
-    Channel.findById(_channel.channel, (error, channel) => {
-      if (error || !channel) {
-        res.sendStatus(404);
-        return;
-      }
-
-      const countryId = channel.countries.indexOf(country.id);
-      if (countryId < 0) {
-        req.flash('error', 'Country not found in channel');
-        res.redirect(`/country/${country.id}/channel`);
-        return;
-      }
-
-      /* Only site and country admins could remove channels */
-      if (req.user.accessLevel < 6 &&
-          country.getUserAccessLevel(req.user) < 3) {
-        res.sendStatus(403);
-        return;
-      }
-
-      _channel.remove();
-      channel.countries.splice(countryId, 1);
-
-      country.save((error) => {
-        if (error) {
-          doAddAccessFailed(req, res, error);
-          return;
-        }
-
-        channel.save((error) => {
-          if (error) {
-            doAddAccessFailed(req, res, error);
-            return;
-          }
-
-          req.flash('info', 'Channel successfully removed');
-          res.redirect(`/country/${country.id}/channel`);
-        });
-      });
-    });
+  res.render('country-channel-add', {
+    title: 'New Country Channel',
   });
-});
+})).post(ensureSignedIn, asyncWrap(async (req, res) => {
+  const country = await Country.findById(req.params.countryId);
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
+
+  /* Only site and country admins could add channels */
+  if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+    res.sendStatus(403);
+    return;
+  }
+
+  const channel = await Channel.findOne({name: req.body.name});
+  if (!channel) {
+    doAddChannelFailed(req, res, 'Channel not found');
+    return;
+  }
+
+  const l = country.channels.length;
+  for (let i = 0; i < l; i++) {
+    if (country.channels[i].channel.equals(channel._id)) {
+      doAddChannelFailed(req, res, 'Channel already exists');
+      return;
+    }
+  }
+
+  const types = [];
+
+  if (req.body.general) {
+    types.push('general');
+  }
+
+  if (req.body.military) {
+    types.push('military');
+  }
+
+  if (req.body.political) {
+    types.push('political');
+  }
+
+  if (req.body.motivation) {
+    types.push('motivation');
+  }
+
+  if (types.length < 1) {
+    doAddChannelFailed(req, res, 'No type selected');
+    return;
+  }
+
+  country.channels.push({
+    channel: channel._id,
+    types: types,
+  });
+
+  try {
+    await country.save();
+
+    channel.countries.push(country._id);
+
+    await channel.save();
+
+    req.flash('info', 'Channel successfully added');
+    res.redirect(`/country/${country.id}`);
+  } catch (error) {
+    doAddChannelFailed(req, res, error);
+  }
+}));
+
+
+router.get('/:countryId/channel/remove/:channelId', ensureSignedIn, asyncWrap(async (req, res) => {
+  const country = await Country.findById(req.params.countryId);
+  if (!country) {
+    res.sendStatus(404);
+    return;
+  }
+
+  const _channel = country.channels.id(req.params.channelId);
+  if (!_channel) {
+    req.flash('error', 'Channel not found in country');
+    res.redirect(`/country/${country.id}/channel`);
+    return;
+  }
+
+  const channel = await Channel.findById(_channel.channel);
+  if (!channel) {
+    res.sendStatus(404);
+    return;
+  }
+
+  const countryId = channel.countries.indexOf(country.id);
+  if (countryId < 0) {
+    req.flash('error', 'Country not found in channel');
+    res.redirect(`/country/${country.id}/channel`);
+    return;
+  }
+
+  /* Only site and country admins could remove channels */
+  if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+    res.sendStatus(403);
+    return;
+  }
+
+  _channel.remove();
+  channel.countries.splice(countryId, 1);
+
+  try {
+    await country.save();
+
+    await channel.save();
+
+    req.flash('info', 'Channel successfully removed');
+    res.redirect(`/country/${country.id}/channel`);
+  } catch (error) {
+    doAddChannelFailed(req, res, error);
+  }
+}));
 
 
 module.exports = router;

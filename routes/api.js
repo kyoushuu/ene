@@ -20,20 +20,17 @@
 const express = require('express');
 const router = express.Router();
 
+const {asyncWrap} = require('./common');
+
 const Server = require('../models/server');
 const Organization = require('../models/organization');
 
 
-router.get('/:server/battle/:battleId', (req, res) => {
-  Server.findOne({
-    name: {$regex: new RegExp(req.params.server, 'i')},
-  }).populate('countries').exec((error, server) => {
-    if (error) {
-      res.end(JSON.stringify({
-        'error': error,
-      }));
-      return;
-    }
+router.get('/:server/battle/:battleId', asyncWrap(async (req, res) => {
+  try {
+    const server = await Server.findOne({
+      name: {$regex: new RegExp(req.params.server, 'i')},
+    }).populate('countries').exec();
 
     if (!server) {
       res.end(JSON.stringify({
@@ -49,61 +46,51 @@ router.get('/:server/battle/:battleId', (req, res) => {
       return;
     }
 
-    Organization.populate(server, {
+    await Organization.populate(server, {
       path: 'countries.organizations',
-    }, (error, server) => {
-      if (error) {
-        res.end(JSON.stringify({
-          'error': error,
-        }));
-        return;
-      }
-
-      const battleId = parseInt(req.params.battleId);
-      if (isNaN(battleId) || battleId < 1) {
-        res.end(JSON.stringify({
-          'error': 'Invalid battle id',
-        }));
-        return;
-      }
-
-      if (!server.countries.length) {
-        return;
-      }
-
-      let i;
-      const l = server.countries.length;
-      for (i = 0; i < l; i++) {
-        if (server.countries[i].organizations.length) {
-          break;
-        }
-      }
-
-      if (i === l) {
-        return;
-      }
-
-      server.countries[i].organizations[0].getBattleInfo(battleId,
-        (error, battleInfo) => {
-          if (error) {
-            res.end(JSON.stringify({
-              'error': error,
-            }));
-            return;
-          }
-
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({
-            'type': battleInfo.type,
-            'defender': battleInfo.defender,
-            'attacker': battleInfo.attacker,
-            'label': battleInfo.label,
-            'typeId': battleInfo.id,
-          }));
-        });
     });
-  });
-});
+
+    const battleId = parseInt(req.params.battleId);
+    if (isNaN(battleId) || battleId < 1) {
+      res.end(JSON.stringify({
+        'error': 'Invalid battle id',
+      }));
+      return;
+    }
+
+    if (!server.countries.length) {
+      return;
+    }
+
+    let i;
+    const l = server.countries.length;
+    for (i = 0; i < l; i++) {
+      if (server.countries[i].organizations.length) {
+        break;
+      }
+    }
+
+    if (i === l) {
+      return;
+    }
+
+    const battleInfo =
+      await server.countries[i].organizations[0].getBattleInfo(battleId);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({
+      'type': battleInfo.type,
+      'defender': battleInfo.defender,
+      'attacker': battleInfo.attacker,
+      'label': battleInfo.label,
+      'typeId': battleInfo.id,
+    }));
+  } catch (error) {
+    res.end(JSON.stringify({
+      'error': error,
+    }));
+  }
+}));
 
 
 module.exports = router;

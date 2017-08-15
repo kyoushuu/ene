@@ -20,12 +20,12 @@
 const express = require('express');
 const router = express.Router();
 
-const common = require('./common');
+const {ensureSignedIn, asyncWrap} = require('./common');
 
 const Channel = require('../models/channel');
 
 
-router.route('/new').get(common.ensureSignedIn, (req, res) => {
+router.route('/new').get(ensureSignedIn, (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
@@ -34,45 +34,43 @@ router.route('/new').get(common.ensureSignedIn, (req, res) => {
   res.render('channel-create', {
     title: 'Create Channel',
   });
-}).post(common.ensureSignedIn, (req, res) => {
+}).post(ensureSignedIn, asyncWrap(async (req, res) => {
   if (req.user.accessLevel < 6) {
     res.sendStatus(403);
     return;
   }
 
-  Channel.create({
-    name: req.body.name,
-    keyword: req.body.keyword,
-  }, (error, channel) => {
-    if (error) {
-      res.render('channel-create', {
-        title: 'Create Channel',
-        error: error,
-        name: req.body.name,
-      });
-      return;
-    }
+  try {
+    const channel = await Channel.create({
+      name: req.body.name,
+      keyword: req.body.keyword,
+    });
 
     req.flash('info', 'Channel successfully created');
     res.redirect(`/channel/${channel.id}`);
-  });
-});
+  } catch (error) {
+    res.render('channel-create', {
+      title: 'Create Channel',
+      error: error,
+      name: req.body.name,
+    });
+  }
+}));
 
 
-router.get('/:channelId', common.ensureSignedIn, (req, res) => {
-  Channel.findById(req.params.channelId, (error, channel) => {
-    if (error || !channel) {
-      res.sendStatus(404);
-      return;
-    }
+router.get('/:channelId', ensureSignedIn, asyncWrap(async (req, res) => {
+  try {
+    const channel = await Channel.findById(req.params.channelId);
 
     res.render('channel', {
       title: 'Channel Information',
       channel: channel,
       info: req.flash('info'),
     });
-  });
-});
+  } catch (error) {
+    res.sendStatus(404);
+  }
+}));
 
 
 module.exports = router;

@@ -20,91 +20,60 @@
 const express = require('express');
 const router = express.Router();
 
-const common = require('./common');
+const {ensureSignedIn, asyncWrap} = require('./common');
 
 const Organization = require('../models/organization');
 const Country = require('../models/country');
 const Server = require('../models/server');
 
 
-router.route('/new').get(common.ensureSignedIn, (req, res) => {
+router.route('/new').get(ensureSignedIn, asyncWrap(async (req, res) => {
   const query = Server.find({}, null, {sort: {_id: 1}});
   query.populate('countries', null, null, {sort: {_id: 1}});
-  query.exec((error, servers) => {
-    if (error) {
-      console.log(error);
-      res.sendStatus(500);
-      return;
-    } else if (!servers || !servers.length) {
-      res.status(404).send('No Servers Found');
-      return;
-    }
+  const servers = await query.exec();
+  if (!servers || !servers.length) {
+    res.status(404).send('No Servers Found');
+    return;
+  }
 
-    res.render('organization-create', {
-      title: 'Create Organization',
-      servers: servers,
-    });
+  res.render('organization-create', {
+    title: 'Create Organization',
+    servers: servers,
   });
-}).post(common.ensureSignedIn, (req, res) => {
+})).post(ensureSignedIn, asyncWrap(async (req, res) => {
   const query = Country.findById(req.body.country).populate('server');
-  query.exec((error, country) => {
-    if (error) {
-      console.log(error);
-      res.sendStatus(500);
-      return;
-    } else if (!country) {
-      res.status(404).send('Country Not Found');
-      return;
-    }
+  const country = await query.exec();
+  if (!country) {
+    res.status(404).send('Country Not Found');
+    return;
+  }
 
-    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
-      res.sendStatus(403);
-      return;
-    }
+  if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+    res.sendStatus(403);
+    return;
+  }
 
-    const organization = new Organization({
-      username: req.body.username,
-      password: req.body.password,
-      shortname: req.body.shortname,
-      country: country._id,
-    });
-
-    organization.login((error) => {
-      if (error) {
-        doCreateFailed(req, res, `Failed to login: ${error}`);
-        return;
-      }
-
-      organization.save((error) => {
-        if (error) {
-          doCreateFailed(req, res, `Failed to save organization: ${error}`);
-          return;
-        }
-
-        country.organizations.push(organization);
-        country.save((error) => {
-          if (error) {
-            doCreateFailed(req, res, `Failed to save country: ${error}`);
-            return;
-          }
-
-          req.flash('info', 'Organization successfully created');
-          res.redirect(`/organization/${organization.id}`);
-        });
-      });
-    });
+  const organization = new Organization({
+    username: req.body.username,
+    password: req.body.password,
+    shortname: req.body.shortname,
+    country: country._id,
   });
-});
 
-function doCreateFailed(req, res, err) {
-  const query = Server.find({}, null, {sort: {_id: 1}});
-  query.populate('countries', null, null, {sort: {_id: 1}});
-  query.exec((error, servers) => {
-    if (error) {
-      console.log(error);
-      res.sendStatus(500);
-      return;
-    } else if (!servers || !servers.length) {
+  try {
+    await organization.login();
+    await organization.save();
+
+    country.organizations.push(organization);
+    await country.save();
+
+    req.flash('info', 'Organization successfully created');
+    res.redirect(`/organization/${organization.id}`);
+  } catch (error) {
+    const query = Server.find({}, null, {sort: {_id: 1}});
+    query.populate('countries', null, null, {sort: {_id: 1}});
+    const servers = await query.exec();
+    if (!servers || !servers.length) {
       res.status(404).send('No Servers Found');
       return;
     }
@@ -112,114 +81,98 @@ function doCreateFailed(req, res, err) {
     res.render('organization-create', {
       title: 'Create Organization',
       servers: servers,
-      error: err,
+      error: error,
       username: req.body.username,
       shortname: req.body.shortname,
       country: req.body.country,
     });
-  });
-}
+  }
+}));
 
 
-router.get('/:organizationId', common.ensureSignedIn, (req, res) => {
+router.get('/:organizationId', ensureSignedIn, asyncWrap(async (req, res) => {
   const query = Organization.findById(req.params.organizationId);
   query.populate('country');
-  query.exec((error, organization) => {
-    if (error || !organization) {
-      res.sendStatus(404);
-      return;
-    } else if (!organization.country || !organization.country._id) {
-      res.status(404).send('Country Not Found');
-      return;
-    }
+  const organization = await query.exec();
 
-    Server.populate(organization, {
-      path: 'country.server',
-    }, (error, organization) => {
-      if (error) {
-        console.log(error);
-        res.sendStatus(500);
-        return;
-      } else if (!organization.country.server ||
-          !organization.country.server._id) {
-        res.status('Server Not Found', 404);
-        return;
-      }
+  if (!organization) {
+    res.sendStatus(404);
+    return;
+  } else if (!organization.country || !organization.country._id) {
+    res.status(404).send('Country Not Found');
+    return;
+  }
 
-      res.render('organization', {
-        title: 'Organization Information',
-        organization: organization,
-        info: req.flash('info'),
-      });
-    });
+  await Server.populate(organization, {
+    path: 'country.server',
   });
-});
+
+  if (!organization.country.server ||
+      !organization.country.server._id) {
+    res.status('Server Not Found', 404);
+    return;
+  }
+
+  res.render('organization', {
+    title: 'Organization Information',
+    organization: organization,
+    info: req.flash('info'),
+  });
+}));
 
 
-router.route('/edit/:organizationId').get(common.ensureSignedIn,
-(req, res) => {
+router.route('/edit/:organizationId').get(ensureSignedIn, asyncWrap(async (req, res) => {
   const query = Organization.findById(req.params.organizationId);
-  query.exec((error, organization) => {
-    if (error || !organization) {
-      res.sendStatus(404);
-      return;
-    }
+  const organization = await query.exec();
 
-    res.render('organization-edit', {
-      title: 'Edit Organization',
-      organization: organization,
-    });
-  });
-}).post(common.ensureSignedIn, (req, res) => {
-  const query = Organization.findById(req.params.organizationId);
-  query.populate('country');
-  query.exec((error, organization) => {
-    if (error || !organization) {
-      res.sendStatus(404);
-      return;
-    }
+  if (!organization) {
+    res.sendStatus(404);
+    return;
+  }
 
-    const country = organization.country;
-
-    if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
-      res.sendStatus(403);
-      return;
-    }
-
-    organization.username = req.body.username;
-    organization.shortname = req.body.shortname;
-    organization.lock = null;
-
-    if (req.body.password) {
-      organization.password = req.body.password;
-    }
-
-    organization.login((error) => {
-      if (error) {
-        doEditFailed(res, error, organization);
-        return;
-      }
-
-      organization.save((error) => {
-        if (error) {
-          doEditFailed(res, error, organization);
-          return;
-        }
-
-        req.flash('info', 'Organization successfully saved');
-        res.redirect(`/organization/${organization.id}`);
-      });
-    });
-  });
-});
-
-function doEditFailed(res, error, organization) {
   res.render('organization-edit', {
     title: 'Edit Organization',
-    error: error,
     organization: organization,
   });
-}
+})).post(ensureSignedIn, asyncWrap(async (req, res) => {
+  const query = Organization.findById(req.params.organizationId);
+  query.populate('country');
+  const organization = await query.exec();
+
+  if (!organization) {
+    res.sendStatus(404);
+    return;
+  }
+
+  const {country} = organization;
+
+  if (req.user.accessLevel < 6 && country.getUserAccessLevel(req.user) < 3) {
+    res.sendStatus(403);
+    return;
+  }
+
+  organization.username = req.body.username;
+  organization.shortname = req.body.shortname;
+  organization.lock = null;
+
+  if (req.body.password) {
+    organization.password = req.body.password;
+  }
+
+  try {
+    await organization.login();
+    await organization.save();
+
+    req.flash('info', 'Organization successfully saved');
+    res.redirect(`/organization/${organization.id}`);
+  } catch (error) {
+    res.render('organization-edit', {
+      title: 'Edit Organization',
+      error: error,
+      organization: organization,
+    });
+  }
+}));
 
 
 module.exports = router;

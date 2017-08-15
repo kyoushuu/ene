@@ -20,24 +20,26 @@
 const express = require('express');
 const router = express.Router();
 
+const {asyncWrap} = require('./common');
+
 const Country = require('../models/country');
 
 /* GET home page. */
-router.get('/', (req, res) => {
+router.get('/', asyncWrap(async (req, res) => {
   if (!req.user) {
     res.render('index', {title: 'Ene Project'});
     return;
   }
 
-  Country.find((req.user.accessLevel < 4 ? {
+  const countries = await Country.find(req.user.accessLevel < 4 ? {
     'accessList.account': req.user,
-  } : {})).populate('server').exec((error, countries) => {
-    res.render('index', {
-      title: 'Ene Project',
-      user: req.user,
-      countries: countries,
-    });
+  } : {}).populate('server').exec();
+
+  res.render('index', {
+    title: 'Ene Project',
+    user: req.user,
+    countries: countries,
   });
-});
+}));
 
 module.exports = router;
