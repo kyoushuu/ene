@@ -33,7 +33,8 @@
     "cron": "^1.0.5",
     "time": "^0.11.0",
     "moment-timezone": "^0.5.10",
-    "numeral": "^2.0.4"
+    "numeral": "^2.0.4",
+    "request-promise-native": "^1.0.4"
   },
   "devDependencies": {
     "jscs": "^3.0.7",
