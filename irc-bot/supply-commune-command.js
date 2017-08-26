@@ -124,7 +124,7 @@ module.exports = async function(bot, from, to, args) {
   const unitId = parseInt($('div#unitStatusHead a').attr('href').split('=')[1]);
 
   if (reason === null) {
-    const day = numeral().unformat($('#contentDrop b').eq(1).text().trim());
+    const day = numeral($('#contentDrop b').eq(1).text().trim()).value();
     reason = `Commune Supply: Day ${day}`;
   }
 

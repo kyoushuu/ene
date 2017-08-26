@@ -102,8 +102,8 @@ module.exports = async function(bot, from, to, args) {
   const battleRoundInfo =
       await organization.getBattleRoundInfo(battleInfo.roundId);
 
-  const defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
-  const attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
+  const defenderScore = numeral(battleRoundInfo.defenderScore).value();
+  const attackerScore = numeral(battleRoundInfo.attackerScore).value();
   const totalScore = defenderScore + attackerScore;
 
   let wall = 0;

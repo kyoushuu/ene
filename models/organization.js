@@ -419,7 +419,7 @@ class Organization extends mongoose.Model {
         type,
         id,
         frozen,
-        round: numeral().unformat($('div#mainFight > div').eq(2).text().trim()),
+        round: numeral($('div#mainFight > div').eq(2).text().trim()).value(),
         roundId: parseInt($('input#battleRoundId').attr('value')),
         defender,
         defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
