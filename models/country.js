@@ -18,6 +18,7 @@
 
 
 const mongoose = require('mongoose');
+const moment = require('moment-timezone');
 
 
 class Country extends mongoose.Model {
@@ -33,6 +34,11 @@ class Country extends mongoose.Model {
     }
 
     return 0;
+  }
+
+
+  getDayStart() {
+    return moment().tz('Europe/Warsaw').startOf('day').unix();
   }
 }
 
