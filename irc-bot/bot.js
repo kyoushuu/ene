@@ -18,6 +18,7 @@
 
 
 const irc = require('irc');
+const codes = irc.colors.codes;
 const parse = require('shell-quote').parse;
 
 const Channel = require('../models/channel');
@@ -47,138 +48,247 @@ const commands = {
 };
 
 
-const bot = new irc.Client(process.env.IRC_SERVER, process.env.IRC_NICKNAME, {
-  userName: process.env.IRC_USERNAME,
-  realName: process.env.IRC_REALNAME,
-  channels: [],
-  floodProtection: true,
-  autoConnect: false,
-});
+class IRCBot extends irc.Client {
+  constructor(server, nickname, options) {
+    super(server, nickname, options);
 
-function isNickIdentified(nick, callback) {
-  let identified = false;
+    this.nickFilterList = [];
 
-  const wrapper = function(message) {
-    if (message.rawCommand === '307' &&
-        message.args[1] === nick &&
-                message.args[2] === 'has identified for this nick') {
-      identified = true;
+    this.addListener('registered', (from, to, message) => {
+      this.onRegistered().catch((error) => {
+        console.log(error);
+      });
+    });
+
+    this.addListener('message#', (from, to, message) => {
+      this.onChannelMessage(from, to, message).catch((error) => {
+        this.say(to, `Error: ${error}`);
+      });
+    });
+
+    this.addListener('pm', (from, message) => {
+      this.onPrivateMessage(from, message).catch((error) => {
+        this.say(from, `Error: ${error}`);
+      });
+    });
+
+    this.addListener('error', (message) => {
+      console.log('Bot error: ', message);
+    });
+  }
+
+
+  async onRegistered() {
+    await this.joinChannels();
+  }
+
+  async onChannelMessage(from, to, message) {
+    if (this.nickFilterList.length && !this.nickFilterList.includes(from)) {
+      return;
     }
-  };
-  bot.addListener('raw', wrapper);
 
-  bot.whois(nick, (info) => {
-    bot.removeListener('raw', wrapper);
-    callback(identified);
-  });
+    const argv = parse(message);
+
+    if (commands.channel.hasOwnProperty(argv[0])) {
+      const identified = await this.isNickIdentified(from);
+
+      if (!identified) {
+        throw new Error('Identify with NickServ first.');
+      }
+
+      await commands.channel[argv[0]](this, from, to, argv, message);
+    }
+  }
+
+  async onPrivateMessage(from, message) {
+    if (this.nickFilterList.length && !this.nickFilterList.includes(from)) {
+      return;
+    }
+
+    const argv = parse(message);
+
+    if (commands.pm.hasOwnProperty(argv[0])) {
+      const identified = await this.isNickIdentified(from);
+
+      if (!identified) {
+        throw new Error('Identify with NickServ first.');
+      }
+
+      commands.pm[argv[0]](this, from, argv, message);
+    }
+  }
+
+
+  async whois(nickname) {
+    const p = new Promise((resolve, reject) => {
+      super.whois(nickname, (info) => {
+        resolve(info);
+      });
+    });
+
+    await p;
+  }
+
+  async join(channel) {
+    const p = new Promise((resolve, reject) => {
+      super.join(channel, resolve);
+    });
+
+    await p;
+  }
+
+  async part(channel) {
+    const p = new Promise((resolve, reject) => {
+      super.part(channel, resolve);
+    });
+
+    await p;
+  }
+
+  async names(channel) {
+    const p = new Promise((resolve, reject) => {
+      this.once(`names${channel}`, (nicks) => {
+        const names = Object.getOwnPropertyNames(nicks);
+
+        names.splice(names.indexOf(this.nick), 1);
+
+        resolve(names);
+      });
+    });
+
+    this.send('NAMES', channel);
+
+    return await p;
+  }
+
+  async callEveryone(channel, message) {
+    const names = await this.names(channel);
+
+    this.say(
+        channel,
+        `${codes.bold}Listen up! ${codes.reset}${names.join(' ')}`);
+
+    if (message) {
+      this.say(
+          channel,
+          `${codes.bold + codes.black},07` +
+          `############# ${message} #############` +
+          `${codes.reset}`);
+    }
+  }
+
+
+  async isNickIdentified(nickname) {
+    return await false;
+  }
+
+  async joinChannels() {
+    const channels = await Channel.find({});
+    if (!channels || !channels.length) {
+      return;
+    }
+
+    for (const channel of channels) {
+      let joinArgs = channel.name;
+      if (channel.keyword) {
+        joinArgs += ` ${channel.keyword}`;
+      }
+
+      await this.join(joinArgs);
+
+      try {
+        await this.watchChannelBattles(channel);
+      } catch (error) {
+        this.say(channel.name, `Failed to watch battles: ${error}`);
+      }
+    }
+  }
+
+  async watchChannelBattles(channel) {
+    const battles = await Battle.find({
+      channel: channel,
+    }).populate('country channel');
+
+    for (const battle of battles) {
+      const country = battle.country;
+
+      await country.populate('organizations').execPopulate();
+
+      if (!country.organizations.length) {
+        throw new Error('Organization not found.');
+      }
+
+      try {
+        await watchBattle(this, country.organizations[0], battle);
+      } catch (error) {
+        throw new Error(`Failed to watch battle #${battle.battleId}: ${error}`);
+      }
+    }
+  }
 }
 
-bot.addListener('registered', (from, to, message) => {
-  bot.addListener('notice', function join(from, to, message) {
-    if (from === 'NickServ' &&
-        message === 'Password accepted - you are now recognized.') {
-      bot.removeListener('notice', join);
 
-      Channel.find({}, (error, channels) => {
-        if (error) {
-          console.log(error);
-          return;
-        } else if (!channels || !channels.length) {
-          console.log('No channels found');
-          return;
-        }
+class RizonBot extends IRCBot {
+  constructor(server, nickname, password, options) {
+    super(server, nickname, options);
 
-        function makeJoinCallback(i) {
-          return function() {
-            Battle.find({
-              channel: channels[i],
-            }).populate('country channel').exec((error, battles) => {
-              if (error) {
-                bot.say(channels[i].name,
-                  `Failed to watch battles of this channel: ${error}`);
-                return;
-              }
-
-              function makePopulateCallback(j) {
-                return function(error, country) {
-                  if (!country.organizations.length) {
-                    bot.say(channels[i].name,
-                      'Failed to watch battle: Organization not found.');
-                    return;
-                  }
-
-                  watchBattle(
-                    bot, battles[j].country.organizations[0], battles[j],
-                    (error) => {
-                      if (error) {
-                        bot.say(channels[i].name,
-                          'Failed to watch battle ' +
-                          `#${battles[j].battleId}: ${error}`);
-                      }
-                    });
-                };
-              }
-
-              const l = battles.length;
-              for (let j = 0; j < l; j++) {
-                const query = battles[j].country;
-                query.populate('organizations', makePopulateCallback(j));
-              }
-            });
-          };
-        }
-
-        const l = channels.length;
-        for (let i = 0; i < l; i++) {
-          let joinArgs = channels[i].name;
-          if (channels[i].keyword) {
-            joinArgs += ` ${channels[i].keyword}`;
-          }
-
-          bot.join(joinArgs, makeJoinCallback(i));
-        }
-      });
-    }
-  });
-  bot.say('NickServ', `IDENTIFY ${process.env.IRC_PASSWORD}`);
-});
-
-bot.addListener('message#', (from, to, message) => {
-  if (process.env.FILTER_NICK &&
-      !process.env.FILTER_NICK.split(':').includes(from)) {
-    return;
+    this.identify = () => this.say('NickServ', `IDENTIFY ${password}`);
   }
 
-  const argv = parse(message);
+  async isNickIdentified(nickname) {
+    let identified = false;
 
-  if (commands.channel.hasOwnProperty(argv[0])) {
-    isNickIdentified(from, (identified) => {
-      if (identified) {
-        commands.channel[argv[0]](bot, from, to, argv, message);
-      } else {
-        bot.say(from, 'Identify with NickServ first.');
+    const wrapper = (message) => {
+      if (message.rawCommand === '307' &&
+          message.args[1] === nickname &&
+          message.args[2] === 'has identified for this nick') {
+        identified = true;
       }
-    });
+    };
+
+    this.addListener('raw', wrapper);
+    await this.whois(nickname);
+    this.removeListener('raw', wrapper);
+
+    return identified;
   }
-});
 
-bot.addListener('pm', (from, message) => {
-  const argv = parse(message);
+  async onRegistered() {
+    const p = new Promise((resolve, reject) => {
+      const listener = (from, to, message) => {
+        if (from === 'NickServ' &&
+            message === 'Password accepted - you are now recognized.') {
+          this.removeListener('notice', listener);
 
-  if (commands.pm.hasOwnProperty(argv[0])) {
-    isNickIdentified(from, (identified) => {
-      if (identified) {
-        commands.pm[argv[0]](bot, from, argv, message);
-      } else {
-        bot.say(from, 'Identify with NickServ first.');
-      }
+          resolve();
+        }
+      };
+      this.addListener('notice', listener);
     });
-  }
-});
 
-bot.addListener('error', (message) => {
-  console.log('Bot error: ', message);
-});
+    this.identify();
+
+    await p;
+    await super.onRegistered();
+  }
+}
+
+
+const bot = new RizonBot(
+    process.env.IRC_SERVER,
+    process.env.IRC_NICKNAME,
+    process.env.IRC_PASSWORD,
+    {
+      userName: process.env.IRC_USERNAME,
+      realName: process.env.IRC_REALNAME,
+      channels: [],
+      floodProtection: true,
+      autoConnect: false,
+    });
+
+if (process.env.FILTER_NICK) {
+  bot.nickFilterList = process.env.FILTER_NICK.split(':');
+}
 
 
 module.exports = bot;
