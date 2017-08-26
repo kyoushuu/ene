@@ -20,7 +20,24 @@
 const mongoose = require('mongoose');
 
 
-const countrySchema = new mongoose.Schema({
+class Country extends mongoose.Model {
+  getUserAccessLevel(user) {
+    const l = this.accessList.length;
+    for (let i = 0; i < l; i++) {
+      const accountId = this.accessList[i].account._id ||
+        this.accessList[i].account;
+
+      if (accountId.equals(user._id)) {
+        return this.accessList[i].accessLevel;
+      }
+    }
+
+    return 0;
+  }
+}
+
+
+mongoose.model(Country, {
   server: {type: mongoose.Schema.Types.ObjectId, ref: 'Server', required: true},
   name: {
     type: String, required: true,
@@ -76,19 +93,5 @@ const countrySchema = new mongoose.Schema({
   },
 });
 
-countrySchema.methods.getUserAccessLevel = function(user) {
-  const l = this.accessList.length;
-  for (let i = 0; i < l; i++) {
-    const accountId = this.accessList[i].account._id ||
-      this.accessList[i].account;
 
-    if (accountId.equals(user._id)) {
-      return this.accessList[i].accessLevel;
-    }
-  }
-
-  return 0;
-};
-
-const Country = mongoose.model('Country', countrySchema);
 module.exports = Country;

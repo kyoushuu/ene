@@ -41,7 +41,12 @@ function decipherValue(value) {
   return decipher.update(value, 'base64', 'binary') + decipher.final('binary');
 }
 
-const channelSchema = new mongoose.Schema({
+
+class Channel extends mongoose.Model {
+}
+
+
+mongoose.model(Channel, {
   name: {
     type: String, required: true, unique: true,
     validate: {
@@ -60,5 +65,5 @@ const channelSchema = new mongoose.Schema({
   countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
 });
 
-const Channel = mongoose.model('Channel', channelSchema);
+
 module.exports = Channel;

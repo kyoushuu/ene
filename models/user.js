@@ -33,7 +33,21 @@ function createConfirmCode() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-const userSchema = new mongoose.Schema({
+
+class User extends mongoose.Model {
+  isValidPassword(password) {
+    return this.password === hash(password, this.salt);
+  }
+
+
+  async recover() {
+    this.recoverCode = createConfirmCode();
+    await this.save();
+  }
+}
+
+
+mongoose.model(User, {
   username: {
     type: String, required: true, unique: true,
     validate: {
@@ -102,14 +116,5 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.methods.isValidPassword = function(password) {
-  return this.password === hash(password, this.salt);
-};
 
-userSchema.methods.recover = async function() {
-  this.recoverCode = createConfirmCode();
-  await this.save();
-};
-
-const User = mongoose.model('User', userSchema);
 module.exports = User;

@@ -20,7 +20,11 @@
 const mongoose = require('mongoose');
 
 
-const batchProductDonationSchema = new mongoose.Schema({
+class BatchProductDonation extends mongoose.Model {
+}
+
+
+mongoose.model(BatchProductDonation, {
   organization: {type: mongoose.Schema.Types.ObjectId, ref: 'Organization'},
   sender: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   recipients: {type: [Number]},
@@ -29,6 +33,5 @@ const batchProductDonationSchema = new mongoose.Schema({
   reason: {type: String},
 });
 
-const BatchProductDonation =
-  mongoose.model('BatchProductDonation', batchProductDonationSchema);
+
 module.exports = BatchProductDonation;

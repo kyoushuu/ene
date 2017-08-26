@@ -50,8 +50,354 @@ function decipherValue(value) {
   return decipher.update(value, 'base64', 'binary') + decipher.final('binary');
 }
 
-const organizationSchema = new mongoose.Schema({
-  country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country', required: true},
+
+class Organization extends mongoose.Model {
+  async createRequest() {
+    if (!this.country._id) {
+      await Country.populate(this, {
+        path: 'country',
+      });
+    }
+
+    if (!this.country.server._id) {
+      await Server.populate(this, {
+        path: 'country.server',
+      });
+    }
+
+    const jar = request.jar();
+    if (this.cookies) {
+      jar.setCookie(this.cookies, this.country.server.address);
+    }
+
+    const req = request.defaults({
+      jar,
+      followAllRedirects: true,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:30.0) ' +
+            'Gecko/20100101 Firefox/30.0',
+        'Accept': 'text/html,application/xhtml+xml,' +
+            'application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      simple: true,
+      gzip: true,
+    });
+
+    return [req, jar];
+  }
+
+
+  async login() {
+    if (this.lock && moment().isBefore(this.lock)) {
+      throw new Error(`Locked, try again after ${moment(this.lock).toNow(true)}`);
+    }
+
+    const [request, jar] = await this.createRequest();
+
+    let $ = await request({
+      uri: this.country.server.address,
+      transform: (body) => cheerio.load(body),
+    });
+
+    if ($('a#userName').length) {
+      return;
+    }
+
+    $ = await request({
+      uri: `${this.country.server.address}/login.html`,
+      transform: (body) => cheerio.load(body),
+      method: 'POST',
+      form: {
+        login: this.username,
+        password: this.password,
+        remember: 'true',
+        submit: 'Login',
+      },
+    });
+
+    if ($('a#userName').length) {
+      this.cookies = jar.getCookieString(this.country.server.address);
+      await this.save();
+      return;
+    } else if ($('div.testDivred').length) {
+      const msg = $('div.testDivred').text().trim();
+
+      if (msg ===
+          'Wrong password. Please pay attention to upper and lower case!') {
+        this.lock = moment().add(1, 'days').toDate();
+        await this.save();
+        throw new Error('Failed to login, locked');
+      }
+
+      throw new Error(msg);
+    }
+
+    throw new Error('Failed to login');
+  }
+
+
+  async logout() {
+    const [request] = await this.createRequest();
+
+    const $ = await request({
+      uri: `${this.country.server.address}/logout.html`,
+      transform: (body) => cheerio.load(body),
+    });
+
+    if (!$('div#loginContainer').length) {
+      throw new Error('Failed to logout');
+    }
+  }
+
+
+  async donateProducts(sender, citizenId, product, quantity, reason) {
+    const [request] = await this.createRequest();
+
+    if (this.country.getUserAccessLevel(sender) < 1) {
+      throw new Error('Permission denied.');
+    }
+
+    const $ = await request({
+      uri: `${this.country.server.address}/donateProducts.html`,
+      transform: (body) => cheerio.load(body),
+      method: 'POST',
+      qs: {
+        id: citizenId,
+      },
+      form: {
+        product,
+        quantity,
+        reason,
+        submit: 'Donate',
+      },
+    });
+
+    if ($('#citizenMessage div').text().trim() === 'Products sent') {
+      await ProductDonation.create({
+        organization: this._id,
+        sender: sender._id,
+        recipient: citizenId,
+        product,
+        quantity,
+        reason,
+      });
+    } else if ($('#citizenMessage div').length) {
+      throw new Error($('#citizenMessage div').text().trim());
+    } else {
+      throw new Error('Failed to donate items');
+    }
+  }
+
+
+  async batchDonateProducts(sender, citizenIds, product, quantity, reason) {
+    const [request] = await this.createRequest();
+
+    if (this.country.getUserAccessLevel(sender) < 1) {
+      throw new Error('Permission denied.');
+    }
+
+    const form = {
+      product,
+      quantity,
+      reason,
+      submit: 'Donate',
+    };
+
+    const l = citizenIds.length;
+    for (let i = 0; i < l; i++) {
+      form[`citizen${i + 1}`] = citizenIds[i];
+    }
+
+    const $ = await request({
+      uri: `${this.country.server.address}/militaryUnitStorage.html`,
+      transform: (body) => cheerio.load(body),
+      method: 'POST',
+      form,
+    });
+
+    if ($('#citizenMessage div').text().trim() === 'Products donated') {
+      await BatchProductDonation.create({
+        organization: this._id,
+        sender: sender._id,
+        recipients: citizenIds,
+        product,
+        quantity,
+        reason,
+      });
+    } else if ($('#citizenMessage div').length) {
+      throw new Error($('#citizenMessage div').text().trim());
+    } else {
+      throw new Error('Failed to donate items');
+    }
+  }
+
+
+  async getInventory() {
+    const [request] = await this.createRequest();
+
+    const $ = await request({
+      uri: `${this.country.server.address}/militaryUnitStorage.html`,
+      transform: (body) => cheerio.load(body),
+    });
+
+    const inventoryOrg = {};
+    const storageOrg = $('div.storageMini');
+    for (let i = 0; i < storageOrg.length; i++) {
+      const images = storageOrg.eq(i).find('img');
+
+      let product = images.eq(0).attr('src');
+      product = product.substring(
+          product.lastIndexOf('/') + 1,
+          product.lastIndexOf('.'));
+
+      let quality = images.eq(1).attr('src');
+      if (quality) {
+        quality = parseInt(quality.substring(
+            quality.lastIndexOf('/') + 2,
+            quality.lastIndexOf('.')));
+      }
+
+      inventoryOrg[product + (quality ? `-${quality}` : '')] =
+        parseInt(storageOrg.eq(i).find('div').eq(0).text());
+    }
+
+    const inventoryMu = {};
+    const storageMu = $('div.storage');
+    for (let i = 0; i < storageMu.length; i++) {
+      const images = storageMu.eq(i).find('img');
+
+      let product = images.eq(0).attr('src');
+      product = product.substring(
+          product.lastIndexOf('/') + 1,
+          product.lastIndexOf('.'));
+
+      let quality = images.eq(1).attr('src');
+      if (quality) {
+        quality = parseInt(quality.substring(
+            quality.lastIndexOf('/') + 2,
+            quality.lastIndexOf('.')));
+      }
+
+      inventoryMu[product + (quality ? `-${quality}` : '')] =
+        parseInt(storageMu.eq(i).find('div').eq(0).text());
+    }
+
+    return [inventoryOrg, inventoryMu];
+  }
+
+
+  async getBattleInfo(battleId) {
+    const [request] = await this.createRequest();
+
+    const $ = await request({
+      uri: `${this.country.server.address}/battle.html`,
+      transform: (body) => cheerio.load(body),
+      qs: {
+        id: battleId,
+      },
+    });
+
+    if ($('div#mainFight div#fightName span').length) {
+      let type = null;
+      let label = null;
+      let id = 0;
+      let frozen = false;
+      let defender = $('div#mainFight div.alliesList').eq(0).clone()
+          .children().remove().end().text().trim();
+      const attacker = $('div#mainFight div.alliesList').eq(1).clone()
+          .children().remove().end().text().trim();
+
+      if ($('div#newFightView div.testDivred').text().trim()
+          .includes('frozen')) {
+        frozen = true;
+      }
+
+      const linkSel =
+        (value) => `div#mainFight div#fightName span a[href*="${value}"]`;
+
+      if ($(linkSel('region')).text().trim() !== '') {
+        label = $(linkSel('region')).text().trim();
+        id = parseInt($(linkSel('region.html')).attr('href').split('=')[1]);
+
+        if (!$('div#mainFight div#fightName span div').text().trim()
+            .includes('Resistance war')) {
+          type = 'direct';
+        } else {
+          type = 'resistance';
+        }
+      } else if ($(linkSel('tournament')).text().trim() !== '') {
+        label = `${$(linkSel('tournament')).text().trim()} ` +
+          `(${defender} vs. ${attacker})`;
+        id = parseInt($(linkSel('tournament')).attr('href').split('=')[1]);
+        type = 'tournament';
+      } else if ($(linkSel('civilWar')).text().trim() !== '') {
+        label = `Civil War (${defender})`;
+        id = parseInt($(linkSel('civilWar')).attr('href').split('=')[1]);
+        type = 'civil';
+        defender = 'Loyalists';
+      } else {
+        label = 'Practice Battle';
+        type = 'practice';
+      }
+
+      return {
+        label,
+        type,
+        id,
+        frozen,
+        round: numeral().unformat($('div#mainFight > div').eq(2).text().trim()),
+        roundId: parseInt($('input#battleRoundId').attr('value')),
+        defender,
+        defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
+        defenderAllies: $('div#mainFight div.alliesPopup').eq(0).text()
+            .trim().split(/\s{2,}/g),
+        attacker,
+        attackerWins: $('div.fightRounds img[src$="red_ball.png"]').length,
+        attackerAllies: $('div#mainFight div.alliesPopup').eq(1).text()
+            .trim().split(/\s{2,}/g),
+      };
+    } else if ($('div.testDivwhite h3').length) {
+      throw new Error($('div.testDivwhite h3').text().trim());
+    } else {
+      throw new Error('Failed to get battle information');
+    }
+  }
+
+
+  async getBattleRoundInfo(battleRoundId) {
+    const [request] = await this.createRequest();
+
+    const body = await request({
+      uri: `${this.country.server.address}/battleScore.html`,
+      qs: {
+        id: battleRoundId,
+        at: 0,
+        ci: 0,
+      },
+    });
+
+    try {
+      const battleRoundInfo = JSON.parse(body);
+
+      return battleRoundInfo;
+    } catch (e) {
+      const $ = cheerio.load(body);
+
+      if ($('div.testDivwhite h3').length) {
+        throw new Error($('div.testDivwhite h3').text().trim());
+      } else {
+        throw new Error('Failed to get battle round information');
+      }
+    }
+  }
+}
+
+
+mongoose.model(Organization, {
+  country: {
+    type: mongoose.Schema.Types.ObjectId, ref: 'Country', required: true,
+  },
   username: {
     type: String, required: true,
     validate: {
@@ -102,342 +448,5 @@ const organizationSchema = new mongoose.Schema({
   },
 });
 
-organizationSchema.methods.createRequest = async function() {
-  if (!this.country._id) {
-    await Country.populate(this, {
-      path: 'country',
-    });
-  }
 
-  if (!this.country.server._id) {
-    await Server.populate(this, {
-      path: 'country.server',
-    });
-  }
-
-  const jar = request.jar();
-  if (this.cookies) {
-    jar.setCookie(this.cookies, this.country.server.address);
-  }
-
-  const req = request.defaults({
-    jar: jar,
-    followAllRedirects: true,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:30.0) ' +
-          'Gecko/20100101 Firefox/30.0',
-      'Accept': 'text/html,application/xhtml+xml,' +
-          'application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.5',
-    },
-    simple: true,
-    gzip: true,
-  });
-
-  return [req, jar];
-};
-
-organizationSchema.methods.login = async function() {
-  if (this.lock && moment().isBefore(this.lock)) {
-    throw new Error(`Locked, try again after ${moment(this.lock).toNow(true)}`);
-  }
-
-  const [request, jar] = await this.createRequest();
-
-  let $ = await request({
-    uri: this.country.server.address,
-    transform: (body) => cheerio.load(body),
-  });
-
-  if ($('a#userName').length) {
-    return;
-  }
-
-  $ = await request({
-    uri: `${this.country.server.address}/login.html`,
-    transform: (body) => cheerio.load(body),
-    method: 'POST',
-    form: {
-      login: this.username,
-      password: this.password,
-      remember: 'true',
-      submit: 'Login',
-    },
-  });
-
-  if ($('a#userName').length) {
-    this.cookies =
-        jar.getCookieString(this.country.server.address);
-    await this.save();
-    return;
-  } else if ($('div.testDivred').length) {
-    const msg = $('div.testDivred').text().trim();
-
-    if (msg ===
-        'Wrong password. Please pay attention to upper and lower case!') {
-      this.lock = moment().add(1, 'days').toDate();
-      await this.save();
-      throw new Error('Failed to login, locked');
-    }
-
-    throw new Error(msg);
-  }
-
-  throw new Error('Failed to login');
-};
-
-organizationSchema.methods.logout = async function() {
-  const [request] = await this.createRequest();
-
-  const $ = await request({
-    uri: `${this.country.server.address}/logout.html`,
-    transform: (body) => cheerio.load(body),
-  });
-
-  if (!$('div#loginContainer').length) {
-    throw new Error('Failed to logout');
-  }
-};
-
-organizationSchema.methods.donateProducts = async function(
-    sender, citizenId, product, quantity, reason) {
-  const [request] = await this.createRequest();
-
-  if (this.country.getUserAccessLevel(sender) < 1) {
-    throw new Error('Permission denied.');
-  }
-
-  const $ = await request({
-    uri: `${this.country.server.address}/donateProducts.html`,
-    transform: (body) => cheerio.load(body),
-    method: 'POST',
-    qs: {
-      id: citizenId,
-    },
-    form: {
-      product: product,
-      quantity: quantity,
-      reason: reason,
-      submit: 'Donate',
-    },
-  });
-
-  if ($('#citizenMessage div').text().trim() === 'Products sent') {
-    await ProductDonation.create({
-      organization: this._id,
-      sender: sender._id,
-      recipient: citizenId,
-      product: product,
-      quantity: quantity,
-      reason: reason,
-    });
-  } else if ($('#citizenMessage div').length) {
-    throw new Error($('#citizenMessage div').text().trim());
-  } else {
-    throw new Error('Failed to donate items');
-  }
-};
-
-organizationSchema.methods.batchDonateProducts = async function(
-    sender, citizenIds, product, quantity, reason) {
-  const [request] = await this.createRequest();
-
-  if (this.country.getUserAccessLevel(sender) < 1) {
-    throw new Error('Permission denied.');
-  }
-
-  const form = {
-    product: product,
-    quantity: quantity,
-    reason: reason,
-    submit: 'Donate',
-  };
-
-  const l = citizenIds.length;
-  for (let i = 0; i < l; i++) {
-    form[`citizen${i + 1}`] = citizenIds[i];
-  }
-
-  const $ = await request({
-    uri: `${this.country.server.address}/militaryUnitStorage.html`,
-    transform: (body) => cheerio.load(body),
-    method: 'POST',
-    form: form,
-  });
-
-  if ($('#citizenMessage div').text().trim() === 'Products donated') {
-    await BatchProductDonation.create({
-      organization: this._id,
-      sender: sender._id,
-      recipients: citizenIds,
-      product: product,
-      quantity: quantity,
-      reason: reason,
-    });
-  } else if ($('#citizenMessage div').length) {
-    throw new Error($('#citizenMessage div').text().trim());
-  } else {
-    throw new Error('Failed to donate items');
-  }
-};
-
-organizationSchema.methods.getInventory = async function() {
-  const [request] = await this.createRequest();
-
-  const $ = await request({
-    uri: `${this.country.server.address}/militaryUnitStorage.html`,
-    transform: (body) => cheerio.load(body),
-  });
-
-  const inventoryOrg = {};
-  const storageOrg = $('div.storageMini');
-  for (let i = 0; i < storageOrg.length; i++) {
-    const images = storageOrg.eq(i).find('img');
-
-    let product = images.eq(0).attr('src');
-    product = product.substring(
-        product.lastIndexOf('/') + 1,
-        product.lastIndexOf('.'));
-
-    let quality = images.eq(1).attr('src');
-    if (quality) {
-      quality = parseInt(quality.substring(
-          quality.lastIndexOf('/') + 2,
-          quality.lastIndexOf('.')));
-    }
-
-    inventoryOrg[product + (quality ? `-${quality}` : '')] =
-      parseInt(storageOrg.eq(i).find('div').eq(0).text());
-  }
-
-  const inventoryMu = {};
-  const storageMu = $('div.storage');
-  for (let i = 0; i < storageMu.length; i++) {
-    const images = storageMu.eq(i).find('img');
-
-    let product = images.eq(0).attr('src');
-    product = product.substring(
-        product.lastIndexOf('/') + 1,
-        product.lastIndexOf('.'));
-
-    let quality = images.eq(1).attr('src');
-    if (quality) {
-      quality = parseInt(quality.substring(
-          quality.lastIndexOf('/') + 2,
-          quality.lastIndexOf('.')));
-    }
-
-    inventoryMu[product + (quality ? `-${quality}` : '')] =
-      parseInt(storageMu.eq(i).find('div').eq(0).text());
-  }
-
-  return [inventoryOrg, inventoryMu];
-};
-
-organizationSchema.methods.getBattleInfo = async function(battleId) {
-  const [request] = await this.createRequest();
-
-  const $ = await request({
-    uri: `${this.country.server.address}/battle.html`,
-    transform: (body) => cheerio.load(body),
-    qs: {
-      id: battleId,
-    },
-  });
-
-  if ($('div#mainFight div#fightName span').length) {
-    let type = null;
-    let label = null;
-    let id = 0;
-    let frozen = false;
-    let defender = $('div#mainFight div.alliesList').eq(0).clone()
-        .children().remove().end().text().trim();
-    const attacker = $('div#mainFight div.alliesList').eq(1).clone()
-        .children().remove().end().text().trim();
-
-    if ($('div#newFightView div.testDivred').text().trim()
-        .includes('frozen')) {
-      frozen = true;
-    }
-
-    const linkSel =
-      (value) => 'div#mainFight div#fightName span a[href*="$value"]';
-
-    if ($(linkSel('region')).text().trim() !== '') {
-      label = $(linkSel('region')).text().trim();
-      id = parseInt($(linkSel('region.html')).attr('href').split('=')[1]);
-
-      if (!$('div#mainFight div#fightName span div').text().trim()
-          .includes('Resistance war')) {
-        type = 'direct';
-      } else {
-        type = 'resistance';
-      }
-    } else if ($(linkSel('tournament')).text().trim() !== '') {
-      label = `${$(linkSel('tournament')).text().trim()} ` +
-        `(${defender} vs. ${attacker})`;
-      id = parseInt($(linkSel('tournament')).attr('href').split('=')[1]);
-      type = 'tournament';
-    } else if ($(linkSel('civilWar')).text().trim() !== '') {
-      label = `Civil War (${defender})`;
-      id = parseInt($(linkSel('civilWar')).attr('href').split('=')[1]);
-      type = 'civil';
-      defender = 'Loyalists';
-    } else {
-      label = 'Practice Battle';
-      type = 'practice';
-    }
-
-    return {
-      label: label,
-      type: type,
-      id: id,
-      frozen: frozen,
-      round: numeral().unformat($('div#mainFight > div').eq(2).text().trim()),
-      roundId: parseInt($('input#battleRoundId').attr('value')),
-      defender: defender,
-      defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
-      defenderAllies: $('div#mainFight div.alliesPopup').eq(0).text()
-          .trim().split(/\s{2,}/g),
-      attacker: attacker,
-      attackerWins: $('div.fightRounds img[src$="red_ball.png"]').length,
-      attackerAllies: $('div#mainFight div.alliesPopup').eq(1).text()
-          .trim().split(/\s{2,}/g),
-    };
-  } else if ($('div.testDivwhite h3').length) {
-    throw new Error($('div.testDivwhite h3').text().trim());
-  } else {
-    throw new Error('Failed to get battle information');
-  }
-};
-
-organizationSchema.methods.getBattleRoundInfo =
-async function(battleRoundId) {
-  const [request] = await this.createRequest();
-
-  const body = await request({
-    uri: `${this.country.server.address}/battleScore.html`,
-    qs: {
-      id: battleRoundId,
-      at: 0,
-      ci: 0,
-    },
-  });
-
-  try {
-    const battleRoundInfo = JSON.parse(body);
-
-    return battleRoundInfo;
-  } catch (e) {
-    const $ = cheerio.load(body);
-
-    if ($('div.testDivwhite h3').length) {
-      throw new Error($('div.testDivwhite h3').text().trim());
-    } else {
-      throw new Error('Failed to get battle round information');
-    }
-  }
-};
-
-const Organization = mongoose.model('Organization', organizationSchema);
 module.exports = Organization;

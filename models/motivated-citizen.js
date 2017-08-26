@@ -20,7 +20,11 @@
 const mongoose = require('mongoose');
 
 
-const motivatedCitizenSchema = new mongoose.Schema({
+class MotivatedCitizen extends mongoose.Model {
+}
+
+
+mongoose.model(MotivatedCitizen, {
   citizenId: {type: Number},
   server: {type: mongoose.Schema.Types.ObjectId, ref: 'Server'},
   weapon: {type: Boolean},
@@ -28,6 +32,5 @@ const motivatedCitizenSchema = new mongoose.Schema({
   gift: {type: Boolean},
 });
 
-const MotivatedCitizen = mongoose.model(
-    'MotivatedCitizen', motivatedCitizenSchema);
+
 module.exports = MotivatedCitizen;

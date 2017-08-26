@@ -21,7 +21,117 @@ const mongoose = require('mongoose');
 const request = require('request-promise-native');
 
 
-const serverSchema = new mongoose.Schema({
+class Server extends mongoose.Model {
+  get address() {
+    const suffix = this.port !== 80 ? `:${this.port}` : '';
+    return `http://${this.name.toLowerCase()}.e-sim.org${suffix}`;
+  }
+
+
+  async getCountryInfoByName(countryName) {
+    if (!this.countriesList) {
+      this.countriesList = await request({
+        uri: `${this.address}/apiCountries.html`,
+        simple: true,
+        json: true,
+      });
+    }
+
+    for (const country of this.countriesList) {
+      if (country.name.toLowerCase() ===
+          countryName.toLowerCase()) {
+        return country;
+      }
+    }
+
+    throw new Error('Country not found');
+  }
+
+
+  async getRegionInfo(regionId) {
+    if (!this.regionsList) {
+      this.regionsList = await request({
+        uri: `${this.address}/apiRegions.html`,
+        simple: true,
+        json: true,
+      });
+    }
+
+    for (const region of this.regionsList) {
+      if (region.id === regionId) {
+        return region;
+      }
+    }
+
+    throw new Error('Region not found');
+  }
+
+
+  async getRegionStatus(regionId) {
+    const regionsStatusList = await request({
+      uri: `${this.address}/apiMap.html`,
+      simple: true,
+      json: true,
+    });
+
+    for (const regionStatus of regionsStatusList) {
+      if (regionStatus.regionId === regionId) {
+        return regionStatus;
+      }
+    }
+
+    throw new Error('Region not found');
+  }
+
+
+  async getAttackerBonusRegion(regionId, countries) {
+    const bonusRegions = [];
+    const countriesId = [];
+
+    for (const countryName of countries) {
+      let countryId;
+
+      try {
+        const country = await this.getCountryInfoByName(countryName);
+        countryId = country.id;
+      } catch (error) {
+        countryId = 0;
+      }
+
+      countriesId.push(countryId);
+    }
+
+    const region = await this.getRegionInfo(regionId);
+
+    for (const neighbour of region.neighbours) {
+      const status = await this.getRegionStatus(neighbour);
+
+      if (!countriesId.includes(status.occupantId)) {
+        continue;
+      }
+
+      if (status.battle === true) {
+        const region = await this.getRegionInfo(status.regionId);
+        const country = countries[countriesId.indexOf(status.occupantId)];
+        return `${region.name}, ${country}`;
+      }
+
+      bonusRegions.push(status);
+    }
+
+    if (bonusRegions.length) {
+      const region = await this.getRegionInfo(bonusRegions[0].regionId);
+      const country =
+          countries[countriesId.indexOf(bonusRegions[0].occupantId)];
+      return `${region.name}, ${country}`;
+    }
+
+    return null;
+  }
+}
+
+
+mongoose.model(Server, {
   name: {
     type: String, required: true, unique: true,
     validate: {
@@ -58,106 +168,5 @@ const serverSchema = new mongoose.Schema({
   disabled: {type: Boolean, default: false},
 });
 
-serverSchema.virtual('address').get(function() {
-  return `http://${this.name.toLowerCase()}.e-sim.org` +
-    `${this.port !== 80 ? `:${this.port}` : ''}`;
-});
 
-serverSchema.methods.getCountryInfoByName = async function(countryName) {
-  if (!this.countriesList) {
-    this.countriesList = await request({
-      uri: `${this.address}/apiCountries.html`,
-      simple: true,
-      json: true,
-    });
-  }
-
-  for (const country of this.countriesList) {
-    if (country.name.toLowerCase() ===
-        countryName.toLowerCase()) {
-      return country;
-    }
-  }
-
-  throw new Error('Country not found');
-};
-
-serverSchema.methods.getRegionInfo = async function(regionId) {
-  if (!this.regionsList) {
-    this.regionsList = await request({
-      uri: `${this.address}/apiRegions.html`,
-      simple: true,
-      json: true,
-    });
-  }
-
-  for (const region of this.regionsList) {
-    if (region.id === regionId) {
-      return region;
-    }
-  }
-
-  throw new Error('Region not found');
-};
-
-serverSchema.methods.getRegionStatus = async function(regionId) {
-  const regionsStatusList = await request({
-    uri: `${this.address}/apiMap.html`,
-    simple: true,
-    json: true,
-  });
-
-  for (const regionStatus of regionsStatusList) {
-    if (regionStatus.regionId === regionId) {
-      return regionStatus;
-    }
-  }
-
-  throw new Error('Region not found');
-};
-
-serverSchema.methods.getAttackerBonusRegion =
-async function(regionId, countries) {
-  const bonusRegions = [];
-  const countriesId = [];
-
-  for (const countryName of countries) {
-    let countryId;
-
-    try {
-      const country = await this.getCountryInfoByName(countryName);
-      countryId = country.id;
-    } catch (error) {
-      countryId = 0;
-    }
-
-    countriesId.push(countryId);
-  }
-
-  const region = await this.getRegionInfo(regionId);
-
-  for (const neighbour of region.neighbours) {
-    const status = await this.getRegionStatus(neighbour);
-
-    if (countriesId.includes(status.occupantId)) {
-      if (status.battle === true) {
-        const region = await this.getRegionInfo(status.regionId);
-        const country = countries[countriesId.indexOf(status.occupantId)];
-        return `${region.name}, ${country}`;
-      }
-
-      bonusRegions.push(status);
-    }
-  }
-
-  if (bonusRegions.length) {
-    const region = await this.getRegionInfo(bonusRegions[0].regionId);
-    const country = countries[countriesId.indexOf(bonusRegions[0].occupantId)];
-    return `${region.name}, ${country}`;
-  }
-
-  return null;
-};
-
-const Server = mongoose.model('Server', serverSchema);
 module.exports = Server;

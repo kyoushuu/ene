@@ -20,7 +20,11 @@
 const mongoose = require('mongoose');
 
 
-const productDonationSchema = new mongoose.Schema({
+class ProductDonation extends mongoose.Model {
+}
+
+
+mongoose.model(ProductDonation, {
   organization: {type: mongoose.Schema.Types.ObjectId, ref: 'Organization'},
   sender: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   recipient: {type: Number},
@@ -29,6 +33,5 @@ const productDonationSchema = new mongoose.Schema({
   reason: {type: String},
 });
 
-const ProductDonation =
-  mongoose.model('ProductDonation', productDonationSchema);
+
 module.exports = ProductDonation;

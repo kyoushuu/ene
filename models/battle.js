@@ -20,7 +20,11 @@
 const mongoose = require('mongoose');
 
 
-const battleSchema = new mongoose.Schema({
+class Battle extends mongoose.Model {
+}
+
+
+mongoose.model(Battle, {
   battleId: {type: Number},
   label: {type: String},
   country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country'},
@@ -29,5 +33,5 @@ const battleSchema = new mongoose.Schema({
   mode: {type: String, default: 'full'},
 });
 
-const Battle = mongoose.model('Battle', battleSchema);
+
 module.exports = Battle;
