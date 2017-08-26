@@ -29,25 +29,49 @@ function hash(password, salt) {
   return crypto.createHmac('sha512', salt).update(password).digest('base64');
 }
 
-function setPassword(value) {
-  this.salt = crypto.randomBytes(64).toString('base64');
-  return hash(value, this.salt);
-}
-
 function createConfirmCode() {
   return crypto.randomBytes(16).toString('hex');
 }
 
 const userSchema = new mongoose.Schema({
-  username: {type: String, required: true, unique: true},
-  password: {type: String, required: true, set: setPassword},
+  username: {
+    type: String, required: true, unique: true,
+    validate: {
+      validator: async function(value) {
+        const users = await User.find({
+          _id: {$ne: this._id},
+          username: value,
+        });
+
+        return users.length === 0;
+      },
+      msg: 'Username already exists',
+    },
+  },
+  password: {
+    type: String, required: true,
+    set: function(value) {
+      this.salt = crypto.randomBytes(64).toString('base64');
+      return hash(value, this.salt);
+    },
+  },
   salt: {type: String, required: true},
   email: {
     type: String, required: true, unique: true, lowercase: true,
-    validate: {
+    validate: [{
       validator: /^[A-Z0-9._%+-]+@(?:[A-Z0-9-]+\.)+[A-Z]{2,4}$/i,
       msg: 'E-mail is invalid',
-    },
+    }, {
+      validator: async function(value) {
+        const users = await User.find({
+          _id: {$ne: this._id},
+          email: value,
+        });
+
+        return users.length === 0;
+      },
+      msg: 'E-mail is already registered',
+    }],
   },
   confirmCode: {type: String, default: createConfirmCode},
   recoverCode: {type: String},
@@ -56,7 +80,26 @@ const userSchema = new mongoose.Schema({
     server: {type: mongoose.Schema.Types.ObjectId, ref: 'Server'},
     name: {type: String, required: true},
   }],
-  nicknames: [String],
+  nicknames: {
+    type: [String],
+    validate: {
+      validator: async function(value) {
+        for (const nickname of value) {
+          const users = await User.find({
+            _id: {$ne: this._id},
+            nicknames: nickname,
+          });
+
+          if (users.length) {
+            return false;
+          }
+        }
+
+        return true;
+      },
+      msg: 'Nickname is already in use',
+    },
+  },
 });
 
 userSchema.methods.isValidPassword = function(password) {
@@ -67,39 +110,6 @@ userSchema.methods.recover = async function() {
   this.recoverCode = createConfirmCode();
   await this.save();
 };
-
-userSchema.path('username').validate(async function(value) {
-  const users = await User.find({
-    _id: {$ne: this._id},
-    username: value,
-  });
-
-  return users.length === 0;
-}, 'Username already exists');
-
-userSchema.path('email').validate(async function(value) {
-  const users = await User.find({
-    _id: {$ne: this._id},
-    email: value,
-  });
-
-  return users.length === 0;
-}, 'E-mail is already registered');
-
-userSchema.path('nicknames').validate(async function(value) {
-  for (const nickname of value) {
-    const users = await User.find({
-      _id: {$ne: this._id},
-      nicknames: nickname,
-    });
-
-    if (users.length) {
-      return false;
-    }
-  }
-
-  return true;
-}, 'Nickname is already in use');
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;

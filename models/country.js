@@ -22,13 +22,38 @@ const mongoose = require('mongoose');
 
 const countrySchema = new mongoose.Schema({
   server: {type: mongoose.Schema.Types.ObjectId, ref: 'Server', required: true},
-  name: {type: String, required: true},
+  name: {
+    type: String, required: true,
+    validate: {
+      validator: async function(value) {
+        const countries = await Country.find({
+          _id: {$ne: this._id},
+          name: value,
+          server: this.server,
+        });
+
+        return countries.length === 0;
+      },
+      msg: 'Country name with the same server already exists',
+    },
+  },
   shortname: {
     type: String, required: true, lowercase: true,
-    validate: {
+    validate: [{
       validator: /^[a-z]{2}$/i,
       msg: 'Short name should be two letters',
-    },
+    }, {
+      validator: async function(value) {
+        const countries = await Country.find({
+          _id: {$ne: this._id},
+          shortname: value,
+          server: this.server,
+        });
+
+        return countries.length === 0;
+      },
+      msg: 'Country short name with the same server already exists',
+    }],
   },
   accessList: [{
     account: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
@@ -50,26 +75,6 @@ const countrySchema = new mongoose.Schema({
     default: '1-WEAPON/5-FOOD/5-GIFT/1-TICKET/3-FOOD',
   },
 });
-
-countrySchema.path('name').validate(async function(value) {
-  const countries = await Country.find({
-    _id: {$ne: this._id},
-    name: value,
-    server: this.server,
-  });
-
-  return countries.length === 0;
-}, 'Country name with the same server already exists');
-
-countrySchema.path('shortname').validate(async function(value) {
-  const countries = await Country.find({
-    _id: {$ne: this._id},
-    shortname: value,
-    server: this.server,
-  });
-
-  return countries.length === 0;
-}, 'Country short name with the same server already exists');
 
 countrySchema.methods.getUserAccessLevel = function(user) {
   const l = this.accessList.length;

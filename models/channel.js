@@ -42,19 +42,23 @@ function decipherValue(value) {
 }
 
 const channelSchema = new mongoose.Schema({
-  name: {type: String, required: true, unique: true},
+  name: {
+    type: String, required: true, unique: true,
+    validate: {
+      validator: async function(value) {
+        const channels = await Channel.find({
+          _id: {$ne: this._id},
+          name: value,
+        });
+
+        return channels.length === 0;
+      },
+      msg: 'Channel name already exists',
+    },
+  },
   keyword: {type: String, get: decipherValue, set: cipherValue},
   countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
 });
-
-channelSchema.path('name').validate(async function(value) {
-  const channels = await Channel.find({
-    _id: {$ne: this._id},
-    name: value,
-  });
-
-  return channels.length === 0;
-}, 'Channel name already exists');
 
 const Channel = mongoose.model('Channel', channelSchema);
 module.exports = Channel;

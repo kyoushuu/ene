@@ -22,13 +22,36 @@ const request = require('request-promise-native');
 
 
 const serverSchema = new mongoose.Schema({
-  name: {type: String, required: true, unique: true},
+  name: {
+    type: String, required: true, unique: true,
+    validate: {
+      validator: async function(value) {
+        const servers = await Server.find({
+          _id: {$ne: this._id},
+          name: value,
+        });
+
+        return servers.length === 0;
+      },
+      msg: 'Server name already exists',
+    },
+  },
   shortname: {
     type: String, required: true, unique: true, lowercase: true,
-    validate: {
+    validate: [{
       validator: /^[a-z]$/i,
       msg: 'Short name should be a single letter',
-    },
+    }, {
+      validator: async function(value) {
+        const servers = await Server.find({
+          _id: {$ne: this._id},
+          shortname: value,
+        });
+
+        return servers.length === 0;
+      },
+      msg: 'Server short name already exists',
+    }],
   },
   port: {type: Number, default: 80},
   countries: [{type: mongoose.Schema.Types.ObjectId, ref: 'Country'}],
@@ -39,24 +62,6 @@ serverSchema.virtual('address').get(function() {
   return `http://${this.name.toLowerCase()}.e-sim.org` +
     `${this.port !== 80 ? `:${this.port}` : ''}`;
 });
-
-serverSchema.path('name').validate(async function(value) {
-  const servers = await Server.find({
-    _id: {$ne: this._id},
-    name: value,
-  });
-
-  return servers.length === 0;
-}, 'Server name already exists');
-
-serverSchema.path('shortname').validate(async function(value) {
-  const servers = await Server.find({
-    _id: {$ne: this._id},
-    shortname: value,
-  });
-
-  return servers.length === 0;
-}, 'Server short name already exists');
 
 serverSchema.methods.getCountryInfoByName = async function(countryName) {
   if (!this.countriesList) {

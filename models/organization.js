@@ -52,7 +52,21 @@ function decipherValue(value) {
 
 const organizationSchema = new mongoose.Schema({
   country: {type: mongoose.Schema.Types.ObjectId, ref: 'Country', required: true},
-  username: {type: String, required: true},
+  username: {
+    type: String, required: true,
+    validate: {
+      validator: async function(value) {
+        const organizations = await Organization.find({
+          _id: {$ne: this._id},
+          username: value,
+          country: this.country,
+        });
+
+        return organizations.length === 0;
+      },
+      msg: 'Organization username with the same country already exists',
+    },
+  },
   password: {
     type: String,
     required: true,
@@ -61,10 +75,21 @@ const organizationSchema = new mongoose.Schema({
   },
   shortname: {
     type: String, required: true, lowercase: true,
-    validate: {
+    validate: [{
       validator: /^[a-z]{2,3}$/i,
       msg: 'Short username should be two or three letters',
-    },
+    }, {
+      validator: async function(value) {
+        const organizations = await Organization.find({
+          _id: {$ne: this._id},
+          shortname: value,
+          country: this.country,
+        });
+
+        return organizations.length === 0;
+      },
+      msg: 'Organization short username with the same country already exists',
+    }],
   },
   cookies: {
     type: String,
@@ -76,26 +101,6 @@ const organizationSchema = new mongoose.Schema({
     default: null,
   },
 });
-
-organizationSchema.path('username').validate(async function(value) {
-  const organizations = await Organization.find({
-    _id: {$ne: this._id},
-    username: value,
-    country: this.country,
-  });
-
-  return organizations.length === 0;
-}, 'Organization username with the same country already exists');
-
-organizationSchema.path('shortname').validate(async function(value) {
-  const organizations = await Organization.find({
-    _id: {$ne: this._id},
-    shortname: value,
-    country: this.country,
-  });
-
-  return organizations.length === 0;
-}, 'Organization short username with the same country already exists');
 
 organizationSchema.methods.createRequest = async function() {
   if (!this.country._id) {
