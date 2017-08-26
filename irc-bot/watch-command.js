@@ -27,8 +27,6 @@ const Channel = require('../models/channel');
 const User = require('../models/user');
 const Battle = require('../models/battle');
 
-const call = require('./call-command');
-
 const watchpoints = {
   full: [
     6000, 4800, 3600,
@@ -47,8 +45,8 @@ const watchpoints = {
 const watchlist = {};
 
 
-module.exports = function(bot, from, to, argv) {
-  parse(bot, '!watch [battle id]', [
+module.exports = async function(bot, from, to, args) {
+  const {server, options, argv, help} = await parse(bot, '!watch [battle id]', [
     ['d', 'defender', 'Defender side (default)'],
     ['a', 'attacker', 'Attacker side'],
     ['L', 'list', 'List battles in watchlist (default)'],
@@ -56,207 +54,152 @@ module.exports = function(bot, from, to, argv) {
     ['l', 'light', 'Show status on T-10, T-5 and T-2 only'],
     ['f', 'full', 'Show status on all intervals (default)'],
     ['r', 'remove', 'Remove battle from watchlist (battle id required)'],
-  ], argv, 0, 1, to, true, (error, args) => {
-    if (error) {
-      bot.say(to, `Error: ${error}`);
-      return;
-    } else if (!args) {
-      return;
-    }
+  ], args, 0, 1, to, true);
 
-    const query = Channel.findOne({name: to}).populate({
-      path: 'countries',
-      match: {server: args.server._id},
-    });
-    query.exec((error, channel) => {
-      if (error) {
-        bot.say(to, `Error: ${error}`);
-        return;
-      } else if (!channel) {
-        bot.say(to, 'Channel not registered in database.');
-        return;
-      } else if (!channel.countries.length) {
-        bot.say(to, 'Channel not registered for given server.');
-        return;
-      }
-
-      User.findOne({
-        nicknames: from,
-      }, (error, user) => {
-        if (error) {
-          bot.say(to,
-              `Failed to find user via nickname: ${error}`);
-          return;
-        }
-
-        if (!user) {
-          bot.say(to, 'Nickname is not registered.');
-          return;
-        }
-
-        const countries = [];
-
-        const l = channel.countries.length;
-        for (let i = 0; i < l; i++) {
-          if (channel.countries[i].getUserAccessLevel(user) > 0) {
-            countries.push(channel.countries[i]);
-          }
-        }
-
-        if (!countries.length) {
-          bot.say(to, 'Permission denied.');
-          return;
-        } else if (countries.length > 1) {
-          bot.say(to, 'Failed, you have access on multiple countries.');
-          return;
-        }
-
-        const query = countries[0].populate('server');
-        query.populate('organizations', (error, country) => {
-          let j = -1;
-          const l = country.channels.length;
-          for (let i = 0; i < l; i++) {
-            if (country.channels[i].channel.equals(channel.id)) {
-              j = i;
-            }
-          }
-
-          if (j < 0 ||
-              !country.channels[j].types.includes('military')) {
-            bot.say(to,
-                'Military commands are not allowed for the given server in ' +
-                'this channel.');
-            return;
-          }
-
-          watchParse_(error, bot, from, to, args, country, channel);
-        });
-      });
-    });
-  });
-};
-
-function watchParse_(error, bot, from, to, args, country, channel) {
-  if (error || !args) {
+  if (help) {
     return;
   }
 
-  const opt = args.opt;
+  const channel = await Channel.findOne({name: to}).populate({
+    path: 'countries',
+    match: {server: server._id},
+  });
+
+  if (!channel) {
+    throw new Error('Channel not registered in database.');
+  } else if (!channel.countries.length) {
+    throw new Error('Channel not registered for given server.');
+  }
+
+  const user = await User.findOne({
+    nicknames: from,
+  });
+
+  if (!user) {
+    throw new Error('Nickname is not registered.');
+  }
+
+  const countries = [];
+
+  for (const country of channel.countries) {
+    if (country.getUserAccessLevel(user) > 0) {
+      countries.push(country);
+    }
+  }
+
+  if (!countries.length) {
+    throw new Error('Permission denied.');
+  } else if (countries.length > 1) {
+    throw new Error('Failed, you have access on multiple countries.');
+  }
+
+  const [country] = countries;
+
+  await country.populate('server organizations').execPopulate();
+
+  let j = -1;
+  const l = country.channels.length;
+  for (let i = 0; i < l; i++) {
+    if (country.channels[i].channel.equals(channel.id)) {
+      j = i;
+    }
+  }
+
+  if (j < 0 || !country.channels[j].types.includes('military')) {
+    throw new Error('Military commands are not allowed for the given server in this channel.');
+  }
+
 
   const side =
-    opt.options.defender ? 'defender' :
-    opt.options.attacker ? 'attacker' :
+    options.defender ? 'defender' :
+    options.attacker ? 'attacker' :
     'defender';
 
   const mode =
-    opt.options.light ? 'light' :
-    opt.options.full ? 'full' :
+    options.light ? 'light' :
+    options.full ? 'full' :
     'full';
 
-  const battleId =
-    !opt.options.list && opt.argv.length > 0 ? parseInt(opt.argv[0]) : 0;
-  if (isNaN(battleId) || battleId < 1) {
-    bot.say(to, 'Invalid battle id');
-    return;
-  }
+  const battleId = !options.list && argv.length > 0 ? parseInt(argv[0]) : 0;
 
-  if (opt.options.list ||
-      (!opt.options.watch && !opt.options.remove && opt.argv.length < 1)) {
-    Battle.find({
+  if (options.list ||
+      (!options.watch && !options.remove && argv.length < 1)) {
+    const battles = await Battle.find({
       country: country,
       channel: channel,
-    }, (error, battles) => {
-      const l = battles.length;
-      if (l === 0) {
-        bot.say(to, 'Watchlist is empty');
-        return;
-      }
+    });
 
-      for (let i = 0; i < l; i++) {
-        bot.say(to,
+    const l = battles.length;
+    if (l === 0) {
+      bot.say(to, 'Watchlist is empty');
+      return;
+    }
+
+    for (let i = 0; i < l; i++) {
+      bot.say(
+          to,
           `${i + 1}. ` +
           `${country.server.address}/battle.html?id=${battles[i].battleId} - ` +
           `${battles[i].label ? battles[i].label : battles[i].side}`);
-      }
-    });
-  } else if (opt.argv.length < 1) {
-    bot.say(to, 'Not enough arguments');
-  } else if (opt.options.remove) {
-    Battle.findOne({
+    }
+  } else if (argv.length < 1) {
+    throw new Error('Not enough arguments');
+  } else if (isNaN(battleId) || battleId < 1) {
+    throw new Error('Invalid battle id');
+  } else if (options.remove) {
+    const battle = await Battle.findOne({
       battleId: battleId,
       country: country,
       channel: channel,
-    }, (error, battle) => {
-      if (error) {
-        bot.say(to, `Failed to watch battle: ${error}`);
-        return;
-      }
+    });
 
-      if (!battle) {
-        bot.say(to, 'Battle not found in watchlist');
-        return;
-      }
+    if (!battle || !watchlist[battle.id]) {
+      throw new Error('Battle not found in watchlist');
+    }
 
+    clearTimeout(watchlist[battle.id]);
+
+    await battle.remove();
+
+    bot.say(to, 'Battle deleted from watchlist');
+    delete watchlist[battle.id];
+  } else {
+    let battle = await Battle.findOne({
+      battleId: battleId,
+      country: country,
+      channel: channel,
+    });
+
+    if (battle) {
       if (watchlist[battle.id] !== null) {
         clearTimeout(watchlist[battle.id]);
-        battle.remove((error, battle) => {
-          bot.say(to, 'Battle deleted from watchlist');
-          delete watchlist[battle.id];
-        });
+        battle.remove();
+        delete watchlist[battle.id];
       } else {
-        bot.say(to, 'Failed to delete watch. Please try again.');
+        throw new Error('Failed to delete previous watch. Please try again.');
       }
-    });
-  } else {
-    Battle.findOne({
+    }
+
+    battle = await Battle.create({
       battleId: battleId,
       country: country,
       channel: channel,
-    }, (error, battle) => {
-      if (error) {
-        bot.say(to, `Failed to watch battle: ${error}`);
-        return;
-      }
-
-      if (battle) {
-        if (watchlist[battle.id] !== null) {
-          clearTimeout(watchlist[battle.id]);
-          battle.remove((error, battle) => {
-            delete watchlist[battle.id];
-          });
-        } else {
-          bot.say(to, 'Failed to delete previous watch. Please try again.');
-          return;
-        }
-      }
-
-      Battle.create({
-        battleId: battleId,
-        country: country,
-        channel: channel,
-        side: side,
-        mode: mode,
-      }, (error, battle) => {
-        battle.populate('channel', (error, battle) => {
-          if (!country.organizations.length) {
-            bot.say(to, 'Failed to watch battle: Organization not found.');
-            return;
-          }
-
-          watchBattle(bot, country.organizations[0], battle,
-          (error, result) => {
-            if (error) {
-              bot.say(to, `Failed to watch battle: ${error}`);
-            }
-          });
-        });
-      });
+      side: side,
+      mode: mode,
     });
-  }
-}
 
-function showBattleRound(
-  bot, organization, battle, battleInfo, battleRoundInfo
+    await battle.populate('channel').execPopulate();
+
+    if (!country.organizations.length) {
+      throw new Error('Failed to watch battle: Organization not found.');
+    }
+
+    await watchBattle(bot, country.organizations[0], battle);
+  }
+};
+
+async function showBattleRound(
+    bot, organization, battle, battleInfo, battleRoundInfo
 ) {
   const server = organization.country.server;
 
@@ -290,129 +233,115 @@ function showBattleRound(
     const allies = battleInfo.attackerAllies.slice();
     allies.unshift(battleInfo.attacker);
 
-    server.getAttackerBonusRegion(battleInfo.id, allies,
-    (error, region) => {
-      if (error) {
-        console.log(`Error: ${error}`);
-      }
-
-      bonusRegion = (error ? null : region);
-      show();
-    });
-    return;
+    bonusRegion = await server.getAttackerBonusRegion(battleInfo.id, allies);
   }
 
-  show();
+  const ul = codes.underline;
+  const bold = codes.bold;
+  const reset = codes.reset;
 
-  function show() {
-    const ul = codes.underline;
-    const bold = codes.bold;
-    const reset = codes.reset;
+  /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
+  const dr = codes.dark_red;
+  const dg = codes.dark_green;
+  /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
 
-    /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
-    const dr = codes.dark_red;
-    const dg = codes.dark_green;
-    const or = codes.orange;
-    /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
+  const defSide = side === 'defender';
+  const rnd = battleInfo.round;
+  const winning = percentage > 0.5;
 
-    const defSide = side === 'defender';
-    const rnd = battleInfo.round;
-    const winning = percentage > 0.5;
+  const def = battleInfo.defender;
+  const defWins = battleInfo.defenderWins;
+  const atk = battleInfo.attacker;
+  const atkWins = battleInfo.attackerWins;
 
-    const def = battleInfo.defender;
-    const defWins = battleInfo.defenderWins;
-    const atk = battleInfo.attacker;
-    const atkWins = battleInfo.attackerWins;
+  const urlSection = `${server.address}/battle.html?id=${battle.battleId}`;
+  const summarySection =
+      `${ul}${bold}${battleInfo.label}${reset} ` +
+      `(${defSide ? def : atk}) - ` +
+      `${bold}R${rnd}${reset} ` +
+      `(${defSide ? dg : dr}${bold}${defWins}${reset}:` +
+      `${defSide ? dr : dg}${bold}${atkWins}${reset})`;
+  const bonusSection =
+      bonusRegion ? `${bold}Bonus: ${reset}${bonusRegion}` : null;
+  const percentSection =
+      `${bold}${winning ? `${dg}Winning` : `${dr}Losing`}${reset}: ` +
+      `${numeral(percentage).format('0.00%')}`;
+  const wallSection =
+      `${bold}Wall: ${winning ? dg : dr}` +
+      `${numeral(wall).format('+0,0')}${reset}`;
+  const timeSection =
+      `${bold}Time: ${reset}0${numeral(time).format('00:00:00')}`;
 
-    const urlSection = `${server.address}/battle.html?id=${battle.battleId}`;
-    const summarySection =
-        `${ul}${bold}${battleInfo.label}${reset} ` +
-        `(${defSide ? def : atk}) - ` +
-        `${bold}R${rnd}${reset} ` +
-        `(${defSide ? dg : dr}${bold}${defWins}${reset}:` +
-        `${defSide ? dr : dg}${bold}${atkWins}${reset})`;
-    const bonusSection =
-        bonusRegion ? `${bold}Bonus: ${reset}${bonusRegion}` : null;
-    const percentSection =
-        `${bold}${winning ? `${dg}Winning` : `${dr}Losing`}${reset}: ` +
-        `${numeral(percentage).format('0.00%')}`;
-    const wallSection =
-        `${bold}Wall: ${winning ? dg : dr}` +
-        `${numeral(wall).format('+0,0')}${reset}`;
-    const timeSection =
-        `${bold}Time: ${reset}0${numeral(time).format('00:00:00')}`;
+  const sections = [
+    urlSection,
+    summarySection,
+    bonusSection,
+    percentSection,
+    wallSection,
+    timeSection,
+  ].filter((value) => value !== null);
 
-    const sections = [
-      urlSection,
-      summarySection,
-      bonusSection,
-      percentSection,
-      wallSection,
-      timeSection,
-    ].filter((value) => value !== null);
-
-    bot.say(battle.channel.name, sections.join(' | '));
-  }
+  bot.say(battle.channel.name, sections.join(' | '));
 }
 
 function watchBattleRound(
-  bot, organization, battle, battleInfo, battleRoundInfo, time, callback
+    bot, organization, battle, battleInfo, battleRoundInfo, time
 ) {
-  const timeout = function(watchpoint) {
+  const timeout = async function(watchpoint) {
     watchlist[battle.id] = null;
-    organization.getBattleRoundInfo(battleInfo.roundId,
-      (error, battleRoundInfo) => {
-        if (error) {
-          callback(error);
-          return;
-        }
+    const battleRoundInfo =
+      await organization.getBattleRoundInfo(battleInfo.roundId);
 
-        let frozen = false;
+    let frozen = false;
 
-        if (battleRoundInfo.remainingTimeInSeconds === time && time > 0) {
-          frozen = true;
-        } else if (watchpoint === 600) {
-          call.call(
-            bot, battle.channel.name,
-            'T-10 --- Get ready to fight!!!');
-        } else if (watchpoint === 300) {
-          call.call(
-            bot, battle.channel.name,
-            'T-5 --- Standby --- hit at T-2 if bar is below 52%!!!');
-        } else if (watchpoint === 120) {
-          const defenderScore = numeral()
-            .unformat(battleRoundInfo.defenderScore);
-          const attackerScore = numeral()
-            .unformat(battleRoundInfo.attackerScore);
-          const totalScore = defenderScore + attackerScore;
+    if (battleRoundInfo.remainingTimeInSeconds === time && time > 0) {
+      frozen = true;
+    } else if (watchpoint === 600) {
+      bot.callEveryone(
+          battle.channel.name,
+          'T-10 --- Get ready to fight!!!');
+    } else if (watchpoint === 300) {
+      bot.callEveryone(
+          battle.channel.name,
+          'T-5 --- Standby --- hit at T-2 if bar is below 52%!!!');
+    } else if (watchpoint === 120) {
+      const defenderScore = numeral()
+          .unformat(battleRoundInfo.defenderScore);
+      const attackerScore = numeral()
+          .unformat(battleRoundInfo.attackerScore);
+      const totalScore = defenderScore + attackerScore;
 
-          let percentage = 0;
+      let percentage = 0;
 
-          if (battle.side === 'defender') {
-            percentage = defenderScore / totalScore;
-          } else if (battle.side === 'attacker') {
-            percentage = attackerScore / totalScore;
-          }
+      if (battle.side === 'defender') {
+        percentage = defenderScore / totalScore;
+      } else if (battle.side === 'attacker') {
+        percentage = attackerScore / totalScore;
+      }
 
-          if (!isFinite(percentage)) {
-            percentage = 0;
-          }
+      if (!isFinite(percentage)) {
+        percentage = 0;
+      }
 
-          call.call(
-            bot, battle.channel.name, `T-2 --- ${
-            percentage < 0.52 ?
-              'Start hitting!!!' :
-              'Hold your hits --- Only hit when bar drops below 52%!!!'}`);
-        }
+      let command;
 
-        if (!frozen) {
-          showBattleRound(
-            bot, organization, battle, battleInfo, battleRoundInfo);
-        }
-        watchBattleRound(
-          bot, organization, battle, battleInfo, battleRoundInfo,
-          battleRoundInfo.remainingTimeInSeconds, callback);
-      });
+      if (percentage < 0.52) {
+        command = 'Start hitting!!!';
+      } else {
+        command = 'Hold your hits --- Only hit when bar drops below 52%!!!';
+      }
+
+      bot.callEveryone(battle.channel.name, `T-2 --- ${command}`);
+    }
+
+    if (!frozen) {
+      await showBattleRound(
+          bot, organization, battle, battleInfo, battleRoundInfo);
+    }
+
+    watchBattleRound(
+        bot, organization, battle, battleInfo, battleRoundInfo,
+        battleRoundInfo.remainingTimeInSeconds);
   };
 
   const l = watchpoints[battle.mode].length;
@@ -432,73 +361,53 @@ function watchBattleRound(
   const attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
 
   const winner = defenderScore >= attackerScore ?
-      battleInfo.defender : battleInfo.attacker;
+    battleInfo.defender : battleInfo.attacker;
 
-  bot.say(battle.channel.name,
-    `The round has ended in favor of ${winner}`);
-  callback(null);
+  bot.say(battle.channel.name, `The round has ended in favor of ${winner}`);
+
+  watchlist[battle.id] = setTimeout(() => {
+    watchlist[battle.id] = null;
+    watchBattle(bot, organization, battle);
+  }, 30000);
 }
 
-function watchBattle(bot, organization, battle, callback) {
-  organization.getBattleInfo(battle.battleId, (error, battleInfo) => {
-    if (error) {
-      callback(error);
-      return;
+async function watchBattle(bot, organization, battle) {
+  const battleInfo = await organization.getBattleInfo(battle.battleId);
+
+  if (!battle.label) {
+    const side = battle.side === 'defender' ?
+      battleInfo.defender : battleInfo.attacker;
+    battle.label = `${battleInfo.label} (${side})`;
+    await battle.save();
+  }
+
+  const battleRoundInfo =
+      await organization.getBattleRoundInfo(battleInfo.roundId);
+
+  if (battleRoundInfo.remainingTimeInSeconds < 0) {
+    const defenderScore = numeral()
+        .unformat(battleRoundInfo.defenderScore);
+    const attackerScore = numeral()
+        .unformat(battleRoundInfo.attackerScore);
+
+    const winner = defenderScore >= attackerScore ?
+      battleInfo.defender : battleInfo.attacker;
+
+    bot.say(battle.channel.name, `The battle has ended in favor of ${winner}`);
+
+    await battle.remove();
+    if (watchlist.hasOwnProperty(battle.id)) {
+      delete watchlist[battle.id];
     }
 
-    if (!battle.label) {
-      const side = battle.side === 'defender' ?
-          battleInfo.defender : battleInfo.attacker;
-      battle.label = `${battleInfo.label} (${side})`;
-      battle.save();
-    }
+    return;
+  }
 
-    organization.getBattleRoundInfo(battleInfo.roundId,
-      (error, battleRoundInfo) => {
-        if (error) {
-          callback(error);
-          return;
-        }
-
-        if (battleRoundInfo.remainingTimeInSeconds < 0) {
-          const defenderScore = numeral()
-            .unformat(battleRoundInfo.defenderScore);
-          const attackerScore = numeral()
-            .unformat(battleRoundInfo.attackerScore);
-
-          const winner = defenderScore >= attackerScore ?
-            battleInfo.defender : battleInfo.attacker;
-
-          bot.say(battle.channel.name,
-              `The battle has ended in favor of ${winner}`);
-          callback(null);
-
-          battle.remove((error, battle) => {
-            if (watchlist.hasOwnProperty(battle.id)) {
-              delete watchlist[battle.id];
-            }
-          });
-
-          return;
-        }
-
-        showBattleRound(
-          bot, organization, battle, battleInfo, battleRoundInfo);
-        watchBattleRound(
-          bot, organization, battle, battleInfo, battleRoundInfo,
-          battleRoundInfo.remainingTimeInSeconds,
-          (error) => {
-            if (error) {
-              callback(error);
-            }
-
-            watchlist[battle.id] = setTimeout(() => {
-              watchlist[battle.id] = null;
-              watchBattle(bot, organization, battle, callback);
-            }, 30000);
-          });
-      });
-  });
+  await showBattleRound(
+      bot, organization, battle, battleInfo, battleRoundInfo);
+  watchBattleRound(
+      bot, organization, battle, battleInfo, battleRoundInfo,
+      battleRoundInfo.remainingTimeInSeconds);
 }
 
 module.exports.watchBattle = watchBattle;

@@ -22,37 +22,24 @@ const parse = require('./parse');
 const User = require('../models/user');
 
 
-exports.add = function(bot, from, argv) {
-  parse(bot, 'add-nickname username password', [
-  ], argv, 2, 2, from, false, (error, args) => {
-    if (error) {
-      bot.say(from, `Error: ${error}`);
-      return;
-    } else if (!args) {
-      return;
-    }
+exports.add = async function(bot, from, args) {
+  const {argv, help} = await parse(bot, 'add-nickname (username) (password)', [
+  ], args, 2, 2, from, false);
 
-    User.findOne({username: args.opt.argv[0]}, (error, user) => {
-      if (error) {
-        bot.say(from, `Error: ${error}`);
-        return;
-      } else if (!user || !user.isValidPassword(args.opt.argv[1])) {
-        bot.say(from, 'Error: Invalid username or password');
-        return;
-      } else if (user.nicknames.includes(from)) {
-        bot.say(from, 'Error: Nickname is already added');
-        return;
-      }
+  if (help) {
+    return;
+  }
 
-      user.nicknames.push(from);
-      user.save((error) => {
-        if (error) {
-          bot.say(from, `Error: ${error}`);
-          return;
-        }
+  const user = await User.findOne({username: argv[0]});
 
-        bot.say(from, 'Nickname successfully added.');
-      });
-    });
-  });
+  if (!user || !user.isValidPassword(argv[1])) {
+    throw new Error('Invalid username or password');
+  } else if (user.nicknames.includes(from)) {
+    throw new Error('Nickname is already added');
+  }
+
+  user.nicknames.push(from);
+  await user.save();
+
+  bot.say(from, 'Nickname successfully added.');
 };

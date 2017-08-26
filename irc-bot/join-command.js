@@ -22,48 +22,27 @@ const parse = require('./parse');
 const User = require('../models/user');
 
 
-module.exports = function(bot, to, argv) {
-  parse(bot, 'join (channel) [keyword]', [
-  ], argv, 1, 2, to, false, (error, args) => {
-    if (error) {
-      bot.say(to, `Error: ${error}`);
-      return;
-    } else if (!args) {
-      return;
-    }
+module.exports = async function(bot, to, args) {
+  const {argv, help} = await parse(bot, 'join (channel) [keyword]', [
+  ], args, 1, 2, to, false);
 
-    User.findOne({
-      nicknames: to,
-    }, (error, user) => {
-      if (error) {
-        bot.say(to,
-            `Failed to find user via nickname: ${error}`);
-        return;
-      }
-
-      if (user) {
-        if (user.accessLevel < 4) {
-          bot.say(to, 'Permission denied.');
-        } else {
-          joinParse_(error, bot, to, args, user);
-        }
-      } else {
-        bot.say(to, 'Nickname is not registered.');
-      }
-    });
-  });
-};
-
-function joinParse_(error, bot, to, args, user) {
-  if (error || !args) {
+  if (help) {
     return;
   }
 
-  const opt = args.opt;
+  const user = await User.findOne({
+    nicknames: to,
+  });
 
-  join(bot, to, opt.argv[0] + (opt.argv.length > 1 ? ` ${opt.argv[1]}` : ''));
-}
+  if (!user) {
+    throw new Error('Nickname is not registered.');
+  }
 
-function join(bot, to, channel) {
-  bot.join(channel);
-}
+  if (user.accessLevel < 4) {
+    throw new Error('Permission denied.');
+  }
+
+  const [channel, keyword] = argv;
+
+  await bot.join(channel + (keyword? ` ${keyword}` : ''));
+};

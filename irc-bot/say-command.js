@@ -22,48 +22,27 @@ const parse = require('./parse');
 const User = require('../models/user');
 
 
-module.exports = function(bot, to, argv) {
-  parse(bot, 'say (recipient) (message)', [
-  ], argv, 2, 2, to, false, (error, args) => {
-    if (error) {
-      bot.say(to, `Error: ${error}`);
-      return;
-    } else if (!args) {
-      return;
-    }
+module.exports = async function(bot, to, args) {
+  const {argv, help} = await parse(bot, 'say (recipient) (message)', [
+  ], args, 2, 2, to, false);
 
-    User.findOne({
-      nicknames: to,
-    }, (error, user) => {
-      if (error) {
-        bot.say(to,
-            `Failed to find user via nickname: ${error}`);
-        return;
-      }
-
-      if (user) {
-        if (user.accessLevel < 4) {
-          bot.say(to, 'Permission denied.');
-        } else {
-          sayParse_(error, bot, to, args, user);
-        }
-      } else {
-        bot.say(to, 'Nickname is not registered.');
-      }
-    });
-  });
-};
-
-function sayParse_(error, bot, to, args, user) {
-  if (error || !args) {
+  if (help) {
     return;
   }
 
-  const opt = args.opt;
+  const user = await User.findOne({
+    nicknames: to,
+  });
 
-  say(bot, to, opt.argv[0], opt.argv[1]);
-}
+  if (!user) {
+    throw new Error('Nickname is not registered.');
+  }
 
-function say(bot, to, recipient, message) {
+  if (user.accessLevel < 4) {
+    throw new Error('Permission denied.');
+  }
+
+  const [recipient, message] = argv;
+
   bot.say(recipient, message);
-}
+};

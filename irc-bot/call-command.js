@@ -17,67 +17,34 @@
  */
 
 
-const irc = require('irc');
-const codes = irc.colors.codes;
-
 const Channel = require('../models/channel');
 const User = require('../models/user');
 
 
-module.exports = function(bot, from, to, argv, raw) {
-  User.findOne({
+module.exports = async function(bot, from, to, args, raw) {
+  const user = await User.findOne({
     nicknames: from,
-  }, (error, user) => {
-    if (error) {
-      bot.say(to,
-          `Failed to find user via nickname: ${error}`);
-      return;
-    }
-
-    if (!user) {
-      bot.say(to, 'Nickname is not registered.');
-      return;
-    }
-
-    const query = Channel.findOne({name: to}).populate({
-      path: 'countries',
-      match: {
-        'accessList.account': user._id,
-      },
-    });
-    query.exec((error, channel) => {
-      if (error) {
-        bot.say(to, `Error: ${error}`);
-        return;
-      } else if (!channel) {
-        bot.say(to, 'Channel not registered in database.');
-        return;
-      } else if (!channel.countries.length && user.accessLevel < 4) {
-        bot.say(to, 'Permission denied.');
-        return;
-      }
-
-      const message = raw.trimLeft();
-      call(bot, to, message.substring(message.indexOf(' ') + 1));
-    });
   });
+
+  if (!user) {
+    throw new Error('Nickname is not registered.');
+  }
+
+  const channel = await Channel.findOne({name: to}).populate({
+    path: 'countries',
+    match: {
+      'accessList.account': user._id,
+    },
+  });
+
+  if (!channel) {
+    throw new Error('Channel not registered in database.');
+  } else if (!channel.countries.length && user.accessLevel < 4) {
+    throw new Error('Permission denied.');
+  }
+
+  const messageTrimmed = raw.trimLeft();
+  const message = messageTrimmed.substring(messageTrimmed.indexOf(' ') + 1);
+
+  bot.callEveryone(to, message);
 };
-
-function call(bot, to, message) {
-  bot.once(`names${to}`, (nicks) => {
-    const names = Object.getOwnPropertyNames(nicks);
-    names.splice(names.indexOf(bot.nick), 1);
-
-    bot.say(to, `${codes.bold}Listen up! ${codes.reset}${names.join(' ')}`);
-
-    if (message) {
-      bot.say(to,
-        `${codes.bold + codes.black},07` +
-        `############# ${message} #############` +
-        `${codes.reset}`);
-    }
-  });
-  bot.send('NAMES', to);
-}
-
-module.exports.call = call;

@@ -23,149 +23,77 @@ const Channel = require('../models/channel');
 const User = require('../models/user');
 
 
-module.exports = function(bot, from, to, argv) {
-  parse(bot, '!donate (citizen) (product) (quantity) [reason]', [
+module.exports = async function(bot, from, to, args) {
+  const {server, options, argv, help} = await parse(bot, '!donate (citizen) (product) (quantity) [reason]', [
     ['i', 'id', 'Given citizen is a citizen id'],
-  ], argv, 3, 4, to, true, (error, args) => {
-    if (error) {
-      bot.say(to, `Error: ${error}`);
-      return;
-    } else if (!args) {
-      return;
-    }
+  ], args, 3, 4, to, true);
 
-    const query = Channel.findOne({name: to}).populate({
-      path: 'countries',
-      match: {server: args.server._id},
-    });
-    query.exec((error, channel) => {
-      if (error) {
-        bot.say(to, `Error: ${error}`);
-        return;
-      } else if (!channel) {
-        bot.say(to, 'Channel not registered in database.');
-        return;
-      } else if (!channel.countries.length) {
-        bot.say(to, 'Channel not registered for given server.');
-        return;
-      }
-
-      User.findOne({
-        nicknames: from,
-      }, (error, user) => {
-        if (error) {
-          bot.say(to,
-              `Failed to find user via nickname: ${error}`);
-          return;
-        }
-
-        if (!user) {
-          bot.say(to, 'Nickname is not registered.');
-          return;
-        }
-
-        const countries = [];
-
-        const l = channel.countries.length;
-        for (let i = 0; i < l; i++) {
-          if (channel.countries[i].getUserAccessLevel(user) > 0) {
-            countries.push(channel.countries[i]);
-          }
-        }
-
-        if (!countries.length) {
-          bot.say(to, 'Permission denied.');
-          return;
-        } else if (countries.length > 1) {
-          bot.say(to, 'Failed, you have access on multiple countries.');
-          return;
-        }
-
-        const query = countries[0].populate('server');
-        query.populate('organizations', (error, country) => {
-          let j = -1;
-          const l = country.channels.length;
-          for (let i = 0; i < l; i++) {
-            if (country.channels[i].channel.equals(channel.id)) {
-              j = i;
-            }
-          }
-
-          if (j < 0 ||
-              !country.channels[j].types.includes('military')) {
-            bot.say(to,
-                'Military commands are not allowed for the given server in ' +
-                'this channel.');
-            return;
-          }
-
-          donateParse_(error, bot, from, to, args, country, user);
-        });
-      });
-    });
-  });
-};
-
-function donateParse_(error, bot, from, to, args, country, user) {
-  if (error || !args) {
+  if (help) {
     return;
   }
 
-  const opt = args.opt;
-
-  const reason = opt.argv.length === 4 ? opt.argv[3] : '';
-
-  donate(country, country.organizations[0], user, {
-    citizen: opt.argv[0],
-    product: opt.argv[1],
-    quantity: opt.argv[2],
-    reason: reason,
-    id: opt.options.id,
-  }, (error) => {
-    if (!error) {
-      const recipient = `${opt.options.id ? '#' : ''}${opt.argv[0]}`;
-      bot.say(to,
-          `Products successfully donated to citizen ${recipient}.`);
-    } else {
-      bot.say(to, `Failed to donate products: ${error}`);
-    }
+  const channel = await Channel.findOne({name: to}).populate({
+    path: 'countries',
+    match: {server: server._id},
   });
-}
+  if (!channel) {
+    throw new Error('Channel not registered in database.');
+  } else if (!channel.countries.length) {
+    throw new Error('Channel not registered for given server.');
+  }
 
-function donate(country, organization, user, options, callback) {
+  const user = await User.findOne({
+    nicknames: from,
+  });
+
+  if (!user) {
+    throw new Error('Nickname is not registered.');
+  }
+
+  const countries = [];
+
+  for (const country of channel.countries) {
+    if (country.getUserAccessLevel(user) > 0) {
+      countries.push(country);
+    }
+  }
+
+  if (!countries.length) {
+    throw new Error('Permission denied.');
+  } else if (countries.length > 1) {
+    throw new Error('Failed, you have access on multiple countries.');
+  }
+
+  const [country] = countries;
+
+  if (country.getUserAccessLevel(user) < 3) {
+    throw new Error('Permission denied.');
+  }
+
+  await country.populate('server organizations').execPopulate();
+
+  let j = -1;
+  const l = country.channels.length;
+  for (let i = 0; i < l; i++) {
+    if (country.channels[i].channel.equals(channel.id)) {
+      j = i;
+    }
+  }
+
+  if (j < 0 || !country.channels[j].types.includes('military')) {
+    throw new Error('Military commands are not allowed for the given server in this channel.');
+  }
+
+  const [citizen, product, quantity, reason=''] = argv;
+  const [organization] = country.organizations;
+
   if (!options.id) {
-    organization.createRequest((error, request, jar) => {
-      const url = `${country.server.address}/apiCitizenByName.html`;
-      request(url, {
-        method: 'GET',
-        qs: {
-          name: options.citizen.toLowerCase(),
-        },
-      }, (error, response, body) => {
-        if (!error && response.statusCode === 200) {
-          const citizenInfo = JSON.parse(body);
-
-          if (citizenInfo.error) {
-            callback(citizenInfo.error);
-            return;
-          }
-
-          options.citizen = citizenInfo.id;
-          options.id = true;
-
-          donate(country, organization, user, options, callback);
-        } else {
-          callback(`Failed to get citizen info: ${
-            error || `HTTP Error: ${response.statusCode}`}`);
-        }
-      });
-    });
-
-    return;
+    const citizenInfo = await country.server.getCitizenInfoByName(citizen);
+    citizen = citizenInfo.id;
   }
 
-  organization.donateProducts(
-      user, options.citizen, options.product,
-      options.quantity, options.reason,
-      callback);
-}
+  await organization.donateProducts(user, citizen, product, quantity, reason);
+
+  const recipient = `${options.id ? '#' : ''}${citizen}`;
+  bot.say(to, `Products successfully donated to citizen ${recipient}.`);
+};

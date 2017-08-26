@@ -23,92 +23,69 @@ const Server = require('../models/server');
 const Channel = require('../models/channel');
 
 
-const parseArgv = function(
-        bot, servers, usage, commandOptions, argv, min, max,
-        to, callback) {
-  const command = usage.split(' ')[0];
+module.exports = async function(
+    bot, usage, commandOptions, args, min, max,
+    to, addServerOptions) {
+  const servers = addServerOptions?
+    await Server.find({}, null, {sort: {_id: 1}}) : [];
+
+  const [command] = usage.split(' ');
   const commonOptions = [
     ['h', 'help', 'Display this help'],
   ];
   const serverOptions = [];
   let allOptions = commandOptions;
 
-  const l = servers.length;
-  for (let i = 0; i < l; i++) {
+  for (const server of servers) {
     serverOptions.push([
-      servers[i].shortname,
-      servers[i].name.toLowerCase(),
-      `Set server to ${servers[i].name}`]);
+      server.shortname,
+      server.name.toLowerCase(),
+      `Set server to ${server.name}`]);
   }
+
   if (serverOptions.length) {
     allOptions = allOptions.concat(serverOptions);
   }
 
   allOptions = allOptions.concat(commonOptions);
 
-  const options = getopt.create(allOptions);
-  options.setHelp(`Usage: ${usage}\n\n[[OPTIONS]]\n`);
+  const opt = getopt.create(allOptions);
+  opt.setHelp(`Usage: ${usage}\n\n[[OPTIONS]]\n`);
 
   let error = null;
-  options.error((e) => {
+  opt.error((e) => {
     error = e;
   });
 
-  const opt = options.parse(argv.slice(1));
+  const {options, argv} = opt.parse(args.slice(1));
 
   if (error) {
-    bot.say(to, error);
-    return callback(null, null);
-  } else if (opt.options.help) {
-    bot.say(to, options.getHelp());
-    return callback(null, null);
-  } else if (opt.argv.length < min) {
-    bot.say(to, 'Not enough arguments.');
-    bot.say(to, `Try \u0002${command} --help\u0002 for more info.`);
-    return callback(null, null);
-  } else if (opt.argv.length > max) {
-    bot.say(to, 'Too many arguments.');
-    bot.say(to, `Try \u0002${command} --help\u0002 for more info.`);
-    return callback(null, null);
+    throw new Error(error);
+  } else if (options.help) {
+    bot.say(to, opt.getHelp());
+    return {help: true};
   }
 
-  const query = Channel.findOne({name: to}).populate('countries');
-  query.exec((error, channel) => {
-    if (error) {
-      callback(error);
-      return;
-    }
+  const tryHelpMsg = `Try \u0002${command} --help\u0002 for more info.`;
+  if (argv.length < min) {
+    throw new Error(`Not enough arguments. ${tryHelpMsg}`);
+  } else if (argv.length > max) {
+    throw new Error(`Too many arguments. ${tryHelpMsg}`);
+  }
 
-    const l = servers.length;
-    for (let i = 0; i < l; i++) {
-      if (opt.options[servers[i].name.toLowerCase()]) {
-        callback(null, {server: servers[i], opt: opt});
-        return;
-      }
+  for (const server of servers) {
+    if (options[server.name.toLowerCase()]) {
+      return {server, options, argv};
     }
+  }
 
-    if (channel && channel.countries && channel.countries.length) {
-      channel.countries[0].populate('server', (error, country) => {
-        callback(error, {server: country.server, opt: opt});
-      });
-    } else {
-      callback(null, {server: servers[0], opt: opt});
-    }
-  });
-};
+  const channel = await Channel.findOne({name: to}).populate('countries');
 
-module.exports = function(
-        bot, usage, commandOptions, argv, min, max,
-        to, addServerOptions, callback) {
-  if (addServerOptions) {
-    Server.find({}, null, {sort: {_id: 1}}, (error, servers) => {
-      parseArgv(
-          bot, servers, usage, commandOptions, argv, min, max,
-          to, callback);
-    });
+  if (channel && channel.countries && channel.countries.length) {
+    const [country] = channel.countries;
+    await country.populate('server').execPopulate();
+    return {server: country.server, options, argv};
   } else {
-    parseArgv(
-        bot, [], usage, commandOptions, argv, min, max,
-        to, callback);
+    return {server: servers[0], options, argv};
   }
 };

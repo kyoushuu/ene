@@ -27,187 +27,131 @@ const Channel = require('../models/channel');
 const User = require('../models/user');
 
 
-module.exports = function(bot, from, to, argv) {
-  parse(bot, '!battle (id)', [
+module.exports = async function(bot, from, to, args) {
+  const {server, options, argv, help} = await parse(bot, '!battle (id)', [
     ['d', 'defender', 'Defender side (default)'],
     ['a', 'attacker', 'Attacker side'],
-  ], argv, 1, 1, to, true, (error, args) => {
-    if (error) {
-      bot.say(to, `Error: ${error}`);
-      return;
-    } else if (!args) {
-      return;
-    }
+  ], args, 1, 1, to, true);
 
-    const query = Channel.findOne({name: to}).populate({
-      path: 'countries',
-      match: {server: args.server._id},
-    });
-    query.exec((error, channel) => {
-      if (error) {
-        bot.say(to, `Error: ${error}`);
-        return;
-      } else if (!channel) {
-        bot.say(to, 'Channel not registered in database.');
-        return;
-      } else if (!channel.countries.length) {
-        bot.say(to, 'Channel not registered for given server.');
-        return;
-      }
-
-      User.findOne({
-        nicknames: from,
-      }, (error, user) => {
-        if (error) {
-          bot.say(to,
-              `Failed to find user via nickname: ${error}`);
-          return;
-        }
-
-        if (!user) {
-          bot.say(to, 'Nickname is not registered.');
-          return;
-        }
-
-        const countries = [];
-
-        const l = channel.countries.length;
-        for (let i = 0; i < l; i++) {
-          if (channel.countries[i].getUserAccessLevel(user) > 0) {
-            countries.push(channel.countries[i]);
-          }
-        }
-
-        if (!countries.length) {
-          bot.say(to, 'Permission denied.');
-          return;
-        } else if (countries.length > 1) {
-          bot.say(to, 'Failed, you have access on multiple countries.');
-          return;
-        }
-
-        const query = countries[0].populate('server');
-        query.populate('organizations', (error, country) => {
-          let j = -1;
-          const l = country.channels.length;
-          for (let i = 0; i < l; i++) {
-            if (country.channels[i].channel.equals(channel.id)) {
-              j = i;
-            }
-          }
-
-          if (j < 0 ||
-              !country.channels[j].types.includes('military')) {
-            bot.say(to,
-                'Military commands are not allowed for the given server in ' +
-                'this channel.');
-            return;
-          }
-
-          battleParse_(error, bot, from, to, args, country, user);
-        });
-      });
-    });
-  });
-};
-
-function battleParse_(error, bot, from, to, args, country, user) {
-  if (error || !args) {
+  if (help) {
     return;
   }
 
-  const opt = args.opt;
+  const channel = await Channel.findOne({name: to}).populate({
+    path: 'countries',
+    match: {server: server._id},
+  });
+
+  if (!channel) {
+    throw new Error('Channel not registered in database.');
+  } else if (!channel.countries.length) {
+    throw new Error('Channel not registered for given server.');
+  }
+
+  const user = await User.findOne({
+    nicknames: from,
+  });
+
+  if (!user) {
+    throw new Error('Nickname is not registered.');
+  }
+
+  const countries = [];
+
+  for (const country of channel.countries) {
+    if (country.getUserAccessLevel(user) > 0) {
+      countries.push(country);
+    }
+  }
+
+  if (!countries.length) {
+    throw new Error('Permission denied.');
+  } else if (countries.length > 1) {
+    throw new Error('Failed, you have access on multiple countries.');
+  }
+
+  const [country] = countries;
+
+  await country.populate('server organizations').execPopulate();
+
+  let j = -1;
+  const l = country.channels.length;
+  for (let i = 0; i < l; i++) {
+    if (country.channels[i].channel.equals(channel.id)) {
+      j = i;
+    }
+  }
+
+  if (j < 0 || !country.channels[j].types.includes('military')) {
+    throw new Error('Military commands are not allowed for the given server in this channel.');
+  }
 
   const side =
-    opt.options.defender ? 'defender' :
-    opt.options.attacker ? 'attacker' :
+    options.defender ? 'defender' :
+    options.attacker ? 'attacker' :
     'defender';
 
-  const battleId = parseInt(opt.argv[0]);
+  const battleId = parseInt(argv[0]);
   if (isNaN(battleId) || battleId < 1) {
-    bot.say(to, 'Invalid battle id');
-    return;
+    throw new Error('Invalid battle id');
   }
 
-  battleShow(country, country.organizations[0], {
-    battleId: battleId,
-    side: side,
-  }, (error, result) => {
-    if (!error) {
-      bot.say(to, result);
-    } else {
-      bot.say(to, `Failed to show battle: ${error}`);
-    }
-  });
-}
+  const organization = country.organizations[0];
 
-function battleShow(country, organization, options, callback) {
-  organization.getBattleInfo(options.battleId, (error, battleInfo) => {
-    if (error) {
-      callback(error);
-      return;
-    }
+  const battleInfo = await organization.getBattleInfo(battleId);
+  const battleRoundInfo =
+      await organization.getBattleRoundInfo(battleInfo.roundId);
 
-    organization.getBattleRoundInfo(battleInfo.roundId,
-      (error, battleRoundInfo) => {
-        if (error) {
-          callback(error);
-          return;
-        }
+  const defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
+  const attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
+  const totalScore = defenderScore + attackerScore;
 
-        const defenderScore = numeral().unformat(battleRoundInfo.defenderScore);
-        const attackerScore = numeral().unformat(battleRoundInfo.attackerScore);
-        const totalScore = defenderScore + attackerScore;
+  let wall = 0;
+  let percentage = 0;
 
-        const side = options.side;
-        let wall = 0;
-        let percentage = 0;
+  if (side === 'defender') {
+    wall = defenderScore - attackerScore;
+    percentage = defenderScore / totalScore;
+  } else if (side === 'attacker') {
+    wall = attackerScore - defenderScore;
+    percentage = attackerScore / totalScore;
+  }
 
-        if (side === 'defender') {
-          wall = defenderScore - attackerScore;
-          percentage = defenderScore / totalScore;
-        } else if (side === 'attacker') {
-          wall = attackerScore - defenderScore;
-          percentage = attackerScore / totalScore;
-        }
+  if (!isFinite(percentage)) {
+    percentage = 0;
+  }
 
-        if (!isFinite(percentage)) {
-          percentage = 0;
-        }
+  const time = Math.max(0, battleRoundInfo.remainingTimeInSeconds);
 
-        const time = Math.max(0, battleRoundInfo.remainingTimeInSeconds);
+  const ul = codes.underline;
+  const bold = codes.bold;
+  const reset = codes.reset;
 
-        const ul = codes.underline;
-        const bold = codes.bold;
-        const reset = codes.reset;
+  /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
+  const dr = codes.dark_red;
+  const dg = codes.dark_green;
+  /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
 
-        /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
-        const dr = codes.dark_red;
-        const dg = codes.dark_green;
-        const or = codes.orange;
-        /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
+  const defSide = side === 'defender';
+  const rnd = battleInfo.round;
+  const winning = percentage > 0.5;
 
-        const defSide = side === 'defender';
-        const rnd = battleInfo.round;
-        const winning = percentage > 0.5;
+  const def = battleInfo.defender;
+  const defWins = battleInfo.defenderWins;
+  const atk = battleInfo.attacker;
+  const atkWins = battleInfo.attackerWins;
 
-        const def = battleInfo.defender;
-        const defWins = battleInfo.defenderWins;
-        const atk = battleInfo.attacker;
-        const atkWins = battleInfo.attackerWins;
-
-        callback(null,
-            `${country.server.address}/battle.html?id=${options.battleId} | ` +
-            `${ul}${bold}${battleInfo.label}${reset} ` +
-            `(${defSide ? def : atk}) - ` +
-            `${bold}R${rnd}${reset} ` +
-            `(${defSide ? dg : dr}${bold}${defWins}${reset}:` +
-            `${defSide ? dr : dg}${bold}${atkWins}${reset}) | ` +
-            `${bold}${winning ? `${dg}Winning` : `${dr}Losing`}${reset}: ` +
-            `${numeral(percentage).format('0.00%')} | ` +
-            `${bold}Wall: ${winning ? dg : dr}` +
-            `${numeral(wall).format('+0,0')}${reset} | ` +
-            `${bold}Time: ${reset}0${numeral(time).format('00:00:00')}`);
-      });
-  });
-}
+  bot.say(
+      to,
+      `${country.server.address}/battle.html?id=${battleId} | ` +
+      `${ul}${bold}${battleInfo.label}${reset} ` +
+      `(${defSide ? def : atk}) - ` +
+      `${bold}R${rnd}${reset} ` +
+      `(${defSide ? dg : dr}${bold}${defWins}${reset}:` +
+      `${defSide ? dr : dg}${bold}${atkWins}${reset}) | ` +
+      `${bold}${winning ? `${dg}Winning` : `${dr}Losing`}${reset}: ` +
+      `${numeral(percentage).format('0.00%')} | ` +
+      `${bold}Wall: ${winning ? dg : dr}` +
+      `${numeral(wall).format('+0,0')}${reset} | ` +
+      `${bold}Time: ${reset}0${numeral(time).format('00:00:00')}`);
+};

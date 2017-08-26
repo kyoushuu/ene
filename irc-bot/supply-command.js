@@ -17,272 +17,118 @@
  */
 
 
-const mongoose = require('mongoose');
-const moment = require('moment-timezone');
-
 const parse = require('./parse');
 
 const Channel = require('../models/channel');
 const User = require('../models/user');
-const ProductDonation = require('../models/productDonation');
 
 
-module.exports = function(bot, from, to, argv) {
-  parse(bot, '!supply (citizen) (supply quantity) [reason]', [
+module.exports = async function(bot, from, to, args) {
+  const {server, options, argv, help} = await parse(bot, '!supply (citizen) (supply quantity) [reason]', [
     ['i', 'id', 'Given citizen is a citizen id'],
     ['d', 'dry-run', 'Dry run - do not actually send items'],
     ['f', 'from=ORGANIZATION', 'Get supplies from ORGANIZATION'],
-  ], argv, 2, 3, to, true, (error, args) => {
-    if (error) {
-      bot.say(to, `Error: ${error}`);
-      return;
-    } else if (!args) {
-      return;
-    }
+  ], args, 2, 3, to, true);
 
-    const query = Channel.findOne({name: to}).populate({
-      path: 'countries',
-      match: {server: args.server._id},
-    });
-    query.exec((error, channel) => {
-      if (error) {
-        bot.say(to, `Error: ${error}`);
-        return;
-      } else if (!channel) {
-        bot.say(to, 'Channel not registered in database.');
-        return;
-      } else if (!channel.countries.length) {
-        bot.say(to, 'Channel not registered for given server.');
-        return;
-      }
+  if (help) {
+    return;
+  }
 
-      User.findOne({
-        nicknames: from,
-      }, (error, user) => {
-        if (error) {
-          bot.say(to,
-              `Failed to find user via nickname: ${error}`);
-          return;
-        }
-
-        if (!user) {
-          bot.say(to, 'Nickname is not registered.');
-          return;
-        }
-
-        const countries = [];
-
-        const l = channel.countries.length;
-        for (let i = 0; i < l; i++) {
-          if (channel.countries[i].getUserAccessLevel(user) > 0) {
-            countries.push(channel.countries[i]);
-          }
-        }
-
-        if (countries.length > 1) {
-          bot.say(to, 'Failed, you have access on multiple countries.');
-          return;
-        } else if (!countries.length ||
-            countries[0].getUserAccessLevel(user) < 2) {
-          bot.say(to, 'Permission denied.');
-          return;
-        }
-
-        supplyParse_(error, bot, from, to, args, channel, countries[0], user);
-      });
-    });
+  const channel = await Channel.findOne({name: to}).populate({
+    path: 'countries',
+    match: {server: server._id},
   });
-};
 
-function supplyParse_(error, bot, from, to, args, channel, country, user) {
-  if (error || !args) {
-    return;
+  if (!channel) {
+    throw new Error('Channel not registered in database.');
+  } else if (!channel.countries.length) {
+    throw new Error('Channel not registered for given server.');
   }
 
-  const opt = args.opt;
+  const user = await User.findOne({
+    nicknames: from,
+  });
 
-  const reason = opt.argv.length === 3 ? opt.argv[2] : '';
-
-  const supplyQuantity = opt.argv[1].split('/');
-  const supplyFormat = country.supplyFormat.split('/');
-  if (supplyQuantity.length > supplyFormat.length) {
-    bot.say(to, 'Too many items');
-    return;
+  if (!user) {
+    throw new Error('Nickname is not registered.');
   }
 
-  let query;
-  if (opt.options.from) {
+  const countries = [];
+
+  for (const country of channel.countries) {
+    if (country.getUserAccessLevel(user) > 0) {
+      countries.push(country);
+    }
+  }
+
+  if (countries.length > 1) {
+    throw new Error('Failed, you have access on multiple countries.');
+  } else if (!countries.length || countries[0].getUserAccessLevel(user) < 2) {
+    throw new Error('Permission denied.');
+  }
+
+  const [country] = countries;
+
+  const reason = argv.length === 3 ? argv[2] : '';
+
+  let query = country;
+
+  if (options.from) {
     if (country.getUserAccessLevel(user) < 3) {
-      bot.say(to, 'Permission denied.');
-      return;
+      throw new Error('Permission denied.');
     }
 
-    query = country.populate({
+    query = query.populate({
       path: 'organizations',
-      match: {shortname: opt.options.from},
+      match: {shortname: options.from},
     });
   } else {
-    query = country.populate('organizations');
+    query = query.populate('organizations');
   }
 
-  query.populate('server', (error, country) => {
-    if (country.organizations.length < 1) {
-      bot.say(to, 'Organization not found.');
-      return;
-    }
+  await query.populate('server').execPopulate();
 
-    let j = -1;
-    const l = country.channels.length;
-    for (let i = 0; i < l; i++) {
-      if (country.channels[i].channel.equals(channel.id)) {
-        j = i;
-      }
-    }
 
-    if (j < 0 ||
-        !country.channels[j].types.includes('military')) {
-      bot.say(to,
-          'Military commands are not allowed for the given server in ' +
-          'this channel.');
-      return;
-    }
-
-    supply(country, country.organizations[0], user, {
-      citizen: opt.argv[0],
-      supplyQuantity: supplyQuantity,
-      supplyFormat: supplyFormat,
-      reason: reason,
-      id: opt.options.id,
-      dryRun: opt.options['dry-run'],
-    }, (error) => {
-      if (!error) {
-        const recipient = `${opt.options.id ? '#' : ''}${opt.argv[0]}`;
-        bot.say(to, `Supplies successfully donated to citizen ${recipient}.`);
-      } else {
-        bot.say(to, `Failed to supply: ${error}`);
-      }
-    });
-  });
-}
-
-function supply(country, organization, user, options, callback) {
-  if (!options.id) {
-    organization.createRequest((error, request, jar) => {
-      const url = `${country.server.address}/apiCitizenByName.html`;
-      request(url, {
-        method: 'GET',
-        qs: {
-          name: options.citizen.toLowerCase(),
-        },
-      }, (error, response, body) => {
-        if (!error && response.statusCode === 200) {
-          const citizenInfo = JSON.parse(body);
-
-          if (citizenInfo.error) {
-            callback(citizenInfo.error);
-            return;
-          }
-
-          options.citizen = citizenInfo.id;
-          options.id = true;
-
-          supply(country, organization, user, options, callback);
-        } else {
-          const errMsg = error || `HTTP Error: ${response.statusCode}`;
-          callback(`Failed to get citizen info: ${errMsg}`);
-        }
-      });
-    });
-
-    return;
+  if (country.organizations.length < 1) {
+    throw new Error('Organization not found.');
   }
 
-  const l = options.supplyQuantity.length;
+  let j = -1;
+  const l = country.channels.length;
   for (let i = 0; i < l; i++) {
-    const c = options.supplyQuantity[i];
-
-    if (!isFinite(c) || c < 0) {
-      callback(`Quantity #${i + 1} is not a valid number`);
-      return;
+    if (country.channels[i].channel.equals(channel.id)) {
+      j = i;
     }
   }
 
-  const dayStart = moment().tz('Europe/Warsaw').startOf('day').unix();
-  const dayStartObjectId = new mongoose.Types.ObjectId(dayStart);
-  supplyCheckMax(organization, user, dayStartObjectId, options, 0, callback);
-}
-
-function supplyCheckMax(
-        organization, user, dayStartObjectId, options, i, callback) {
-  if (i >= options.supplyQuantity.length) {
-    supplyDonate(organization, user, options, 0, callback);
-    return;
+  if (j < 0 || !country.channels[j].types.includes('military')) {
+    throw new Error('Military commands are not allowed for the given server in this channel.');
   }
 
-  const limit = options.supplyFormat[i].split(':');
-  if (limit.length < 2) {
-    supplyCheckMax(
-        organization, user, dayStartObjectId, options, ++i, callback);
-    return;
-  }
+  const [organization] = country.organizations;
 
-  ProductDonation.aggregate([
-    {
-      $match: {
-        _id: {$gte: dayStartObjectId},
-        recipient: options.citizen,
-        product: limit[0],
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        total: {$sum: '$quantity'},
-      },
-    },
-  ], (error, result) => {
-    if (error) {
-      callback(error);
-      return;
+  const [citizen] = argv;
+  const dryRun = options['dry-run'];
+
+  const quantities = [];
+  const quantitiesStr = argv[1].split('/');
+  for (let i = 0; i < quantitiesStr.length; i++) {
+    const quantity = quantitiesStr[i];
+
+    if (!isFinite(quantity) || quantity < 0) {
+      throw new Error(`Quantity #${i + 1} is not a valid number`);
     }
 
-    if (result.length &&
-        parseInt(options.supplyQuantity[i]) + result[0].total >
-                parseInt(limit[1])) {
-      callback(`Daily limit for ${limit[0]} exceeded (${parseInt(limit[1])})`);
-      return;
-    }
-
-    supplyCheckMax(
-        organization, user, dayStartObjectId, options, ++i, callback);
-  });
-}
-
-function supplyDonate(organization, user, options, i, callback) {
-  if (i >= options.supplyQuantity.length || options.dryRun) {
-    callback(null);
-    return;
+    quantities.push(parseInt(quantity));
   }
 
-  if (options.supplyQuantity[i] < 1) {
-    supplyDonate(organization, user, options, ++i, callback);
-    return;
+  if (!options.id) {
+    const citizenInfo = await country.server.getCitizenInfoByName(citizen);
+    citizen = citizenInfo.id;
   }
 
-  const product = options.supplyFormat[i].split(':')[0];
-  const quantity = parseInt(options.supplyQuantity[i]);
-  organization.donateProducts(
-      user, options.citizen, product,
-      quantity, options.reason,
-      (error) => {
-        if (error) {
-          callback(
-              `Failed to send ${quantity} items of ${product}: ${error}`);
-          return;
-        }
+  await organization.supplyProducts(user, citizen, quantities, reason, dryRun);
 
-        supplyDonate(organization, user, options, ++i, callback);
-      });
-}
-
-module.exports.supply = supply;
+  const recipient = `${options.id ? '#' : ''}${argv[0]}`;
+  bot.say(to, `Supplies successfully donated to citizen ${recipient}.`);
+};

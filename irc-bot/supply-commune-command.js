@@ -21,379 +21,274 @@ const cheerio = require('cheerio');
 const numeral = require('numeral');
 
 const parse = require('./parse');
-const supply = require('./supply-command');
 
 const Channel = require('../models/channel');
 const User = require('../models/user');
 
 
-module.exports = function(bot, from, to, argv) {
-  parse(bot, '!supply-commune (organization) (supply quantity) [reason]', [
+module.exports = async function(bot, from, to, args) {
+  const {server, options, argv, help} = await parse(bot, '!supply-commune (organization) (supply quantity) [reason]', [
     ['d', 'dry-run', 'Dry run - do not actually send items'],
     ['c', 'use-org-companies', 'Use companies of the organization'],
     ['i', 'use-org-inventory', 'Get supplies from organization\'s inventory'],
     ['j', 'jump=WORKER', 'Jump to WORKER, skipping previous workers'],
     ['S', 'skip=WORKER+', 'Skip WORKER, could be used multiple times'],
-  ], argv, 2, 3, to, true, (error, args) => {
-    if (error) {
-      bot.say(to, `Error: ${error}`);
-      return;
-    } else if (!args) {
-      return;
-    }
+  ], args, 2, 3, to, true);
+  if (help) {
+    return;
+  }
 
-    const query = Channel.findOne({name: to}).populate({
-      path: 'countries',
-      match: {server: args.server._id},
-    });
-    query.exec((error, channel) => {
-      if (error) {
-        bot.say(to, `Error: ${error}`);
-        return;
-      } else if (!channel) {
-        bot.say(to, 'Channel not registered in database.');
-        return;
-      } else if (!channel.countries.length) {
-        bot.say(to, 'Channel not registered for given server.');
-        return;
-      }
-
-      User.findOne({
-        nicknames: from,
-      }, (error, user) => {
-        if (error) {
-          bot.say(to,
-              `Failed to find user via nickname: ${error}`);
-          return;
-        }
-
-        if (!user) {
-          bot.say(to, 'Nickname is not registered.');
-          return;
-        }
-
-        const countries = [];
-
-        const l = channel.countries.length;
-        for (let i = 0; i < l; i++) {
-          if (channel.countries[i].getUserAccessLevel(user) > 0) {
-            countries.push(channel.countries[i]);
-          }
-        }
-
-        if (!countries.length) {
-          bot.say(to, 'Permission denied.');
-          return;
-        } else if (countries.length > 1) {
-          bot.say(to, 'Failed, you have access on multiple countries.');
-          return;
-        }
-
-        supplyCommuneParse_(
-          error, bot, from, to, args, channel, countries[0], user);
-      });
-    });
+  const channel = await Channel.findOne({name: to}).populate({
+    path: 'countries',
+    match: {server: server._id},
   });
-};
 
-function supplyCommuneParse_(
-  error, bot, from, to, args, channel, country, user
-) {
-  if (error || !args) {
-    return;
+  if (!channel) {
+    throw new Error('Channel not registered in database.');
+  } else if (!channel.countries.length) {
+    throw new Error('Channel not registered for given server.');
   }
 
-  const opt = args.opt;
+  const user = await User.findOne({
+    nicknames: from,
+  });
 
-  const reason = opt.argv.length === 3 ? opt.argv[2] : null;
-
-  const supplyQuantity = opt.argv[1].split('/');
-  const supplyFormat = country.supplyFormat.split('/');
-  if (supplyQuantity.length > supplyFormat.length) {
-    bot.say(to, 'Too many items');
-    return;
+  if (!user) {
+    throw new Error('Nickname is not registered.');
   }
 
-  country.populate('server').populate({
+  const countries = [];
+
+  for (const country of channel.countries) {
+    if (country.getUserAccessLevel(user) > 0) {
+      countries.push(country);
+    }
+  }
+
+  if (!countries.length) {
+    throw new Error('Permission denied.');
+  } else if (countries.length > 1) {
+    throw new Error('Failed, you have access on multiple countries.');
+  }
+
+  const [country] = countries;
+
+  await country.populate('server').populate({
     path: 'organizations',
-    match: {shortname: opt.argv[0]},
-  }, (error, country) => {
-    if (!country.organizations.length) {
-      bot.say(to, 'Organization not found.');
-      return;
+    match: {shortname: argv[0]},
+  }).execPopulate();
+
+  if (!country.organizations.length) {
+    throw new Error('Organization not found.');
+  }
+
+  let j = -1;
+  const l = country.channels.length;
+  for (let i = 0; i < l; i++) {
+    if (country.channels[i].channel.equals(channel.id)) {
+      j = i;
+    }
+  }
+
+  if (j < 0 || !country.channels[j].types.includes('military')) {
+    throw new Error('Military commands are not allowed for the given server in this channel.');
+  }
+
+  const quantities = [];
+  const quantitiesStr = argv[1].split('/');
+  for (let i = 0; i < quantitiesStr.length; i++) {
+    const quantity = quantitiesStr[i];
+
+    if (!isFinite(quantity) || quantity < 0) {
+      throw new Error(`Quantity #${i + 1} is not a valid number`);
     }
 
-    let j = -1;
-    const l = country.channels.length;
-    for (let i = 0; i < l; i++) {
-      if (country.channels[i].channel.equals(channel.id)) {
-        j = i;
-      }
-    }
+    quantities.push(parseInt(quantity));
+  }
 
-    if (j < 0 ||
-        !country.channels[j].types.includes('military')) {
-      bot.say(to,
-          'Military commands are not allowed for the given server in ' +
-          'this channel.');
-      return;
-    }
+  let [, , reason] = argv;
+  const dryRun = options['dry-run'];
+  const useOrgCompanies = options['use-org-companies'];
+  const useOrgInventory = options['use-org-inventory'];
+  const {jump, skip} = options;
 
-    getMembers_(country, country.organizations[0], user, {
-      supplyQuantity: supplyQuantity,
-      supplyFormat: supplyFormat,
-      reason: reason,
-      dryRun: opt.options['dry-run'],
-      useOrgCompanies: opt.options['use-org-companies'],
-      useOrgInventory: opt.options['use-org-inventory'],
-      jump: opt.options.jump,
-      skip: opt.options.skip,
-    }, bot, to);
+  const [organization] = country.organizations;
+
+
+  const [request] = await organization.createRequest();
+  let $ = await request({
+    uri: `${country.server.address}/myMilitaryUnit.html`,
+    transform: (body) => cheerio.load(body),
   });
-}
 
-function getMembers_(country, organization, user, options, bot, to) {
-  organization.createRequest((error, request, jar) => {
-    const url = `${country.server.address}/myMilitaryUnit.html`;
-    request(url, (error, response, body) => {
-      if (!error && response.statusCode === 200) {
-        const $ = cheerio.load(body);
+  const unitId = parseInt($('div#unitStatusHead a').attr('href').split('=')[1]);
 
-        if (!$('a#userName').length) {
-          organization.login((error) => {
-            if (!error) {
-              getMembers_(country, organization, user, options, bot, to);
-            } else {
-              bot.say(to, `Failed to get military unit page: ${error}`);
-            }
-          });
-          return;
-        }
+  if (reason === null) {
+    const day = numeral().unformat($('#contentDrop b').eq(1).text().trim());
+    reason = `Commune Supply: Day ${day}`;
+  }
 
-        const unitId = parseInt(
-            $('div#unitStatusHead a').attr('href').split('=')[1]);
-        options.unitId = unitId;
+  const membersList = $('div#militaryUnitContainer ~ div').eq(0)
+      .find('div').find('a.profileLink');
+  const membersId = [];
 
-        if (options.reason === null) {
-          const day = numeral().unformat($('#contentDrop b').eq(1)
-            .text().trim());
-          options.reason = `Commune Supply: Day ${day}`;
-        }
+  for (let i = 0; i < membersList.length; i++) {
+    const member = membersList.eq(i).clone().children().remove().end();
+    const citizenId = parseInt(member.attr('href').split('=')[1]);
+    membersId.push(citizenId);
+  }
 
-        const membersList = $('div#militaryUnitContainer ~ div').eq(0)
-          .find('div').find('a.profileLink');
-        options.membersId = [];
 
-        const l = membersList.length;
-        for (let i = 0; i < l; i++) {
-          const member = membersList.eq(i).clone().children().remove().end();
-          const citizenId = parseInt(member.attr('href').split('=')[1]);
-          options.membersId.push(citizenId);
-        }
-
-        getCompanies_(country, organization, user, options, bot, to);
-        return;
-      }
-
-      const errMsg = error || `HTTP Error: ${response.statusCode}`;
-      bot.say(to, `Failed to get military unit page: ${errMsg}`);
-    });
+  $ = await request({
+    uri: useOrgCompanies ?
+      `${country.server.address}/companies.html` :
+      `${country.server.address}/militaryUnitCompanies.html`,
+    transform: (body) => cheerio.load(body),
+    qs: {
+      id: useOrgCompanies ? undefined : unitId,
+    },
   });
-}
 
-function getCompanies_(country, organization, user, options, bot, to) {
-  organization.createRequest((error, request, jar) => {
-    const url = country.server.address +
-      (options.useOrgCompanies ?
-        '/companies.html' :
-        '/militaryUnitCompanies.html');
-    request(url, {
-      method: 'GET',
+  const companiesList = $('#myCompaniesToSortTable tr[class]');
+  const companiesId = [];
+
+  for (let i = 0; i < companiesList.length; i++) {
+    if (!parseInt(companiesList.eq(i).find('td').eq(-1).text())) {
+      continue;
+    }
+
+    const company = companiesList.eq(i).find('a[href*="company"]');
+    const companyId = parseInt(company.attr('href').split('=')[1]);
+    companiesId.push(companyId);
+  }
+
+
+  const membersWorked = [];
+  let jumpPos = -1;
+
+  for (const companyId of companiesId) {
+    $ = await request({
+      uri: `${country.server.address}/companyWorkResults.html`,
+      transform: (body) => cheerio.load(body),
       qs: {
-        id: options.useOrgCompanies ? undefined : options.unitId,
+        id: companyId,
       },
-    }, (error, response, body) => {
-      if (!error && response.statusCode === 200) {
-        const $ = cheerio.load(body);
-
-        const companiesList = $('#myCompaniesToSortTable tr[class]');
-        options.companiesId = [];
-
-        const l = companiesList.length;
-        for (let i = 0; i < l; i++) {
-          if (!parseInt(companiesList.eq(i).find('td').eq(-1).text())) {
-            continue;
-          }
-
-          const company = companiesList.eq(i).find('a[href*="company"]');
-          const companyId = parseInt(company.attr('href').split('=')[1]);
-          options.companiesId.push(companyId);
-        }
-
-        options.membersWorked = [];
-        options.jumpPos = -1;
-
-        getWorkResults_(0, country, organization, user, options, bot, to);
-        return;
-      }
     });
-  });
-}
 
-function getWorkResults_(i, country, organization, user, options, bot, to) {
-  if (i >= options.companiesId.length) {
-    if (options.jump && options.jumpPos < 0) {
-      bot.say(to, `Citizen ${options.jump} not found in list.`);
-      return;
-    }
+    const workersList = $('#productivityTable tr:not([style])');
 
-    if (options.skip) {
-      options.skipIds = [];
+    for (let i = 0; i < workersList.length; i++) {
+      const workerResults = workersList.eq(i).find('td');
 
-      const l = options.skip.length;
-      for (let j = 0; j < l; j++) {
-        const m = options.membersWorked.length;
-        let citizenId = -1;
-        for (let k = 0; k < m; k++) {
-          if (options.skip[j].toUpperCase() ===
-              options.membersWorked[k].name.toUpperCase()) {
-            citizenId = k;
-            break;
-          }
-        }
-
-        if (citizenId < 0) {
-          bot.say(to, `Citizen ${options.skip[j]} not found in list.`);
-          return;
-        }
-
-        options.skipIds.push(citizenId);
-      }
-    }
-
-    if (options.useOrgInventory) {
-      sendSupplies_(0, country, organization, user, options, bot, to);
-      return;
-    }
-
-    options.recipients = [];
-    const l = options.membersWorked.length;
-    for (let j = (options.jump ? options.jumpPos : 0); j < l; j++) {
-      if (options.skip && options.skipIds.includes(j)) {
+      if (!workerResults.eq(-2).find('div').length) {
         continue;
       }
 
-      bot.say(to,
-        `Sending supplies to ${options.membersWorked[j].name}...`);
-      options.recipients.push(options.membersWorked[j].id);
-    }
+      const worker = workerResults.eq(0).find('a');
+      const citizenId = parseInt(worker.attr('href').split('=')[1]);
 
-    if (options.dryRun) {
-      bot.say(to, 'Done.');
-      return;
-    }
-
-    sendSuppliesBatch_(0, country, organization, user, options, bot, to);
-    return;
-  }
-
-  organization.createRequest((error, request, jar) => {
-    const url = `${country.server.address}/companyWorkResults.html`;
-    request(url, {
-      method: 'GET',
-      qs: {
-        id: options.companiesId[i],
-      },
-    }, (error, response, body) => {
-      if (!error && response.statusCode === 200) {
-        const $ = cheerio.load(body);
-
-        const workersList = $('#productivityTable tr:not([style])');
-
-        const l = workersList.length;
-        for (let j = 0; j < l; j++) {
-          const workerResults = workersList.eq(j).find('td');
-
-          if (!workerResults.eq(-2).find('div').length) {
-            continue;
-          }
-
-          const worker = workerResults.eq(0).find('a');
-          const citizenId = parseInt(worker.attr('href').split('=')[1]);
-
-          if (!options.membersId.includes(citizenId)) {
-            continue;
-          }
-
-          const name = worker.clone().children().remove().end().text().trim();
-
-          if (options.jump &&
-              options.jump.toUpperCase() === name.toUpperCase()) {
-            options.jumpPos = options.membersWorked.length;
-          }
-
-          options.membersWorked.push({
-            id: citizenId,
-            name: name,
-          });
-        }
-
-        getWorkResults_(++i, country, organization, user, options, bot, to);
+      if (!membersId.includes(citizenId)) {
+        continue;
       }
-    });
-  });
-}
 
-function sendSupplies_(i, country, organization, user, options, bot, to) {
-  if (i >= options.membersWorked.length) {
-    bot.say(to, 'Done.');
-    return;
+      const name = worker.clone().children().remove().end().text().trim();
+
+      if (jump &&
+          jump.toUpperCase() === name.toUpperCase()) {
+        jumpPos = membersWorked.length;
+      }
+
+      membersWorked.push({
+        id: citizenId,
+        name: name,
+      });
+    }
   }
 
-  if ((options.jump && options.jumpPos > i) ||
-      (options.skip && options.skipIds.includes(i))) {
-    sendSupplies_(++i, country, organization, user, options, bot, to);
-    return;
+  if (jump && jumpPos < 0) {
+    throw new Error(`Citizen ${jump} not found in list.`);
   }
 
-  const name = options.membersWorked[i].name;
-  options.citizen = options.membersWorked[i].id;
-  options.id = true;
 
-  bot.say(to, `Sending supplies to ${name}...`);
-  supply.supply(country, organization, user, options, (error) => {
-    if (error) {
-      bot.say(to, `Failed to supply ${name}: ${error}`);
-      return;
+  const skipIds = [];
+
+  if (skip) {
+    for (let i = 0; i < skip.length; i++) {
+      const m = membersWorked.length;
+      let citizenId = -1;
+      for (let k = 0; k < m; k++) {
+        if (skip[i].toUpperCase() ===
+            membersWorked[k].name.toUpperCase()) {
+          citizenId = k;
+          break;
+        }
+      }
+
+      if (citizenId < 0) {
+        throw new Error(`Citizen ${skip[i]} not found in list.`);
+      }
+
+      skipIds.push(citizenId);
+    }
+  }
+
+
+  if (useOrgInventory) {
+    for (let i = (jump ? jumpPos : 0); i < membersWorked.length; i++) {
+      if (skip && skipIds.includes(i)) {
+        continue;
+      }
+
+      const {name, id: citizen} = membersWorked[i];
+
+      bot.say(to, `Sending supplies to ${name}...`);
+      await organization.supplyProducts(
+          user, citizen, quantities, reason, dryRun);
     }
 
-    sendSupplies_(++i, country, organization, user, options, bot, to);
-  });
-}
-
-function sendSuppliesBatch_(i, country, organization, user, options, bot, to) {
-  if (i >= options.supplyQuantity.length) {
     bot.say(to, 'Done.');
     return;
   }
 
-  if (options.supplyQuantity[i] < 1) {
-    sendSuppliesBatch_(++i, country, organization, user, options, bot, to);
+
+  const recipients = [];
+
+  for (let i = (jump ? jumpPos : 0); i < membersWorked.length; i++) {
+    if (skip && skipIds.includes(i)) {
+      continue;
+    }
+
+    bot.say(
+        to,
+        `Sending supplies to ${membersWorked[i].name}...`);
+    recipients.push(membersWorked[i].id);
+  }
+
+
+  if (dryRun) {
+    bot.say(to, 'Done.');
     return;
   }
 
-  const product = options.supplyFormat[i].split(':')[0];
-  const quantity = parseInt(options.supplyQuantity[i]);
-  organization.batchDonateProducts(
-      user, options.recipients, product,
-      quantity, options.reason,
-      (error) => {
-        if (error) {
-          bot.say(to,
-              `Failed to send ${quantity} items of ${product}: ${error}`);
-          return;
-        }
 
-        sendSuppliesBatch_(++i, country, organization, user, options, bot, to);
-      });
-}
+  const supplyFormat = country.supplyFormat.split('/');
+
+  for (let i = 0; i < supplyFormat.length; i++) {
+    if (quantities[i] < 1) {
+      continue;
+    }
+
+    const [product] = supplyFormat[i].split(':');
+    const quantity = quantities[i];
+
+    try {
+      await organization.batchDonateProducts(
+          user, recipients, product,
+          quantity, reason);
+    } catch (error) {
+      throw new Error(`Failed to send ${product}: ${error}`);
+    }
+  }
+
+  bot.say(to, 'Done.');
+};
