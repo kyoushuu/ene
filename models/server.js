@@ -28,6 +28,24 @@ class Server extends mongoose.Model {
   }
 
 
+  async getCitizenInfoByName(citizenName) {
+    const citizenInfo = await request({
+      uri: `${this.address}/apiCitizenByName.html`,
+      qs: {
+        name: citizenName.toLowerCase(),
+      },
+      simple: true,
+      json: true,
+    });
+
+    if (citizenInfo.error) {
+      throw new Error(citizenInfo.error);
+    }
+
+    return citizenInfo;
+  }
+
+
   async getCountryInfoByName(countryName) {
     if (!this.countriesList) {
       this.countriesList = await request({
