@@ -233,6 +233,79 @@ class Organization extends mongoose.Model {
   }
 
 
+  async supplyProducts(sender, citizenId, quantities, reason, dryRun=false) {
+    if (!this.country._id) {
+      await Country.populate(this, {
+        path: 'country',
+      });
+    }
+
+    const supplyFormat = this.country.supplyFormat.split('/');
+
+    if (quantities.length > supplyFormat.length) {
+      throw new Error('Too many items');
+    }
+
+    const dayStart = this.country.getDayStart();
+    const dayStartObjectId = new mongoose.Types.ObjectId(dayStart);
+
+    for (let i = 0; i < quantities.length; i++) {
+      if (quantities[i] < 1) {
+        continue;
+      }
+
+      const format = supplyFormat[i].split(':');
+      if (format.length < 2) {
+        continue;
+      }
+
+      const [product] = format;
+      const quantity = quantities[i];
+      const limit = parseInt(format[1]);
+
+      const result = await ProductDonation.aggregate([
+        {
+          $match: {
+            _id: {$gte: dayStartObjectId},
+            recipient: citizenId,
+            product,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: {$sum: '$quantity'},
+          },
+        },
+      ]);
+
+      if (result.length && quantity + result[0].total > limit) {
+        throw new Error(`Daily limit for ${product} exceeded (${limit})`);
+      }
+    }
+
+    if (dryRun) {
+      return;
+    }
+
+    for (let i = 0; i < quantities.length; i++) {
+      if (quantities[i] < 1) {
+        continue;
+      }
+
+      const [product] = supplyFormat[i].split(':');
+      const quantity = quantities[i];
+
+      try {
+        await this.donateProducts(
+            sender, citizenId, product, quantity, reason);
+      } catch (error) {
+        throw new Error(`Failed to send ${product}: ${error}`);
+      }
+    }
+  }
+
+
   async getInventory() {
     const [request] = await this.createRequest();
 
