@@ -19,6 +19,7 @@
 
 const cheerio = require('cheerio');
 const cron = require('cron');
+const {URLSearchParams} = require('url');
 
 const parse = require('./parse');
 
@@ -168,14 +169,17 @@ module.exports = async function(bot, from, to, args) {
     },
   });
 
-  const lastPageLink = $('ul#pagination li:nth-last-child(2) a');
+  const lastPageLink = $('ul#pagination-digg li:nth-last-child(2) a');
   if (!lastPageLink.length) {
     throw new Error('Failed to parse motivate page.');
   }
 
+  const lastPage = parseInt(new URLSearchParams(
+      lastPageLink.attr('href').split('?')[1]).get('page'));
+
   let found = 0;
 
-  for (let page = parseInt(lastPageLink.text()); page > 0 && found < find; page--) {
+  for (let page = lastPage; page > 0 && found < find; page--) {
     bot.say(to, `Checking page ${page}...`);
     motivateLock[server.name].date = Date.now();
 
@@ -189,7 +193,7 @@ module.exports = async function(bot, from, to, args) {
     });
 
     const citizens = [];
-    $('table.sortedTable tbody tr td:first-child a').each((i, elem) => {
+    $('table.dataTable tr td:first-child a').each((i, elem) => {
       citizens.push(parseInt(elem.attribs['href'].split('=')[1]));
     });
 
