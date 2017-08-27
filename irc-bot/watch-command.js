@@ -17,10 +17,6 @@
  */
 
 
-const irc = require('irc');
-const codes = irc.colors.codes;
-const numeral = require('numeral');
-
 const parse = require('./parse');
 
 const Channel = require('../models/channel');
@@ -198,92 +194,6 @@ module.exports = async function(bot, from, to, args) {
   }
 };
 
-async function showBattleRound(
-    bot, organization, battle, battleInfo, battleRoundInfo
-) {
-  const server = organization.country.server;
-
-  const defenderScore = numeral(battleRoundInfo.defenderScore).value();
-  const attackerScore = numeral(battleRoundInfo.attackerScore).value();
-  const totalScore = defenderScore + attackerScore;
-
-  const side = battle.side;
-  let wall = 0;
-  let percentage = 0;
-  let bonusRegion = null;
-
-  if (side === 'defender') {
-    wall = defenderScore - attackerScore;
-    percentage = defenderScore / totalScore;
-  } else if (side === 'attacker') {
-    wall = attackerScore - defenderScore;
-    percentage = attackerScore / totalScore;
-  }
-
-  if (!isFinite(percentage)) {
-    percentage = 0;
-  }
-
-  const time = Math.max(0, battleRoundInfo.remainingTimeInSeconds);
-
-  if (battleInfo.type === 'resistance' ||
-      (battleInfo.type === 'direct' && side === 'defender')) {
-    bonusRegion = `${battleInfo.label}, ${battleInfo.defender}`;
-  } else if (battleInfo.type === 'direct' && side === 'attacker') {
-    const allies = battleInfo.attackerAllies.slice();
-    allies.unshift(battleInfo.attacker);
-
-    bonusRegion = await server.getAttackerBonusRegion(battleInfo.id, allies);
-  }
-
-  const ul = codes.underline;
-  const bold = codes.bold;
-  const reset = codes.reset;
-
-  /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
-  const dr = codes.dark_red;
-  const dg = codes.dark_green;
-  /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
-
-  const defSide = side === 'defender';
-  const rnd = battleInfo.round;
-  const winning = percentage > 0.5;
-
-  const def = battleInfo.defender;
-  const defWins = battleInfo.defenderWins;
-  const atk = battleInfo.attacker;
-  const atkWins = battleInfo.attackerWins;
-
-  const urlSection = `${server.address}/battle.html?id=${battle.battleId}`;
-  const summarySection =
-      `${ul}${bold}${battleInfo.label}${reset} ` +
-      `(${defSide ? def : atk}) - ` +
-      `${bold}R${rnd}${reset} ` +
-      `(${defSide ? dg : dr}${bold}${defWins}${reset}:` +
-      `${defSide ? dr : dg}${bold}${atkWins}${reset})`;
-  const bonusSection =
-      bonusRegion ? `${bold}Bonus: ${reset}${bonusRegion}` : null;
-  const percentSection =
-      `${bold}${winning ? `${dg}Winning` : `${dr}Losing`}${reset}: ` +
-      `${numeral(percentage).format('0.00%')}`;
-  const wallSection =
-      `${bold}Wall: ${winning ? dg : dr}` +
-      `${numeral(wall).format('+0,0')}${reset}`;
-  const timeSection =
-      `${bold}Time: ${reset}0${numeral(time).format('00:00:00')}`;
-
-  const sections = [
-    urlSection,
-    summarySection,
-    bonusSection,
-    percentSection,
-    wallSection,
-    timeSection,
-  ].filter((value) => value !== null);
-
-  bot.say(battle.channel.name, sections.join(' | '));
-}
-
 function watchBattleRound(
     bot, organization, battle, battleInfo, battleRoundInfo, time
 ) {
@@ -331,8 +241,9 @@ function watchBattleRound(
     }
 
     if (!frozen) {
-      await showBattleRound(
-          bot, organization, battle, battleInfo, battleRoundInfo);
+      await bot.displayBattleStatus(
+          battle.channel.name, organization,
+          battle, battleInfo, battleRoundInfo);
     }
 
     watchBattleRound(
@@ -395,8 +306,8 @@ async function watchBattle(bot, organization, battle) {
     return;
   }
 
-  await showBattleRound(
-      bot, organization, battle, battleInfo, battleRoundInfo);
+  await bot.displayBattleStatus(
+      battle.channel.name, organization, battle, battleInfo, battleRoundInfo);
   watchBattleRound(
       bot, organization, battle, battleInfo, battleRoundInfo,
       battleRoundInfo.remainingTimeInSeconds);
