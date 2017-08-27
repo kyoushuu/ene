@@ -305,9 +305,7 @@ function watchBattleRound(
           battle.channel.name,
           'T-5 --- Standby --- hit at T-2 if bar is below 52%!!!');
     } else if (watchpoint === 120) {
-      const defenderScore = numeral(battleRoundInfo.defenderScore).value();
-      const attackerScore = numeral(battleRoundInfo.attackerScore).value();
-      const totalScore = defenderScore + attackerScore;
+      const {defenderScore, attackerScore, totalScore} = battleRoundInfo;
 
       let percentage = 0;
 
@@ -355,8 +353,7 @@ function watchBattleRound(
     }
   }
 
-  const defenderScore = numeral(battleRoundInfo.defenderScore).value();
-  const attackerScore = numeral(battleRoundInfo.attackerScore).value();
+  const {defenderScore, attackerScore} = battleRoundInfo;
 
   const winner = defenderScore >= attackerScore ?
     battleInfo.defender : battleInfo.attacker;
@@ -383,8 +380,7 @@ async function watchBattle(bot, organization, battle) {
       await organization.getBattleRoundInfo(battleInfo.roundId);
 
   if (battleRoundInfo.remainingTimeInSeconds < 0) {
-    const defenderScore = numeral(battleRoundInfo.defenderScore).value();
-    const attackerScore = numeral(battleRoundInfo.attackerScore).value();
+    const {defenderScore, attackerScore} = battleRoundInfo;
 
     const winner = defenderScore >= attackerScore ?
       battleInfo.defender : battleInfo.attacker;
