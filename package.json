@@ -9,6 +9,10 @@
     "start": "node ./bin/www",
     "test": "jscs . bin/www && mocha"
   },
+  "engines": {
+    "node": ">= 8.0",
+    "npm": ">= 5.0"
+  },
   "dependencies": {
     "express": "^4.10.6",
     "express-session": "^1.9.3",
