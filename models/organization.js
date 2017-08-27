@@ -453,6 +453,13 @@ class Organization extends mongoose.Model {
     try {
       const battleRoundInfo = JSON.parse(body);
 
+      battleRoundInfo.defenderScore =
+          numeral(battleRoundInfo.defenderScore).value();
+      battleRoundInfo.attackerScore =
+          numeral(battleRoundInfo.attackerScore).value();
+      battleRoundInfo.totalScore =
+          battleRoundInfo.defenderScore + battleRoundInfo.attackerScore;
+
       return battleRoundInfo;
     } catch (e) {
       const $ = cheerio.load(body);
