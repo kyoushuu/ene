@@ -87,12 +87,16 @@ module.exports = async function(bot, from, to, args) {
   const [citizen, product, quantity, reason=''] = argv;
   const [organization] = country.organizations;
 
+  let citizenId = 0;
+
   if (!options.id) {
     const citizenInfo = await country.server.getCitizenInfoByName(citizen);
-    citizen = citizenInfo.id;
+    citizenId = citizenInfo.id;
+  } else {
+    citizenId = parseInt(citizen);
   }
 
-  await organization.donateProducts(user, citizen, product, quantity, reason);
+  await organization.donateProducts(user, citizenId, product, quantity, reason);
 
   const recipient = `${options.id ? '#' : ''}${citizen}`;
   bot.say(to, `Products successfully donated to citizen ${recipient}.`);

@@ -122,12 +122,17 @@ module.exports = async function(bot, from, to, args) {
     quantities.push(parseInt(quantity));
   }
 
+  let citizenId = 0;
+
   if (!options.id) {
     const citizenInfo = await country.server.getCitizenInfoByName(citizen);
-    citizen = citizenInfo.id;
+    citizenId = citizenInfo.id;
+  } else {
+    citizenId = parseInt(citizen);
   }
 
-  await organization.supplyProducts(user, citizen, quantities, reason, dryRun);
+  await organization.supplyProducts(
+      user, citizenId, quantities, reason, dryRun);
 
   const recipient = `${options.id ? '#' : ''}${argv[0]}`;
   bot.say(to, `Supplies successfully donated to citizen ${recipient}.`);
