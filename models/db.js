@@ -22,6 +22,7 @@ const mongoose = require('mongoose');
 const dburl = process.env.DB_URL || 'mongodb://localhost/';
 const dbname = process.env.DB_NAME || 'ene';
 
+mongoose.Promise = global.Promise;
 mongoose.connect(dburl + dbname, {
   useMongoClient: true,
 });
