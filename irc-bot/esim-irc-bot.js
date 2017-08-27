@@ -19,6 +19,7 @@
 
 const {colors: {codes}} = require('irc');
 const {parse} = require('shell-quote');
+const numeral = require('numeral');
 
 const Channel = require('../models/channel');
 const Battle = require('../models/battle');
@@ -162,6 +163,95 @@ class EsimIRCBot extends RizonIRCBot {
           `############# ${message} #############` +
           `${codes.reset}`);
     }
+  }
+
+  async displayBattleStatus(
+      channel,
+      organization,
+      battle,
+      battleInfo = undefined,
+      battleRoundInfo = undefined) {
+    await organization.populate('country').execPopulate();
+    await organization.country.populate('server').execPopulate();
+
+    const {server} = organization.country;
+
+    battleInfo = battleInfo ||
+        await organization.getBattleInfo(battle.battleId);
+    battleRoundInfo = battleRoundInfo ||
+        await organization.getBattleRoundInfo(battleInfo.roundId);
+
+
+    let bonusRegion = null;
+
+    if (battleInfo.type === 'resistance' ||
+        battleInfo.type === 'direct' && battle.side === 'defender') {
+      bonusRegion = `${battleInfo.label}, ${battleInfo.defender}`;
+    } else if (battleInfo.type === 'direct' && battle.side === 'attacker') {
+      const allies = battleInfo.attackerAllies.slice();
+      allies.unshift(battleInfo.attacker);
+
+      bonusRegion = await server.getAttackerBonusRegion(battleInfo.id, allies);
+    }
+
+
+    const {defenderScore, attackerScore, totalScore} = battleRoundInfo;
+
+    let wall = 0;
+    let percentage = 0;
+
+    if (battle.side === 'defender') {
+      wall = defenderScore - attackerScore;
+      percentage = defenderScore / totalScore;
+    } else if (battle.side === 'attacker') {
+      wall = attackerScore - defenderScore;
+      percentage = attackerScore / totalScore;
+    }
+
+    if (!isFinite(percentage)) {
+      percentage = 0;
+    }
+
+
+    const time = Math.max(0, battleRoundInfo.remainingTimeInSeconds);
+
+    const {underline: ul, bold, reset} = codes;
+    const {dark_red: dr, dark_green: dg} = codes;
+
+    const defenderSide = battle.side === 'defender';
+    const winning = percentage > 0.5;
+    const status = winning ? 'Winning' : 'Losing';
+
+    const {round, defender, defenderWins, attacker, attackerWins} = battleInfo;
+
+    const urlSection = `${server.address}/battle.html?id=${battle.battleId}`;
+    const summarySection =
+        `${ul}${bold}${battleInfo.label}${reset} ` +
+        `(${defenderSide ? defender : attacker}) - ` +
+        `${bold}R${round}${reset} ` +
+        `(${defenderSide ? dg : dr}${bold}${defenderWins}${reset}:` +
+        `${defenderSide ? dr : dg}${bold}${attackerWins}${reset})`;
+    const bonusSection =
+        bonusRegion ? `${bold}Bonus: ${reset}${bonusRegion}` : null;
+    const percentSection =
+        `${bold}${winning ? dg : dr}${status}${reset}: ` +
+        `${numeral(percentage).format('0.00%')}`;
+    const wallSection =
+        `${bold}Wall: ${winning ? dg : dr}` +
+        `${numeral(wall).format('+0,0')}${reset}`;
+    const timeSection =
+        `${bold}Time: ${reset}0${numeral(time).format('00:00:00')}`;
+
+    const sections = [
+      urlSection,
+      summarySection,
+      bonusSection,
+      percentSection,
+      wallSection,
+      timeSection,
+    ].filter((value) => value !== null);
+
+    this.say(channel, sections.join(' | '));
   }
 }
 
