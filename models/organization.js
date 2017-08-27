@@ -30,7 +30,7 @@ const ProductDonation = require('./product-donation');
 const BatchProductDonation = require('./batch-product-donation');
 
 
-const secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
+const secret = process.env.SECRET_KEY;
 
 function cipherValue(value) {
   if (!value) {

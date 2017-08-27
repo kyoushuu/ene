@@ -21,7 +21,7 @@ const mongoose = require('mongoose');
 const crypto = require('crypto');
 
 
-const secret = process.env.SECRET_KEY || process.env.OPENSHIFT_SECRET_TOKEN;
+const secret = process.env.SECRET_KEY;
 
 function cipherValue(value) {
   if (!value) {

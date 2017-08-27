@@ -29,8 +29,7 @@ const Server = require('../models/server');
 
 
 async function sendEmail(user, subject, body) {
-  const domain = process.env.DOMAIN ||
-      process.env.OPENSHIFT_APP_DNS || 'localhost';
+  const domain = process.env.DOMAIN || 'localhost';
   const sender = process.env.SMTP_SENDER || `no-reply@${domain}`;
   const transport = nodemailer.createTransport(process.env.SMTP_URL);
 
@@ -48,8 +47,7 @@ async function sendEmail(user, subject, body) {
 
 
 async function sendConfirmEmail(user) {
-  const address = process.env.ADDRESS || process.env.DOMAIN ||
-      process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
+  const address = process.env.ADDRESS || process.env.DOMAIN || 'localhost:3000';
 
   await sendEmail(user, 'New account confirmation',
       `Welcome ${user.username},
@@ -158,7 +156,7 @@ router.route('/recover').get((req, res) => {
     await user.recover();
 
     const address = process.env.ADDRESS || process.env.DOMAIN ||
-        process.env.OPENSHIFT_APP_DNS || 'localhost:3000';
+        'localhost:3000';
 
     await sendEmail(user, 'Account Recovery',
         `Hello ${user.username},

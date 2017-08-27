@@ -41,7 +41,7 @@ const organization = require('./routes/organization');
 const channel = require('./routes/channel');
 const api = require('./routes/api');
 
-const secret = process.env.OPENSHIFT_SECRET_TOKEN || 'your secret here';
+const secret = process.env.SECRET_KEY || 'secret';
 
 
 passport.use(new LocalStrategy((username, password, done) => {
