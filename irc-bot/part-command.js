@@ -17,32 +17,21 @@
  */
 
 
-const parse = require('./parse');
-
-const User = require('../models/user');
+const Command = require('./command');
 
 
-module.exports = async function(bot, to, args) {
-  const {argv, help} = await parse(bot, 'part (channel)', [
-  ], args, 1, 1, to, false);
-
-  if (help) {
-    return;
+class PartCommand extends Command {
+  constructor(bot) {
+    super(bot, 'part', {
+      params: ['channel'],
+      requireAccessLevel: 4,
+    });
   }
 
-  const user = await User.findOne({
-    nicknames: to,
-  });
-
-  if (!user) {
-    throw new Error('Nickname is not registered.');
+  async run(from, {params, options, argv}) {
+    await this.bot.part(params.channel);
   }
+}
 
-  if (user.accessLevel < 4) {
-    throw new Error('Permission denied.');
-  }
 
-  const [channel] = argv;
-
-  await bot.part(channel);
-};
+module.exports = PartCommand;

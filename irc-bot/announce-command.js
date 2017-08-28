@@ -17,37 +17,25 @@
  */
 
 
-const irc = require('irc');
-const {codes} = irc.colors;
+const {colors: {codes}} = require('irc');
 
-const parse = require('./parse');
-
-const User = require('../models/user');
+const Command = require('./command');
 
 
-module.exports = async function(bot, to, args) {
-  const {argv, help} = await parse(bot, 'announce (message)', [
-  ], args, 1, 1, to, false);
-
-  if (help) {
-    return;
+class AnnounceCommand extends Command {
+  constructor(bot) {
+    super(bot, 'announce', {
+      params: ['message'],
+      requireAccessLevel: 4,
+    });
   }
 
-  const user = await User.findOne({
-    nicknames: to,
-  });
-
-  if (!user) {
-    throw new Error('Nickname is not registered.');
+  async run(from, {params, options, argv}) {
+    for (const channel of Object.getOwnPropertyNames(this.bot.chans)) {
+      this.bot.say(channel, `${codes.bold}ANNOUNCEMENT: ${codes.reset}${params.message}`);
+    }
   }
+}
 
-  if (user.accessLevel < 4) {
-    throw new Error('Permission denied.');
-  }
 
-  const [message] = argv;
-
-  for (const channel of Object.getOwnPropertyNames(bot.chans)) {
-    bot.say(channel, `${codes.bold}ANNOUNCEMENT: ${codes.reset}${message}`);
-  }
-};
+module.exports = AnnounceCommand;

@@ -17,29 +17,36 @@
  */
 
 
-const parse = require('./parse');
+const Command = require('./command');
 
 const User = require('../models/user');
 
 
-exports.add = async function(bot, from, args) {
-  const {argv, help} = await parse(bot, 'add-nickname (username) (password)', [
-  ], args, 2, 2, from, false);
-
-  if (help) {
-    return;
+class AddNicknameCommand extends Command {
+  constructor(bot) {
+    super(bot, 'add-nickname', {
+      params: ['username', 'password'],
+      requireRegistered: true,
+    });
   }
 
-  const user = await User.findOne({username: argv[0]});
+  async run(from, {params, options, argv}) {
+    const user = await User.findOne({
+      username: params.username,
+    });
 
-  if (!user || !user.isValidPassword(argv[1])) {
-    throw new Error('Invalid username or password');
-  } else if (user.nicknames.includes(from)) {
-    throw new Error('Nickname is already added');
+    if (!user || !user.isValidPassword(params.password)) {
+      throw new Error('Invalid username or password');
+    } else if (user.nicknames.includes(from)) {
+      throw new Error('Nickname is already added');
+    }
+
+    user.nicknames.push(from);
+    await user.save();
+
+    this.bot.say(from, 'Nickname successfully added.');
   }
+}
 
-  user.nicknames.push(from);
-  await user.save();
 
-  bot.say(from, 'Nickname successfully added.');
-};
+exports.add = AddNicknameCommand;

@@ -17,32 +17,21 @@
  */
 
 
-const parse = require('./parse');
-
-const User = require('../models/user');
+const Command = require('./command');
 
 
-module.exports = async function(bot, to, args) {
-  const {argv, help} = await parse(bot, 'act (recipient) (action)', [
-  ], args, 2, 2, to, false);
-
-  if (help) {
-    return;
+class ActCommand extends Command {
+  constructor(bot) {
+    super(bot, 'act', {
+      params: ['recipient', 'action'],
+      requireAccessLevel: 4,
+    });
   }
 
-  const user = await User.findOne({
-    nicknames: to,
-  });
-
-  if (!user) {
-    throw new Error('Nickname is not registered.');
+  async run(from, {params, options, argv}) {
+    this.bot.action(params.recipient, params.action);
   }
+}
 
-  if (user.accessLevel < 4) {
-    throw new Error('Permission denied.');
-  }
 
-  const [recipient, action] = argv;
-
-  bot.action(recipient, action);
-};
+module.exports = ActCommand;
