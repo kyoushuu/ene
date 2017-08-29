@@ -25,26 +25,20 @@ const Channel = require('../models/channel');
 
 const RizonIRCBot = require('./rizon-irc-bot');
 
+const MotivateCommand = require('./motivate-command');
+const DonateCommand = require('./donate-command');
+const SupplyCommand = require('./supply-command');
+const SupplyCommuneCommand = require('./supply-commune-command');
+const BattleCommand = require('./battle-command');
+const WatchCommand = require('./watch-command');
+const CallCommand = require('./call-command');
 
-const commands = {
-  channel: {
-    '!motivate': require('./motivate-command'),
-    '!donate': require('./donate-command'),
-    '!supply': require('./supply-command'),
-    '!supply-commune': require('./supply-commune-command'),
-    '!battle': require('./battle-command'),
-    '!watch': require('./watch-command'),
-    '!call': require('./call-command'),
-  },
-  priv: {
-    'add-nickname': require('./nickname-command').add,
-    'announce': require('./announce-command'),
-    'join': require('./join-command'),
-    'part': require('./part-command'),
-    'say': require('./say-command'),
-    'act': require('./act-command'),
-  },
-};
+const AddNicknameCommand = require('./nickname-command').add;
+const AnnounceCommand = require('./announce-command');
+const JoinCommand = require('./join-command');
+const PartCommand = require('./part-command');
+const SayCommand = require('./say-command');
+const ActCommand = require('./act-command');
 
 
 class EsimIRCBot extends RizonIRCBot {
@@ -52,6 +46,26 @@ class EsimIRCBot extends RizonIRCBot {
     super(server, nickname, password, options);
 
     this.nickFilterList = [];
+
+    this.commands = {
+      channel: {
+        '!motivate': new MotivateCommand(this),
+        '!donate': new DonateCommand(this),
+        '!supply': new SupplyCommand(this),
+        '!supply-commune': new SupplyCommuneCommand(this),
+        '!battle': new BattleCommand(this),
+        '!watch': new WatchCommand(this),
+        '!call': new CallCommand(this),
+      },
+      priv: {
+        'add-nickname': new AddNicknameCommand(this),
+        'announce': new AnnounceCommand(this),
+        'join': new JoinCommand(this),
+        'part': new PartCommand(this),
+        'say': new SayCommand(this),
+        'act': new ActCommand(this),
+      },
+    };
   }
 
 
@@ -70,14 +84,16 @@ class EsimIRCBot extends RizonIRCBot {
 
     const argv = parse(message);
 
-    if (commands.channel.hasOwnProperty(argv[0])) {
-      const identified = await this.isNickIdentified(from);
+    if (this.commands.channel.hasOwnProperty(argv[0])) {
+      const command = this.commands.channel[argv[0]];
+      const result = await command.parse(from, to, argv, message);
 
-      if (!identified) {
-        throw new Error('Identify with NickServ first.');
+      if (result.help) {
+        this.say(to, await command.getHelp());
+        return;
       }
 
-      await commands.channel[argv[0]](this, from, to, argv, message);
+      await command.run(from, to, result);
     }
   }
 
@@ -90,14 +106,16 @@ class EsimIRCBot extends RizonIRCBot {
 
     const argv = parse(message);
 
-    if (commands.priv.hasOwnProperty(argv[0])) {
-      const identified = await this.isNickIdentified(from);
+    if (this.commands.priv.hasOwnProperty(argv[0])) {
+      const command = this.commands.priv[argv[0]];
+      const result = await command.parse(from, argv, message);
 
-      if (!identified) {
-        throw new Error('Identify with NickServ first.');
+      if (result.help) {
+        this.say(from, await command.getHelp());
+        return;
       }
 
-      commands.priv[argv[0]](this, from, argv, message);
+      await command.run(from, result);
     }
   }
 
