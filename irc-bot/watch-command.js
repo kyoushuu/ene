@@ -62,6 +62,12 @@ class WatchCommand extends ChannelCommand {
         console.log(error);
       });
     });
+
+    this.bot.addListener('part', (channel, nick, reason, message) => {
+      this.onPart(channel, nick, reason, message).catch((error) => {
+        console.log(error);
+      });
+    });
   }
 
 
@@ -76,6 +82,20 @@ class WatchCommand extends ChannelCommand {
       await this.resumeWatchChannelBattles(channel);
     } catch (error) {
       this.bot.say(channel.name, `Failed to watch battles: ${error.message}`);
+    }
+  }
+
+  async onPart(chan, nick, reason, message) {
+    if (nick !== this.bot.nick) {
+      return;
+    }
+
+    const channel = await Channel.findOne({name: chan});
+
+    try {
+      await this.stopWatchChannelBattles(channel);
+    } catch (error) {
+      this.bot.say(channel.name, `Failed to unwatch battles: ${error.message}`);
     }
   }
 
@@ -307,6 +327,19 @@ class WatchCommand extends ChannelCommand {
         await this.watchBattle(country.organizations[0], battle);
       } catch (error) {
         throw new Error(`Failed to watch battle #${battle.battleId}: ${error}`);
+      }
+    }
+  }
+
+  async stopWatchChannelBattles(channel) {
+    const battles = await Battle.find({
+      channel,
+    });
+
+    for (const battle of battles) {
+      if (watchlist[battle.id] !== null) {
+        clearTimeout(watchlist[battle.id]);
+        delete watchlist[battle.id];
       }
     }
   }
