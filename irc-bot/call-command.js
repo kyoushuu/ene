@@ -17,34 +17,30 @@
  */
 
 
-const Channel = require('../models/channel');
-const User = require('../models/user');
+const ChannelCommand = require('./channel-command');
 
 
-module.exports = async function(bot, from, to, args, raw) {
-  const user = await User.findOne({
-    nicknames: from,
-  });
-
-  if (!user) {
-    throw new Error('Nickname is not registered.');
+class CallCommand extends ChannelCommand {
+  constructor(bot) {
+    super(bot, 'call', {
+      params: [{name: 'message', required: false}],
+      requireCountryAccessLevel: 2,
+    });
   }
 
-  const channel = await Channel.findOne({name: to}).populate({
-    path: 'countries',
-    match: {
-      'accessList.account': user._id,
-    },
-  });
+  async parse(from, to, args, raw) {
+    const {help} = await super.parse(from, to, args, raw);
 
-  if (!channel) {
-    throw new Error('Channel not registered in database.');
-  } else if (!channel.countries.length && user.accessLevel < 4) {
-    throw new Error('Permission denied.');
+    return {help, raw};
   }
 
-  const messageTrimmed = raw.trimLeft();
-  const message = messageTrimmed.substring(messageTrimmed.indexOf(' ') + 1);
+  async run(from, to, {raw}) {
+    const line = raw.trimLeft();
+    const message = line.substring(line.indexOf(' ') + 1);
 
-  bot.callEveryone(to, message);
-};
+    await this.bot.callEveryone(to, message);
+  }
+}
+
+
+module.exports = CallCommand;

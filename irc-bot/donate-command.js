@@ -17,87 +17,51 @@
  */
 
 
-const parse = require('./parse');
-
-const Channel = require('../models/channel');
-const User = require('../models/user');
+const ChannelCommand = require('./channel-command');
 
 
-module.exports = async function(bot, from, to, args) {
-  const {server, options, argv, help} = await parse(bot, '!donate (citizen) (product) (quantity) [reason]', [
-    ['i', 'id', 'Given citizen is a citizen id'],
-  ], args, 3, 4, to, true);
-
-  if (help) {
-    return;
+class DonateCommand extends ChannelCommand {
+  constructor(bot) {
+    super(bot, 'donate', {
+      params: [
+        'citizen', 'product',
+        {name: 'quantity', parser: parseInt},
+        {name: 'reason', required: false, default: ''},
+      ],
+      options: [
+        ['i', 'id', 'Given citizen is a citizen id'],
+      ],
+      requireCountryAccessLevel: 3,
+      requireCountryChannelType: 'military',
+    });
   }
 
-  const channel = await Channel.findOne({name: to}).populate({
-    path: 'countries',
-    match: {server: server._id},
-  });
-  if (!channel) {
-    throw new Error('Channel not registered in database.');
-  } else if (!channel.countries.length) {
-    throw new Error('Channel not registered for given server.');
-  }
+  async run(from, to, {server, country, channel, user, params, options, argv}) {
+    await country.populate('server organizations').execPopulate();
 
-  const user = await User.findOne({
-    nicknames: from,
-  });
+    const {citizen, product, quantity, reason} = params;
+    const [organization] = country.organizations;
 
-  if (!user) {
-    throw new Error('Nickname is not registered.');
-  }
-
-  const countries = [];
-
-  for (const country of channel.countries) {
-    if (country.getUserAccessLevel(user) > 0) {
-      countries.push(country);
+    if (!isFinite(quantity) || quantity < 1) {
+      throw new Error('Quantity is not valid');
     }
-  }
 
-  if (!countries.length) {
-    throw new Error('Permission denied.');
-  } else if (countries.length > 1) {
-    throw new Error('Failed, you have access on multiple countries.');
-  }
+    let citizenId = 0;
 
-  const [country] = countries;
-
-  if (country.getUserAccessLevel(user) < 3) {
-    throw new Error('Permission denied.');
-  }
-
-  await country.populate('server organizations').execPopulate();
-
-  let j = -1;
-  const l = country.channels.length;
-  for (let i = 0; i < l; i++) {
-    if (country.channels[i].channel.equals(channel.id)) {
-      j = i;
+    if (!options.id) {
+      const citizenInfo = await country.server.getCitizenInfoByName(citizen);
+      citizenId = citizenInfo.id;
+    } else {
+      citizenId = parseInt(citizen);
     }
+
+    await organization.donateProducts(
+        user, citizenId, product, quantity, reason);
+
+    const recipient = `${options.id ? '#' : ''}${citizen}`;
+    this.bot.say(to, `Products successfully donated to citizen ${recipient}.`);
   }
+}
 
-  if (j < 0 || !country.channels[j].types.includes('military')) {
-    throw new Error('Military commands are not allowed for the given server in this channel.');
-  }
 
-  const [citizen, product, quantity, reason=''] = argv;
-  const [organization] = country.organizations;
-
-  let citizenId = 0;
-
-  if (!options.id) {
-    const citizenInfo = await country.server.getCitizenInfoByName(citizen);
-    citizenId = citizenInfo.id;
-  } else {
-    citizenId = parseInt(citizen);
-  }
-
-  await organization.donateProducts(user, citizenId, product, quantity, reason);
-
-  const recipient = `${options.id ? '#' : ''}${citizen}`;
-  bot.say(to, `Products successfully donated to citizen ${recipient}.`);
-};
+module.exports = DonateCommand;

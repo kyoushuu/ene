@@ -17,82 +17,41 @@
  */
 
 
-const parse = require('./parse');
-
-const Channel = require('../models/channel');
-const User = require('../models/user');
+const ChannelCommand = require('./channel-command');
 
 
-module.exports = async function(bot, from, to, args) {
-  const {server, options, argv, help} = await parse(bot, '!battle (id)', [
-    ['d', 'defender', 'Defender side (default)'],
-    ['a', 'attacker', 'Attacker side'],
-  ], args, 1, 1, to, true);
-
-  if (help) {
-    return;
+class BattleCommand extends ChannelCommand {
+  constructor(bot) {
+    super(bot, 'battle', {
+      params: [{name: 'battleId', parser: parseInt}],
+      options: [
+        ['d', 'defender', 'Defender side (default)'],
+        ['a', 'attacker', 'Attacker side'],
+      ],
+      requireCountryAccessLevel: 1,
+      requireCountryChannelType: 'military',
+    });
   }
 
-  const channel = await Channel.findOne({name: to}).populate({
-    path: 'countries',
-    match: {server: server._id},
-  });
+  async run(from, to, {server, country, channel, user, params, options, argv}) {
+    await country.populate('server organizations').execPopulate();
 
-  if (!channel) {
-    throw new Error('Channel not registered in database.');
-  } else if (!channel.countries.length) {
-    throw new Error('Channel not registered for given server.');
-  }
+    const [organization] = country.organizations;
 
-  const user = await User.findOne({
-    nicknames: from,
-  });
+    const side =
+      options.defender ? 'defender' :
+      options.attacker ? 'attacker' :
+      'defender';
 
-  if (!user) {
-    throw new Error('Nickname is not registered.');
-  }
-
-  const countries = [];
-
-  for (const country of channel.countries) {
-    if (country.getUserAccessLevel(user) > 0) {
-      countries.push(country);
+    if (!isFinite(params.battleId) || params.battleId < 1) {
+      throw new Error('Invalid battle id');
     }
+
+    await this.bot.displayBattleStatus(to, organization, {
+      battleId: params.battleId, side,
+    });
   }
+}
 
-  if (!countries.length) {
-    throw new Error('Permission denied.');
-  } else if (countries.length > 1) {
-    throw new Error('Failed, you have access on multiple countries.');
-  }
 
-  const [country] = countries;
-
-  await country.populate('server organizations').execPopulate();
-
-  let j = -1;
-  const l = country.channels.length;
-  for (let i = 0; i < l; i++) {
-    if (country.channels[i].channel.equals(channel.id)) {
-      j = i;
-    }
-  }
-
-  if (j < 0 || !country.channels[j].types.includes('military')) {
-    throw new Error('Military commands are not allowed for the given server in this channel.');
-  }
-
-  const [organization] = country.organizations;
-
-  const side =
-    options.defender ? 'defender' :
-    options.attacker ? 'attacker' :
-    'defender';
-
-  const battleId = parseInt(argv[0]);
-  if (isNaN(battleId) || battleId < 1) {
-    throw new Error('Invalid battle id');
-  }
-
-  await bot.displayBattleStatus(to, organization, {battleId, side});
-};
+module.exports = BattleCommand;
