@@ -414,6 +414,10 @@ class Organization extends mongoose.Model {
         type = 'practice';
       }
 
+      const defenderScore = numeral($('#defenderScore').text().trim()).value();
+      const attackerScore = numeral($('#attackerScore').text().trim()).value();
+      const totalScore = defenderScore + attackerScore;
+
       return {
         label,
         type,
@@ -421,11 +425,14 @@ class Organization extends mongoose.Model {
         frozen,
         round: numeral($('div#mainFight > div').eq(2).text().trim()).value(),
         roundId: parseInt($('input#battleRoundId').attr('value')),
+        totalScore,
         defender,
+        defenderScore,
         defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
         defenderAllies: $('div#mainFight div.alliesPopup').eq(0).text()
             .trim().split(/\s{2,}/g),
         attacker,
+        attackerScore,
         attackerWins: $('div.fightRounds img[src$="red_ball.png"]').length,
         attackerAllies: $('div#mainFight div.alliesPopup').eq(1).text()
             .trim().split(/\s{2,}/g),
