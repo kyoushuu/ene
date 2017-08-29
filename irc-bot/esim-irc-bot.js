@@ -22,10 +22,8 @@ const {parse} = require('shell-quote');
 const numeral = require('numeral');
 
 const Channel = require('../models/channel');
-const Battle = require('../models/battle');
 
 const RizonIRCBot = require('./rizon-irc-bot');
-const {watchBattle} = require('./watch-command');
 
 
 const commands = {
@@ -117,34 +115,6 @@ class EsimIRCBot extends RizonIRCBot {
       }
 
       await this.join(joinArgs);
-
-      try {
-        await this.watchChannelBattles(channel);
-      } catch (error) {
-        this.say(channel.name, `Failed to watch battles: ${error}`);
-      }
-    }
-  }
-
-  async watchChannelBattles(channel) {
-    const battles = await Battle.find({
-      channel,
-    }).populate('country channel');
-
-    for (const battle of battles) {
-      const {country} = battle;
-
-      await country.populate('organizations').execPopulate();
-
-      if (!country.organizations.length) {
-        throw new Error('Organization not found.');
-      }
-
-      try {
-        await watchBattle(this, country.organizations[0], battle);
-      } catch (error) {
-        throw new Error(`Failed to watch battle #${battle.battleId}: ${error}`);
-      }
     }
   }
 

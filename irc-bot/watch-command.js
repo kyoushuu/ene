@@ -20,6 +20,7 @@
 const ChannelCommand = require('./channel-command');
 
 const Battle = require('../models/battle');
+const Channel = require('../models/channel');
 
 const watchpoints = {
   full: [
@@ -55,6 +56,27 @@ class WatchCommand extends ChannelCommand {
       requireCountryAccessLevel: 1,
       requireCountryChannelType: 'military',
     });
+
+    this.bot.addListener('join', (channel, nick, message) => {
+      this.onJoin(channel, nick, message).catch((error) => {
+        console.log(error);
+      });
+    });
+  }
+
+
+  async onJoin(chan, nick, message) {
+    if (nick !== this.bot.nick) {
+      return;
+    }
+
+    const channel = await Channel.findOne({name: chan});
+
+    try {
+      await this.resumeWatchChannelBattles(channel);
+    } catch (error) {
+      this.bot.say(channel.name, `Failed to watch battles: ${error.message}`);
+    }
   }
 
 
@@ -265,6 +287,28 @@ class WatchCommand extends ChannelCommand {
     this.watchBattleRound(
         organization, battle, battleInfo, battleRoundInfo,
         battleRoundInfo.remainingTimeInSeconds);
+  }
+
+  async resumeWatchChannelBattles(channel) {
+    const battles = await Battle.find({
+      channel,
+    }).populate('country');
+
+    for (const battle of battles) {
+      const {country} = battle;
+
+      await country.populate('organizations').execPopulate();
+
+      if (!country.organizations.length) {
+        throw new Error('Organization not found.');
+      }
+
+      try {
+        await this.watchBattle(country.organizations[0], battle);
+      } catch (error) {
+        throw new Error(`Failed to watch battle #${battle.battleId}: ${error}`);
+      }
+    }
   }
 }
 
