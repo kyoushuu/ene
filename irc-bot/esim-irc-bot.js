@@ -148,8 +148,11 @@ class EsimIRCBot extends RizonIRCBot {
 
     battleInfo = battleInfo ||
         await organization.getBattleInfo(battle.battleId);
-    battleRoundInfo = battleRoundInfo ||
-        await organization.getBattleRoundInfo(battleInfo.roundId);
+
+    if (battleInfo.roundId) {
+      battleRoundInfo = battleRoundInfo ||
+          await organization.getBattleRoundInfo(battleInfo.roundId);
+    }
 
 
     let bonusRegion = null;
@@ -165,7 +168,8 @@ class EsimIRCBot extends RizonIRCBot {
     }
 
 
-    const {defenderScore, attackerScore, totalScore} = battleRoundInfo;
+    const {defenderScore, attackerScore, totalScore} =
+      battleRoundInfo || battleInfo;
 
     let wall = 0;
     let percentage = 0;
@@ -183,7 +187,8 @@ class EsimIRCBot extends RizonIRCBot {
     }
 
 
-    const time = Math.max(0, battleRoundInfo.remainingTimeInSeconds);
+    const {remainingTimeInSeconds = 0} = battleRoundInfo || {};
+    const time = Math.max(0, remainingTimeInSeconds);
 
     const {underline: ul, bold, reset} = codes;
     const {dark_red: dr, dark_green: dg} = codes;
