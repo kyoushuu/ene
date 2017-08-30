@@ -37,7 +37,6 @@ const watchpoints = {
     600, 300, 120, -12,
   ],
 };
-const watchlist = {};
 
 
 class WatchCommand extends ChannelCommand {
@@ -56,6 +55,8 @@ class WatchCommand extends ChannelCommand {
       requireCountryAccessLevel: 1,
       requireCountryChannelType: 'military',
     });
+
+    this.watchlist = {};
 
     this.bot.addListener('join', (channel, nick, message) => {
       this.onJoin(channel, nick, message).catch((error) => {
@@ -153,16 +154,16 @@ class WatchCommand extends ChannelCommand {
         channel,
       });
 
-      if (!battle || !watchlist[battle.id]) {
+      if (!battle || !this.watchlist[battle.id]) {
         throw new Error('Battle not found in watchlist');
       }
 
-      clearTimeout(watchlist[battle.id]);
+      clearTimeout(this.watchlist[battle.id]);
 
       await battle.remove();
 
       this.bot.say(to, 'Battle deleted from watchlist');
-      delete watchlist[battle.id];
+      delete this.watchlist[battle.id];
     } else {
       let battle = await Battle.findOne({
         battleId,
@@ -171,10 +172,10 @@ class WatchCommand extends ChannelCommand {
       });
 
       if (battle) {
-        if (watchlist[battle.id] !== null) {
-          clearTimeout(watchlist[battle.id]);
+        if (this.watchlist[battle.id] !== null) {
+          clearTimeout(this.watchlist[battle.id]);
           battle.remove();
-          delete watchlist[battle.id];
+          delete this.watchlist[battle.id];
         } else {
           throw new Error('Failed to delete previous watch. Please try again.');
         }
@@ -200,7 +201,7 @@ class WatchCommand extends ChannelCommand {
 
   watchBattleRound(organization, battle, battleInfo, battleRoundInfo, time) {
     const timeout = async (watchpoint) => {
-      watchlist[battle.id] = null;
+      this.watchlist[battle.id] = null;
       const battleRoundInfo =
         await organization.getBattleRoundInfo(battleInfo.roundId);
 
@@ -257,7 +258,7 @@ class WatchCommand extends ChannelCommand {
     for (let i = 0; i < l; i++) {
       if (battleRoundInfo.remainingTimeInSeconds >
           watchpoints[battle.mode][i]) {
-        watchlist[battle.id] = setTimeout(
+        this.watchlist[battle.id] = setTimeout(
             timeout,
             (battleRoundInfo.remainingTimeInSeconds -
               watchpoints[battle.mode][i]) * 1000,
@@ -274,8 +275,8 @@ class WatchCommand extends ChannelCommand {
 
     this.bot.say(battle.channel.name, `The round has ended in favor of ${winner}`);
 
-    watchlist[battle.id] = setTimeout(() => {
-      watchlist[battle.id] = null;
+    this.watchlist[battle.id] = setTimeout(() => {
+      this.watchlist[battle.id] = null;
       this.watchBattle(organization, battle);
     }, 30000);
   }
@@ -300,8 +301,8 @@ class WatchCommand extends ChannelCommand {
       this.bot.say(battle.channel.name, `The battle in ${battleInfo.label} has ended in favor of ${winner}`);
 
       await battle.remove();
-      if (watchlist.hasOwnProperty(battle.id)) {
-        delete watchlist[battle.id];
+      if (this.watchlist.hasOwnProperty(battle.id)) {
+        delete this.watchlist[battle.id];
       }
 
       return;
@@ -345,9 +346,9 @@ class WatchCommand extends ChannelCommand {
     });
 
     for (const battle of battles) {
-      if (watchlist[battle.id] !== null) {
-        clearTimeout(watchlist[battle.id]);
-        delete watchlist[battle.id];
+      if (this.watchlist[battle.id] !== null) {
+        clearTimeout(this.watchlist[battle.id]);
+        delete this.watchlist[battle.id];
       }
     }
   }
