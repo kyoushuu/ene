@@ -246,29 +246,29 @@ class Organization extends mongoose.Model {
       throw new Error('Too many items');
     }
 
+    const products = supplyFormat
+        .filter((a, i) => quantities[i] && quantities[i] > 0)
+        .map((a, i) => {
+          const format = a.split(':');
+
+          return {
+            product: format[0],
+            quantity: quantities[i],
+            limit: format.length > 1 ? parseInt(format[1]) : 0,
+          };
+        });
+
+    const productsWithLimit = products.filter((p) => p.limit > 0);
+
     const dayStart = this.country.getDayStart();
     const dayStartObjectId = new mongoose.Types.ObjectId(dayStart);
-
-    for (let i = 0; i < quantities.length; i++) {
-      if (quantities[i] < 1) {
-        continue;
-      }
-
-      const format = supplyFormat[i].split(':');
-      if (format.length < 2) {
-        continue;
-      }
-
-      const [product] = format;
-      const quantity = quantities[i];
-      const limit = parseInt(format[1]);
-
-      const result = await ProductDonation.aggregate([
+    const received = await Promise.all(productsWithLimit.map((a) =>
+      ProductDonation.aggregate([
         {
           $match: {
             _id: {$gte: dayStartObjectId},
             recipient: citizenId,
-            product,
+            product: a.product,
           },
         },
         {
@@ -277,31 +277,39 @@ class Organization extends mongoose.Model {
             total: {$sum: '$quantity'},
           },
         },
-      ]);
+      ])));
 
-      if (result.length && quantity + result[0].total > limit) {
-        throw new Error(`Daily limit for ${product} exceeded (${limit})`);
-      }
+    const productsOverLimit = productsWithLimit.filter((p, i) =>
+      received[i] &&
+      received[i].length &&
+      received[i][0].total + p.quantity > p.limit);
+
+    if (productsOverLimit.length) {
+      const products = productsOverLimit.map((p) => p.product).join(', ');
+      const limits = productsOverLimit.map((p) => p.limit).join(', ');
+      throw new Error(`Daily limit for ${products} exceeded (${limits})`);
     }
 
     if (dryRun) {
       return;
     }
 
-    for (let i = 0; i < quantities.length; i++) {
-      if (quantities[i] < 1) {
-        continue;
-      }
+    const results = await Promise.all(products.map((a) => {
+      const p = this.donateProducts(
+          sender, citizenId, a.product, a.quantity, reason);
 
-      const [product] = supplyFormat[i].split(':');
-      const quantity = quantities[i];
+      return p.catch((e) => {
+        e.product = a.product;
+        return e;
+      });
+    }));
 
-      try {
-        await this.donateProducts(
-            sender, citizenId, product, quantity, reason);
-      } catch (error) {
-        throw new Error(`Failed to send ${product}: ${error}`);
-      }
+    const errors = results.filter((a) => a instanceof Error);
+
+    if (errors.length) {
+      const products = errors.map((e) => e.product).join(', ');
+      const messages = errors.map((e) => e.message).join(', ');
+      throw new Error(`Failed to send ${products}: ${messages}`);
     }
   }
 
