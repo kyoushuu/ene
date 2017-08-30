@@ -91,13 +91,10 @@ class SupplyCommuneCommand extends ChannelCommand {
 
     const membersList = $('div#militaryUnitContainer ~ div').eq(0)
         .find('div').find('a.profileLink');
-    const membersId = [];
-
-    for (let i = 0; i < membersList.length; i++) {
-      const member = membersList.eq(i).clone().children().remove().end();
-      const citizenId = parseInt(member.attr('href').split('=')[1]);
-      membersId.push(citizenId);
-    }
+    const membersId = membersList.get().map((a) =>
+      parseInt(
+          $(a).clone().children().remove().end().attr('href').split('=')[1]
+      ));
 
 
     const companies =
@@ -118,56 +115,33 @@ class SupplyCommuneCommand extends ChannelCommand {
     }
 
 
-    const skipIds = [];
+    const skipIds = (skip ? skip : []).map((name) =>
+      membersWorked.findIndex((m) => name.localeCompare(m.name) === 0));
+    const skipNotFound = skipIds.indexOf(-1);
 
-    if (skip) {
-      for (const skipName of skip) {
-        let citizenId = -1;
-        for (const [j, member] of membersWorked.entries()) {
-          if (skipName.toUpperCase() === member.name.toUpperCase()) {
-            citizenId = j;
-            break;
-          }
-        }
-
-        if (citizenId < 0) {
-          throw new Error(`Citizen ${skipName} not found in list.`);
-        }
-
-        skipIds.push(citizenId);
-      }
+    if (skip && skipNotFound >= 0) {
+      throw new Error(`Citizen ${skip[skipNotFound]} not found in list.`);
     }
+
+    const recipients =
+      membersWorked.filter((e, i) => i >= jumpPos && !skipIds.includes(i));
 
 
     if (useOrgInventory) {
-      for (let i = jump ? jumpPos : 0; i < membersWorked.length; i++) {
-        if (skip && skipIds.includes(i)) {
-          continue;
-        }
-
-        const {name, id: citizen} = membersWorked[i];
-
+      for (const {name, id} of recipients) {
         this.bot.say(to, `Sending supplies to ${name}...`);
         await organization.supplyProducts(
-            user, citizen, quantities, reason, dryRun);
+            user, id, quantities, reason, dryRun);
       }
 
       this.bot.say(to, 'Done.');
       return;
     }
 
-
-    const recipients = [];
-
-    for (let i = jump ? jumpPos : 0; i < membersWorked.length; i++) {
-      if (skip && skipIds.includes(i)) {
-        continue;
-      }
-
+    for (const {name} of recipients) {
       this.bot.say(
           to,
-          `Sending supplies to ${membersWorked[i].name}...`);
-      recipients.push(membersWorked[i].id);
+          `Sending supplies to ${name}...`);
     }
 
 
@@ -177,23 +151,29 @@ class SupplyCommuneCommand extends ChannelCommand {
     }
 
 
-    const supplyFormat = country.supplyFormat.split('/');
+    const recipientsId = recipients.map((cit) => cit.id);
+    const results = await Promise.all(country.supplyFormat.split('/')
+        .map((a, i) => ({
+          product: a.split(':')[0],
+          quantity: quantities[i] || 0,
+        }))
+        .filter((a) => a.quantity < 1)
+        .map((a) => {
+          const p = organization.batchDonateProducts(
+              user, recipientsId, a.product, a.quantity, reason);
 
-    for (let i = 0; i < supplyFormat.length; i++) {
-      if (quantities[i] < 1) {
-        continue;
-      }
+          return p.catch((e) => {
+            e.product = a.product;
+            return e;
+          });
+        }));
 
-      const [product] = supplyFormat[i].split(':');
-      const quantity = quantities[i];
+    const errors = results.filter((a) => a instanceof Error);
 
-      try {
-        await organization.batchDonateProducts(
-            user, recipients, product,
-            quantity, reason);
-      } catch (error) {
-        throw new Error(`Failed to send ${product}: ${error}`);
-      }
+    if (errors.length) {
+      const products = errors.map((e) => e.product).join(', ');
+      const messages = errors.map((e) => e.message).join(', ');
+      throw new Error(`Failed to send ${products}: ${messages}`);
     }
 
     this.bot.say(to, 'Done.');
