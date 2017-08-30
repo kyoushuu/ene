@@ -360,6 +360,36 @@ class Organization extends mongoose.Model {
   }
 
 
+  async getCompanies(muId = undefined) {
+    const [request] = await this.createRequest();
+
+    const $ = await request({
+      uri: muId ?
+        `${this.country.server.address}/militaryUnitCompanies.html` :
+        `${this.country.server.address}/companies.html`,
+      transform: (body) => cheerio.load(body),
+      qs: {
+        id: muId,
+      },
+    });
+
+    return $('#myCompaniesToSortTable tr[class]').get().map((a) => {
+      const imgSrcFilenames = $(a).find('div.product img').get()
+          .map((img) => $(img).attr('src'))
+          .map((src) =>
+            src.substring(src.lastIndexOf('/') + 1, src.lastIndexOf('.')));
+
+      return {
+        id: parseInt($(a).find('a[href*="company"]').attr('href').split('=')[1]),
+        product: imgSrcFilenames[0],
+        quality: parseInt(imgSrcFilenames[1].substring(1)),
+        region: parseInt($(a).find('a[href*="region"]').attr('href').split('=')[1]),
+        workers: parseInt($(a).find('td').eq(-1).text()),
+      };
+    });
+  }
+
+
   async getBattleInfo(battleId) {
     const [request] = await this.createRequest();
 
