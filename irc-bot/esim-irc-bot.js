@@ -126,14 +126,9 @@ class EsimIRCBot extends RizonIRCBot {
       return;
     }
 
-    for (const channel of channels) {
-      let joinArgs = channel.name;
-      if (channel.keyword) {
-        joinArgs += ` ${channel.keyword}`;
-      }
-
-      await this.join(joinArgs);
-    }
+    await Promise.all(channels
+        .map((c) => c.keyword ? `${c.name} ${c.keyword}` : `${c.name}`)
+        .map((c) => this.join(c)));
   }
 
 
