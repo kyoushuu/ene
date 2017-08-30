@@ -390,6 +390,48 @@ class Organization extends mongoose.Model {
   }
 
 
+  async getCompanyWorkResults(companyId, daysBefore = -1) {
+    const [request] = await this.createRequest();
+
+    const $ = await request({
+      uri: `${this.country.server.address}/companyWorkResults.html`,
+      transform: (body) => cheerio.load(body),
+      qs: {
+        id: companyId,
+      },
+    });
+
+    const workersResults = $('#productivityTable tr:not([style])').get()
+        .map((a) => $(a).find('td'))
+        .filter((a) => a.eq(-1 - daysBefore).find('div').length !== 0);
+    const workersLinks = workersResults.map((a) => a.eq(0).find('a'));
+
+    return workersLinks.map((link) => ({
+      id: parseInt(link.attr('href').split('=')[1]),
+      name: link.clone().children().remove().end().text().trim(),
+    }));
+  }
+
+
+  async getMotivatePackage(citizenId) {
+    const [request] = await this.createRequest();
+
+    const $ = await request({
+      uri: `${this.country.server.address}/motivateCitizen.html`,
+      transform: (body) => cheerio.load(body),
+      qs: {
+        id: citizenId,
+      },
+    });
+
+    return {
+      weapon: $('input[value=1]').length > 0,
+      food: $('input[value=2]').length > 0,
+      gift: $('input[value=3]').length > 0,
+    };
+  }
+
+
   async getBattleInfo(battleId) {
     const [request] = await this.createRequest();
 
