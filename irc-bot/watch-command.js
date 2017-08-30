@@ -78,6 +78,10 @@ class WatchCommand extends ChannelCommand {
 
     const channel = await Channel.findOne({name: chan});
 
+    if (!channel) {
+      return;
+    }
+
     try {
       await this.resumeWatchChannelBattles(channel);
     } catch (error) {
@@ -91,6 +95,10 @@ class WatchCommand extends ChannelCommand {
     }
 
     const channel = await Channel.findOne({name: chan});
+
+    if (!channel) {
+      return;
+    }
 
     try {
       await this.stopWatchChannelBattles(channel);
