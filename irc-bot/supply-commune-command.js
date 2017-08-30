@@ -71,7 +71,7 @@ class SupplyCommuneCommand extends ChannelCommand {
 
 
     const [request] = await organization.createRequest();
-    let $ = await request({
+    const $ = await request({
       uri: `${country.server.address}/myMilitaryUnit.html`,
       transform: (body) => cheerio.load(body),
     });
@@ -100,70 +100,18 @@ class SupplyCommuneCommand extends ChannelCommand {
     }
 
 
-    $ = await request({
-      uri: useOrgCompanies ?
-        `${country.server.address}/companies.html` :
-        `${country.server.address}/militaryUnitCompanies.html`,
-      transform: (body) => cheerio.load(body),
-      qs: {
-        id: useOrgCompanies ? undefined : unitId,
-      },
-    });
-
-    const companiesList = $('#myCompaniesToSortTable tr[class]');
-    const companiesId = [];
-
-    for (let i = 0; i < companiesList.length; i++) {
-      if (!parseInt(companiesList.eq(i).find('td').eq(-1).text())) {
-        continue;
-      }
-
-      const company = companiesList.eq(i).find('a[href*="company"]');
-      const companyId = parseInt(company.attr('href').split('=')[1]);
-      companiesId.push(companyId);
-    }
-
-
-    const membersWorked = [];
-    let jumpPos = -1;
-
-    for (const companyId of companiesId) {
-      $ = await request({
-        uri: `${country.server.address}/companyWorkResults.html`,
-        transform: (body) => cheerio.load(body),
-        qs: {
-          id: companyId,
-        },
-      });
-
-      const workersList = $('#productivityTable tr:not([style])');
-
-      for (let i = 0; i < workersList.length; i++) {
-        const workerResults = workersList.eq(i).find('td');
-
-        if (!workerResults.eq(-2).find('div').length) {
-          continue;
-        }
-
-        const worker = workerResults.eq(0).find('a');
-        const citizenId = parseInt(worker.attr('href').split('=')[1]);
-
-        if (!membersId.includes(citizenId)) {
-          continue;
-        }
-
-        const name = worker.clone().children().remove().end().text().trim();
-
-        if (jump && jump.toUpperCase() === name.toUpperCase()) {
-          jumpPos = membersWorked.length;
-        }
-
-        membersWorked.push({
-          id: citizenId,
-          name,
-        });
-      }
-    }
+    const companies =
+      await organization.getCompanies(useOrgCompanies ? undefined : unitId);
+    const companiesResults = await Promise.all(
+        companies
+            .filter((a) => a.workers > 0)
+            .map((a) => organization.getCompanyWorkResults(a.id)));
+    const citizensWorked = companiesResults.reduce((a, b) => a.concat(b), []);
+    const membersWorked =
+      citizensWorked.filter((a) => membersId.includes(a.id));
+    const jumpPos = jump ?
+      membersWorked.findIndex((a) => jump.localeCompare(a.name) === 0) :
+      -1;
 
     if (jump && jumpPos < 0) {
       throw new Error(`Citizen ${jump} not found in list.`);
