@@ -19,6 +19,7 @@
 
 const mongoose = require('mongoose');
 const request = require('request-promise-native');
+const cheerio = require('cheerio');
 
 
 class Server extends mongoose.Model {
@@ -145,6 +146,21 @@ class Server extends mongoose.Model {
     }
 
     return null;
+  }
+
+
+  async getNewCitizens(countryId = 0, page = 1) {
+    const $ = await request({
+      uri: `${this.address}/newCitizens.html`,
+      transform: (body) => cheerio.load(body),
+      qs: {
+        countryId,
+        page,
+      },
+    });
+
+    return $('table.dataTable tr td:first-child a').get()
+        .map((a) => parseInt($(a).attr('href').split('=')[1]));
   }
 }
 
