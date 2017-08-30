@@ -1,0 +1,59 @@
+{
+    "env" : {
+        "mocha": true,
+        "node": true,
+        "es6": true
+    },
+    "extends": ["eslint:recommended", "google"],
+    "parserOptions": {
+        "ecmaVersion": 8
+    },
+    "rules": {
+        "new-cap": "off",
+
+        "require-jsdoc": "off",
+        "valid-jsdoc": "off",
+        "multiline-ternary": ["off", "always-multiline"],
+
+        "comma-dangle": ["error", "always-multiline"],
+        "no-unused-vars": "error",
+        "prefer-const": "error",
+        "no-const-assign": "error",
+        "prefer-arrow-callback": "error",
+        "prefer-template": "error",
+        "no-path-concat": "error",
+        "linebreak-style": ["error", "unix"],
+        "quotes": ["error", "single"],
+        "require-await": "error",
+        "no-template-curly-in-string": "error",
+        "consistent-return": "error",
+        "no-useless-concat": "error",
+        "no-useless-return": "error",
+        "prefer-destructuring": "error",
+        "indent": ["error", 2, {
+            "flatTernaryExpressions": true,
+            "MemberExpression": 2,
+            "FunctionDeclaration": {"body": 1, "parameters": 2},
+            "FunctionExpression": {"body": 1, "parameters": 2},
+            "CallExpression": {"arguments": 2}
+        }],
+        "max-len": ["error", {
+            "ignoreStrings": true,
+            "ignoreTemplateLiterals": true
+        }],
+        "no-await-in-loop": "error",
+        "no-use-before-define": "error",
+        "max-depth": ["error", {"max": 4}],
+        "max-params": ["error", {"max": 5}],
+        "max-nested-callbacks": ["error", {"max": 3}],
+        "max-statements-per-line": "error",
+        "no-extra-parens": "error",
+        "class-methods-use-this": ["error", {
+            "exceptMethods": ["onRegistered", "onChannelMessage", "onPrivateMessage", "run"]
+        }],
+
+        "no-console": "warn",
+        "max-statements": ["warn", {"max": 50}],
+        "complexity": ["warn", {"max": 20}]
+    }
+}

@@ -37,9 +37,11 @@ class Country extends mongoose.Model {
   }
 
 
+  /* eslint-disable class-methods-use-this */
   getDayStart() {
     return moment().tz('Europe/Warsaw').startOf('day').unix();
   }
+  /* eslint-enable class-methods-use-this */
 }
 
 

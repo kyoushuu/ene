@@ -28,9 +28,11 @@ class ActCommand extends Command {
     });
   }
 
+  /* eslint-disable require-await */
   async run(from, {params, options, argv}) {
     this.bot.action(params.recipient, params.action);
   }
+  /* eslint-enable require-await */
 }
 
 

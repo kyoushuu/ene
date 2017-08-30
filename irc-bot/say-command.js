@@ -28,9 +28,11 @@ class SayCommand extends Command {
     });
   }
 
+  /* eslint-disable require-await */
   async run(from, {params, options, argv}) {
     this.bot.say(params.recipient, params.message);
   }
+  /* eslint-enable require-await */
 }
 
 

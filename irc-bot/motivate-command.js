@@ -133,6 +133,7 @@ class MotivateCommand extends ChannelCommand {
 
     let found = 0;
 
+    /* eslint-disable no-await-in-loop */
     for (let page = lastPage; page > 0 && found < find; page--) {
       this.bot.say(to, `Checking page ${page}...`);
       motivateLock[server.name].date = Date.now();
@@ -196,6 +197,7 @@ class MotivateCommand extends ChannelCommand {
         }
       }
     }
+    /* eslint-enable no-await-in-loop */
 
     this.bot.say(to, `Done. Found ${found} citizen/s.`);
     if (found < find) {

@@ -44,6 +44,7 @@ class Command {
     this.opt = null;
   }
 
+  /* eslint-disable require-await */
   async buildOptions() {
     if (this.opt) {
       return;
@@ -68,6 +69,7 @@ class Command {
     this.opt = getopt.create(this.allOptions);
     this.opt.setHelp(`Usage: ${usage}\n\n[[OPTIONS]]\n`);
   }
+  /* eslint-enable require-await */
 
   async parse(from, args, raw) {
     if (!this.opt) {

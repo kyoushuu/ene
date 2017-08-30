@@ -58,6 +58,7 @@ class IRCBot extends irc.Client {
   }
 
 
+  /* eslint-disable require-await */
   async whois(nickname) {
     return new Promise((resolve) => {
       super.whois(nickname, (info) => {
@@ -91,6 +92,7 @@ class IRCBot extends irc.Client {
       this.send('NAMES', channel);
     });
   }
+  /* eslint-enable require-await */
 }
 
 

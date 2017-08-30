@@ -30,11 +30,13 @@ class AnnounceCommand extends Command {
     });
   }
 
+  /* eslint-disable require-await */
   async run(from, {params, options, argv}) {
     for (const channel of Object.getOwnPropertyNames(this.bot.chans)) {
       this.bot.say(channel, `${codes.bold}ANNOUNCEMENT: ${codes.reset}${params.message}`);
     }
   }
+  /* eslint-enable require-await */
 }
 
 

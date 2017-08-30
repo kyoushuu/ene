@@ -130,8 +130,10 @@ class SupplyCommuneCommand extends ChannelCommand {
     if (useOrgInventory) {
       for (const {name, id} of recipients) {
         this.bot.say(to, `Sending supplies to ${name}...`);
+        /* eslint-disable no-await-in-loop */
         await organization.supplyProducts(
             user, id, quantities, reason, dryRun);
+        /* eslint-enable no-await-in-loop */
       }
 
       this.bot.say(to, 'Done.');
