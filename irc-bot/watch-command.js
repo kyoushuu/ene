@@ -323,21 +323,11 @@ class WatchCommand extends ChannelCommand {
       channel,
     }).populate('country');
 
-    for (const battle of battles) {
-      const {country} = battle;
-
-      await country.populate('organizations').execPopulate();
-
-      if (!country.organizations.length) {
-        throw new Error('Organization not found.');
-      }
-
-      try {
-        await this.watchBattle(country.organizations[0], battle);
-      } catch (error) {
-        throw new Error(`Failed to watch battle #${battle.battleId}: ${error}`);
-      }
-    }
+    await Promise.all(battles
+        .map((b) => b.country.populate('organizations').execPopulate()));
+    await Promise.all(battles
+        .filter((b) => b.country.organizations.length)
+        .map((b) => this.watchBattle(b.country.organizations[0], b)));
   }
 
   async stopWatchChannelBattles(channel) {
