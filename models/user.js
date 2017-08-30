@@ -98,15 +98,13 @@ mongoose.model(User, {
     type: [String],
     validate: {
       validator: async function(value) {
-        for (const nickname of value) {
-          const users = await User.find({
-            _id: {$ne: this._id},
-            nicknames: nickname,
-          });
+        const users = await Promise.all(value.map((nickname) => User.find({
+          _id: {$ne: this._id},
+          nicknames: nickname,
+        })));
 
-          if (users.length) {
-            return false;
-          }
+        if (users.reduce((a, b) => a.concat(b), []).length) {
+          return false;
         }
 
         return true;
