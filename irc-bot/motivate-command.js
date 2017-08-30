@@ -17,9 +17,7 @@
  */
 
 
-const cheerio = require('cheerio');
 const cron = require('cron');
-const {URLSearchParams} = require('url');
 
 const ChannelCommand = require('./channel-command');
 
@@ -131,24 +129,7 @@ class MotivateCommand extends ChannelCommand {
 
     const [organization] = country.organizations;
     const cache = !options['no-cache'];
-
-
-    const [request] = await organization.createRequest();
-    let $ = await request({
-      uri: `${country.server.address}/newCitizens.html`,
-      transform: (body) => cheerio.load(body),
-      qs: {
-        countryId: 0,
-      },
-    });
-
-    const lastPageLink = $('ul#pagination-digg li:nth-last-child(2) a');
-    if (!lastPageLink.length) {
-      throw new Error('Failed to parse motivate page.');
-    }
-
-    const lastPage = parseInt(new URLSearchParams(
-        lastPageLink.attr('href').split('?')[1]).get('page'));
+    const lastPage = await organization.getNewCitizensLastPage(0);
 
     let found = 0;
 
@@ -156,19 +137,7 @@ class MotivateCommand extends ChannelCommand {
       this.bot.say(to, `Checking page ${page}...`);
       motivateLock[server.name].date = Date.now();
 
-      $ = await request({
-        uri: `${country.server.address}/newCitizens.html`,
-        transform: (body) => cheerio.load(body),
-        qs: {
-          countryId: 0,
-          page,
-        },
-      });
-
-      const citizens = [];
-      $('table.dataTable tr td:first-child a').each((i, elem) => {
-        citizens.push(parseInt(elem.attribs['href'].split('=')[1]));
-      });
+      const citizens = await country.server.getNewCitizens(0, page);
 
       for (const citizenId of citizens) {
         let citizen = null;
@@ -194,39 +163,19 @@ class MotivateCommand extends ChannelCommand {
           }
         }
 
-        $ = await request({
-          uri: `${country.server.address}/motivateCitizen.html`,
-          transform: (body) => cheerio.load(body),
-          qs: {
-            id: citizenId,
-          },
-        });
+        const packAvailable = await organization.getMotivatePackage(citizenId);
 
         if (citizen) {
-          if ($('input[value=1]').length === 0 && citizen.weapon) {
-            citizen.weapon = false;
-          }
-
-          if ($('input[value=2]').length === 0 && citizen.food) {
-            citizen.food = false;
-          }
-
-          if ($('input[value=3]').length === 0 && citizen.gift) {
-            citizen.gift = false;
-          }
+          citizen.weapon = packAvailable.weapon;
+          citizen.food = packAvailable.food;
+          citizen.gift = packAvailable.gift;
 
           if (citizen.isModified()) {
             await citizen.save();
           }
         }
 
-        const packId =
-          pack === 'weapon' ? 1 :
-          pack === 'food' ? 2 :
-          pack === 'gift' ? 3 :
-          2;
-
-        if ($(`input[value=${packId}]`).length) {
+        if (packAvailable[pack]) {
           const motivateUrl =
             `${country.server.address}/motivateCitizen.html?id=${citizenId}`;
 
