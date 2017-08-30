@@ -20,6 +20,7 @@
 const mongoose = require('mongoose');
 const request = require('request-promise-native');
 const cheerio = require('cheerio');
+const {URLSearchParams} = require('url');
 
 
 class Server extends mongoose.Model {
@@ -161,6 +162,26 @@ class Server extends mongoose.Model {
 
     return $('table.dataTable tr td:first-child a').get()
         .map((a) => parseInt($(a).attr('href').split('=')[1]));
+  }
+
+
+  async getNewCitizensLastPage(countryId = 0) {
+    const $ = await request({
+      uri: `${this.address}/newCitizens.html`,
+      transform: (body) => cheerio.load(body),
+      qs: {
+        countryId,
+      },
+    });
+
+
+    const lastPageLink = $('ul#pagination-digg li:nth-last-child(2) a');
+    if (!lastPageLink.length) {
+      throw new Error('Link to last page not found');
+    }
+
+    return parseInt(new URLSearchParams(
+        lastPageLink.attr('href').split('?')[1]).get('page'));
   }
 }
 
