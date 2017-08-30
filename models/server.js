@@ -105,44 +105,30 @@ class Server extends mongoose.Model {
 
 
   async getAttackerBonusRegion(regionId, countries) {
-    const bonusRegions = [];
-    const countriesId = [];
-
-    for (const countryName of countries) {
-      let countryId;
-
-      try {
-        const country = await this.getCountryInfoByName(countryName);
-        countryId = country.id;
-      } catch (error) {
-        countryId = 0;
-      }
-
-      countriesId.push(countryId);
-    }
+    const countriesId = (await Promise.all(countries
+        .map((c) => this.getCountryInfoByName(c))
+        .map((p) => p.catch((e) => ({id: 0})))))
+        .map((c) => c.id);
 
     const region = await this.getRegionInfo(regionId);
+    const bonusRegions = (await Promise.all(region.neighbours
+        .map((n) => this.getRegionStatus(n))))
+        .filter((s) => countriesId.includes(s.occupantId));
 
-    for (const neighbour of region.neighbours) {
-      const status = await this.getRegionStatus(neighbour);
+    const regionWithBattle = bonusRegions.find((s) => s.battle);
+    if (regionWithBattle) {
+      const region = await this.getRegionInfo(regionWithBattle.regionId);
+      const country =
+        countries[countriesId.indexOf(regionWithBattle.occupantId)];
 
-      if (!countriesId.includes(status.occupantId)) {
-        continue;
-      }
-
-      if (status.battle === true) {
-        const region = await this.getRegionInfo(status.regionId);
-        const country = countries[countriesId.indexOf(status.occupantId)];
-        return `${region.name}, ${country}`;
-      }
-
-      bonusRegions.push(status);
+      return `${region.name}, ${country}`;
     }
 
     if (bonusRegions.length) {
       const region = await this.getRegionInfo(bonusRegions[0].regionId);
       const country =
           countries[countriesId.indexOf(bonusRegions[0].occupantId)];
+
       return `${region.name}, ${country}`;
     }
 
