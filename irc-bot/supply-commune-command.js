@@ -17,7 +17,6 @@
  */
 
 
-const cheerio = require('cheerio');
 const numeral = require('numeral');
 
 const ChannelCommand = require('./channel-command');
@@ -73,7 +72,7 @@ class SupplyCommuneCommand extends ChannelCommand {
     const [request] = await organization.createRequest();
     const $ = await request({
       uri: `${country.server.address}/myMilitaryUnit.html`,
-      transform: (body) => cheerio.load(body),
+      ensureSignedIn: true,
     });
 
     const unitLink = $('div#unitStatusHead a').attr('href');
