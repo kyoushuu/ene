@@ -84,7 +84,24 @@ class Organization extends mongoose.Model {
       gzip: true,
     });
 
-    return [req, jar];
+    const wrapper = async (options) => {
+      if (options.ensureSignedIn) {
+        options.transform = (body) => cheerio.load(body);
+        options.ensureSignedIn = undefined;
+
+        const $ = await req(options);
+
+        if ($('a#userName').length) {
+          return $;
+        }
+
+        await this.login();
+      }
+
+      return req(options);
+    };
+
+    return [wrapper, jar];
   }
 
 
