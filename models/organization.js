@@ -177,7 +177,7 @@ class Organization extends mongoose.Model {
 
     const $ = await request({
       uri: `${this.country.server.address}/donateProducts.html`,
-      transform: (body) => cheerio.load(body),
+      ensureSignedIn: true,
       method: 'POST',
       qs: {
         id: citizenId,
@@ -228,7 +228,7 @@ class Organization extends mongoose.Model {
 
     const $ = await request({
       uri: `${this.country.server.address}/militaryUnitStorage.html`,
-      transform: (body) => cheerio.load(body),
+      ensureSignedIn: true,
       method: 'POST',
       form,
     });
@@ -336,7 +336,7 @@ class Organization extends mongoose.Model {
 
     const $ = await request({
       uri: `${this.country.server.address}/militaryUnitStorage.html`,
-      transform: (body) => cheerio.load(body),
+      ensureSignedIn: true,
     });
 
     const inventoryOrg = {};
@@ -392,7 +392,7 @@ class Organization extends mongoose.Model {
       uri: muId ?
         `${this.country.server.address}/militaryUnitCompanies.html` :
         `${this.country.server.address}/companies.html`,
-      transform: (body) => cheerio.load(body),
+      ensureSignedIn: true,
       qs: {
         id: muId,
       },
@@ -420,7 +420,7 @@ class Organization extends mongoose.Model {
 
     const $ = await request({
       uri: `${this.country.server.address}/companyWorkResults.html`,
-      transform: (body) => cheerio.load(body),
+      ensureSignedIn: true,
       qs: {
         id: companyId,
       },
@@ -443,7 +443,7 @@ class Organization extends mongoose.Model {
 
     const $ = await request({
       uri: `${this.country.server.address}/motivateCitizen.html`,
-      transform: (body) => cheerio.load(body),
+      ensureSignedIn: true,
       qs: {
         id: citizenId,
       },
@@ -462,7 +462,7 @@ class Organization extends mongoose.Model {
 
     const $ = await request({
       uri: `${this.country.server.address}/battle.html`,
-      transform: (body) => cheerio.load(body),
+      ensureSignedIn: true,
       qs: {
         id: battleId,
       },
