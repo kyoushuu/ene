@@ -468,77 +468,77 @@ class Organization extends mongoose.Model {
       },
     });
 
-    if ($('div#mainFight div#fightName span').length) {
-      let type = null;
-      let label = null;
-      let id = 0;
-      let frozen = false;
-      let defender = $('div#mainFight div.alliesList').eq(0).clone()
-          .children().remove().end().text().trim();
-      const attacker = $('div#mainFight div.alliesList').eq(1).clone()
-          .children().remove().end().text().trim();
-
-      if ($('div#newFightView div.testDivred').text().trim()
-          .includes('frozen')) {
-        frozen = true;
-      }
-
-      const linkSel =
-        (value) => `div#mainFight div#fightName span a[href*="${value}"]`;
-
-      if ($(linkSel('region')).text().trim() !== '') {
-        label = $(linkSel('region')).text().trim();
-        id = parseInt($(linkSel('region.html')).attr('href').split('=')[1]);
-
-        if (!$('div#mainFight div#fightName span div').text().trim()
-            .includes('Resistance war')) {
-          type = 'direct';
-        } else {
-          type = 'resistance';
-        }
-      } else if ($(linkSel('tournament')).text().trim() !== '') {
-        label = `${$(linkSel('tournament')).text().trim()} ` +
-          `(${defender} vs. ${attacker})`;
-        id = parseInt($(linkSel('tournament')).attr('href').split('=')[1]);
-        type = 'tournament';
-      } else if ($(linkSel('civilWar')).text().trim() !== '') {
-        label = `Civil War (${defender})`;
-        id = parseInt($(linkSel('civilWar')).attr('href').split('=')[1]);
-        type = 'civil';
-        defender = 'Loyalists';
-      } else {
-        label = 'Practice Battle';
-        type = 'practice';
-      }
-
-      const defenderScore = numeral($('#defenderScore').text().trim()).value();
-      const attackerScore = numeral($('#attackerScore').text().trim()).value();
-      const totalScore = defenderScore + attackerScore;
-
-      return {
-        label,
-        type,
-        id,
-        frozen,
-        round: numeral($('div#mainFight > div').eq(2).text().trim()).value(),
-        roundId: parseInt($('input#battleRoundId').attr('value')),
-        totalScore,
-        defender,
-        defenderScore,
-        defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
-        defenderAllies: $('div#mainFight div.alliesPopup').eq(0).text()
-            .trim().split(/\s{2,}/g),
-        attacker,
-        attackerScore,
-        attackerWins: $('div.fightRounds img[src$="red_ball.png"]').length,
-        attackerAllies: $('div#mainFight div.alliesPopup').eq(1).text()
-            .trim().split(/\s{2,}/g),
-      };
-    } else if ($('div.testDivwhite h3').length) {
+    if ($('div.testDivwhite h3').length) {
       throw new Error($('div.testDivwhite h3').text().trim());
-    } else {
+    }
+
+    if (!$('div#mainFight div#fightName span').length) {
       throw new Error('Failed to get battle information');
     }
+
+    let type = null;
+    let label = null;
+    let id = 0;
+    let frozen = false;
+    let defender = $('div#mainFight div.alliesList').eq(0).clone()
+        .children().remove().end().text().trim();
+    const attacker = $('div#mainFight div.alliesList').eq(1).clone()
+        .children().remove().end().text().trim();
+
+    if ($('div#newFightView div.testDivred').text().includes('frozen')) {
+      frozen = true;
+    }
+
+    const linkSel = (v) => `div#mainFight div#fightName span a[href*="${v}"]`;
+
+    if ($(linkSel('region')).text().trim() !== '') {
+      label = $(linkSel('region')).text().trim();
+      id = parseInt($(linkSel('region')).attr('href').split('=')[1]);
+
+      if (!$('div#mainFight div#fightName span div').text()
+          .includes('Resistance war')) {
+        type = 'direct';
+      } else {
+        type = 'resistance';
+      }
+    } else if ($(linkSel('tournament')).text().trim() !== '') {
+      label = `${$(linkSel('tournament')).text().trim()} ` +
+        `(${defender} vs. ${attacker})`;
+      id = parseInt($(linkSel('tournament')).attr('href').split('=')[1]);
+      type = 'tournament';
+    } else if ($(linkSel('civilWar')).text().trim() !== '') {
+      label = `Civil War (${defender})`;
+      id = parseInt($(linkSel('civilWar')).attr('href').split('=')[1]);
+      type = 'civil';
+      defender = 'Loyalists';
+    } else {
+      label = 'Practice Battle';
+      type = 'practice';
+    }
+
+    const defenderScore = numeral($('#defenderScore').text().trim()).value();
+    const attackerScore = numeral($('#attackerScore').text().trim()).value();
+    const totalScore = defenderScore + attackerScore;
+
+    return {
+      label,
+      type,
+      id,
+      frozen,
+      round: numeral($('div#mainFight > div').eq(2).text().trim()).value(),
+      roundId: parseInt($('input#battleRoundId').attr('value')),
+      totalScore,
+      defender,
+      defenderScore,
+      defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
+      defenderAllies: $('div#mainFight div.alliesPopup').eq(0).text()
+          .trim().split(/\s{2,}/g),
+      attacker,
+      attackerScore,
+      attackerWins: $('div.fightRounds img[src$="red_ball.png"]').length,
+      attackerAllies: $('div#mainFight div.alliesPopup').eq(1).text()
+          .trim().split(/\s{2,}/g),
+    };
   }
 
 
