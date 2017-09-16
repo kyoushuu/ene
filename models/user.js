@@ -18,25 +18,16 @@
 
 
 const mongoose = require('mongoose');
-const crypto = require('crypto');
+
+const {hashValue, createRandomHex, createSalt} = require('../utils/crypto');
 
 
-function hash(password, salt) {
-  if (password === '') {
-    return null;
-  }
-
-  return crypto.createHmac('sha512', salt).update(password).digest('base64');
-}
-
-function createConfirmCode() {
-  return crypto.randomBytes(16).toString('hex');
-}
+const createConfirmCode = () => createRandomHex(16);
 
 
 class User extends mongoose.Model {
   isValidPassword(password) {
-    return this.password === hash(password, this.salt);
+    return this.password === hashValue(password, this.salt);
   }
 
 
@@ -65,8 +56,8 @@ mongoose.model(User, {
   password: {
     type: String, required: true,
     set: function(value) {
-      this.salt = crypto.randomBytes(64).toString('base64');
-      return hash(value, this.salt);
+      this.salt = createSalt();
+      return hashValue(value, this.salt);
     },
   },
   salt: {type: String, required: true},

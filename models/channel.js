@@ -18,28 +18,8 @@
 
 
 const mongoose = require('mongoose');
-const crypto = require('crypto');
 
-
-const secret = process.env.SECRET_KEY;
-
-function cipherValue(value) {
-  if (!value) {
-    return null;
-  }
-
-  const cipher = crypto.createCipher('aes-256-cbc', secret);
-  return cipher.update(value, 'binary', 'base64') + cipher.final('base64');
-}
-
-function decipherValue(value) {
-  if (!value) {
-    return null;
-  }
-
-  const decipher = crypto.createDecipher('aes-256-cbc', secret);
-  return decipher.update(value, 'base64', 'binary') + decipher.final('binary');
-}
+const {cipherValue, decipherValue} = require('../utils/crypto');
 
 
 class Channel extends mongoose.Model {
