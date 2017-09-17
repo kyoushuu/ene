@@ -6,11 +6,11 @@
   "author": "Arnel A. Borja <kyoushuu@yahoo.com>",
   "main": "./bin/www",
   "scripts": {
-    "start": "node ./bin/www",
+    "start": "node -r reify ./bin/www",
     "mocha": "mocha",
     "eslint": "eslint . bin/www",
     "test": "npm run eslint && npm run mocha",
-    "debug": "npm run eslint && node --inspect-brk ./bin/www"
+    "debug": "npm run eslint && node -r reify --inspect-brk ./bin/www"
   },
   "engines": {
     "node": ">= 8.0",
@@ -37,6 +37,7 @@
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
     "pug": "^2.0.0-rc.4",
+    "reify": "^0.12.3",
     "request": "^2.51.0",
     "request-promise-native": "^1.0.4",
     "serve-favicon": "^2.1.7",
