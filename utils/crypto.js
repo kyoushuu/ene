@@ -17,42 +17,51 @@
  */
 
 
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 
 const secret = process.env.SECRET_KEY || 'secret';
 
 
-exports.cipherValue = function(value) {
+function cipherValue(value) {
   if (!value) {
     return null;
   }
 
   const cipher = crypto.createCipher('aes-256-cbc', secret);
   return cipher.update(value, 'binary', 'base64') + cipher.final('base64');
-};
+}
 
-exports.decipherValue = function(value) {
+function decipherValue(value) {
   if (!value) {
     return null;
   }
 
   const decipher = crypto.createDecipher('aes-256-cbc', secret);
   return decipher.update(value, 'base64', 'binary') + decipher.final('binary');
-};
+}
 
-exports.hashValue = function(value, salt) {
+function hashValue(value, salt) {
   if (!value) {
     return null;
   }
 
   return crypto.createHmac('sha512', salt).update(value).digest('base64');
-};
+}
 
-exports.createRandomHex = function(bytesLength) {
+function createRandomHex(bytesLength) {
   return crypto.randomBytes(bytesLength).toString('hex');
-};
+}
 
-exports.createSalt = function() {
+function createSalt() {
   return crypto.randomBytes(64).toString('base64');
+}
+
+
+export {
+  cipherValue,
+  decipherValue,
+  hashValue,
+  createRandomHex,
+  createSalt,
 };
