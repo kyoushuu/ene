@@ -36,7 +36,7 @@ describe('Country model', () => {
 
   after(() => mongoose.connection.close());
 
-  afterEach(() => mockgoose.reset());
+  afterEach((done) => mockgoose.reset(done));
 
   let testServer;
 

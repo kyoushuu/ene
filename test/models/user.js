@@ -35,7 +35,7 @@ describe('User model', () => {
 
   after(() => mongoose.connection.close());
 
-  afterEach(() => mockgoose.reset());
+  afterEach((done) => mockgoose.reset(done));
 
   describe('#create', () => {
     it('should create a confirm code', async () => {
