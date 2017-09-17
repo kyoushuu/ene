@@ -17,7 +17,7 @@
  */
 
 
-const ChannelCommand = require('./channel-command');
+import ChannelCommand from './channel-command';
 
 
 class BattleCommand extends ChannelCommand {
@@ -90,4 +90,4 @@ class BattleCommand extends ChannelCommand {
 }
 
 
-module.exports = BattleCommand;
+export default BattleCommand;

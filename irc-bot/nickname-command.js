@@ -17,9 +17,9 @@
  */
 
 
-const Command = require('./command');
+import Command from './command';
 
-const User = require('../models/user');
+import User from '../models/user';
 
 
 class AddNicknameCommand extends Command {
@@ -49,4 +49,6 @@ class AddNicknameCommand extends Command {
 }
 
 
-exports.add = AddNicknameCommand;
+export {
+  AddNicknameCommand as add,
+};

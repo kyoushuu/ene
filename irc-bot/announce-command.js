@@ -17,9 +17,10 @@
  */
 
 
-const {colors: {codes}} = require('irc');
+import {colors} from 'irc';
+const {codes} = colors;
 
-const Command = require('./command');
+import Command from './command';
 
 
 class AnnounceCommand extends Command {
@@ -40,4 +41,4 @@ class AnnounceCommand extends Command {
 }
 
 
-module.exports = AnnounceCommand;
+export default AnnounceCommand;

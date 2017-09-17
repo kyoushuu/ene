@@ -17,7 +17,7 @@
  */
 
 
-const EsimIRCBot = require('./esim-irc-bot');
+import EsimIRCBot from './esim-irc-bot';
 
 
 const bot = new EsimIRCBot(
@@ -37,4 +37,4 @@ if (process.env.FILTER_NICK) {
 }
 
 
-module.exports = bot;
+export default bot;

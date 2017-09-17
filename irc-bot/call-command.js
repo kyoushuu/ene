@@ -17,7 +17,7 @@
  */
 
 
-const ChannelCommand = require('./channel-command');
+import ChannelCommand from './channel-command';
 
 
 class CallCommand extends ChannelCommand {
@@ -43,4 +43,4 @@ class CallCommand extends ChannelCommand {
 }
 
 
-module.exports = CallCommand;
+export default CallCommand;

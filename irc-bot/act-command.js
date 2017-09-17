@@ -17,7 +17,7 @@
  */
 
 
-const Command = require('./command');
+import Command from './command';
 
 
 class ActCommand extends Command {
@@ -36,4 +36,4 @@ class ActCommand extends Command {
 }
 
 
-module.exports = ActCommand;
+export default ActCommand;

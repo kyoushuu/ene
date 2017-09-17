@@ -17,10 +17,10 @@
  */
 
 
-const Command = require('./command');
+import Command from './command';
 
-const Server = require('../models/server');
-const Channel = require('../models/channel');
+import Server from '../models/server';
+import Channel from '../models/channel';
 
 
 class ChannelCommand extends Command {
@@ -141,4 +141,4 @@ class ChannelCommand extends Command {
 }
 
 
-module.exports = ChannelCommand;
+export default ChannelCommand;

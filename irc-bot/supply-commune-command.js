@@ -17,9 +17,9 @@
  */
 
 
-const numeral = require('numeral');
+import numeral from 'numeral';
 
-const ChannelCommand = require('./channel-command');
+import ChannelCommand from './channel-command';
 
 
 class SupplyCommuneCommand extends ChannelCommand {
@@ -182,4 +182,4 @@ class SupplyCommuneCommand extends ChannelCommand {
 }
 
 
-module.exports = SupplyCommuneCommand;
+export default SupplyCommuneCommand;

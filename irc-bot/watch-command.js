@@ -17,10 +17,10 @@
  */
 
 
-const ChannelCommand = require('./channel-command');
+import ChannelCommand from './channel-command';
 
-const Battle = require('../models/battle');
-const Channel = require('../models/channel');
+import Battle from '../models/battle';
+import Channel from '../models/channel';
 
 const watchpoints = {
   full: [
@@ -345,4 +345,4 @@ class WatchCommand extends ChannelCommand {
 }
 
 
-module.exports = WatchCommand;
+export default WatchCommand;

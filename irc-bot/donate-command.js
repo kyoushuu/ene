@@ -17,7 +17,7 @@
  */
 
 
-const ChannelCommand = require('./channel-command');
+import ChannelCommand from './channel-command';
 
 
 class DonateCommand extends ChannelCommand {
@@ -64,4 +64,4 @@ class DonateCommand extends ChannelCommand {
 }
 
 
-module.exports = DonateCommand;
+export default DonateCommand;

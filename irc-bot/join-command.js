@@ -17,7 +17,7 @@
  */
 
 
-const Command = require('./command');
+import Command from './command';
 
 
 class JoinCommand extends Command {
@@ -34,4 +34,4 @@ class JoinCommand extends Command {
 }
 
 
-module.exports = JoinCommand;
+export default JoinCommand;

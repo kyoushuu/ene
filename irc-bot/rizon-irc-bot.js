@@ -17,7 +17,7 @@
  */
 
 
-const IRCBot = require('./irc-bot');
+import IRCBot from './irc-bot';
 
 
 class RizonIRCBot extends IRCBot {
@@ -66,4 +66,4 @@ class RizonIRCBot extends IRCBot {
 }
 
 
-module.exports = RizonIRCBot;
+export default RizonIRCBot;

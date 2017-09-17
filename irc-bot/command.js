@@ -17,9 +17,9 @@
  */
 
 
-const getopt = require('node-getopt');
+import getopt from 'node-getopt';
 
-const User = require('../models/user');
+import User from '../models/user';
 
 
 class Command {
@@ -151,4 +151,4 @@ class Command {
 }
 
 
-module.exports = Command;
+export default Command;

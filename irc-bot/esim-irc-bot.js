@@ -17,28 +17,29 @@
  */
 
 
-const {colors: {codes}} = require('irc');
-const {parse} = require('shell-quote');
-const numeral = require('numeral');
+import {colors} from 'irc';
+const {codes} = colors;
+import {parse} from 'shell-quote';
+import numeral from 'numeral';
 
-const Channel = require('../models/channel');
+import Channel from '../models/channel';
 
-const RizonIRCBot = require('./rizon-irc-bot');
+import RizonIRCBot from './rizon-irc-bot';
 
-const MotivateCommand = require('./motivate-command');
-const DonateCommand = require('./donate-command');
-const SupplyCommand = require('./supply-command');
-const SupplyCommuneCommand = require('./supply-commune-command');
-const BattleCommand = require('./battle-command');
-const WatchCommand = require('./watch-command');
-const CallCommand = require('./call-command');
+import MotivateCommand from './motivate-command';
+import DonateCommand from './donate-command';
+import SupplyCommand from './supply-command';
+import SupplyCommuneCommand from './supply-commune-command';
+import BattleCommand from './battle-command';
+import WatchCommand from './watch-command';
+import CallCommand from './call-command';
 
-const AddNicknameCommand = require('./nickname-command').add;
-const AnnounceCommand = require('./announce-command');
-const JoinCommand = require('./join-command');
-const PartCommand = require('./part-command');
-const SayCommand = require('./say-command');
-const ActCommand = require('./act-command');
+import {add as AddNicknameCommand} from './nickname-command';
+import AnnounceCommand from './announce-command';
+import JoinCommand from './join-command';
+import PartCommand from './part-command';
+import SayCommand from './say-command';
+import ActCommand from './act-command';
 
 
 class EsimIRCBot extends RizonIRCBot {
@@ -244,4 +245,4 @@ class EsimIRCBot extends RizonIRCBot {
 }
 
 
-module.exports = EsimIRCBot;
+export default EsimIRCBot;

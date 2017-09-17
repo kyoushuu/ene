@@ -17,7 +17,7 @@
  */
 
 
-const irc = require('irc');
+import irc from 'irc';
 
 
 class IRCBot extends irc.Client {
@@ -96,4 +96,4 @@ class IRCBot extends irc.Client {
 }
 
 
-module.exports = IRCBot;
+export default IRCBot;

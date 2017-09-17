@@ -17,11 +17,11 @@
  */
 
 
-const cron = require('cron');
+import cron from 'cron';
 
-const ChannelCommand = require('./channel-command');
+import ChannelCommand from './channel-command';
 
-const MotivatedCitizen = require('../models/motivated-citizen');
+import MotivatedCitizen from '../models/motivated-citizen';
 
 const motivateLock = {};
 const motivateDate = {};
@@ -216,7 +216,7 @@ class MotivateCommand extends ChannelCommand {
 }
 
 
-module.exports = MotivateCommand;
+export default MotivateCommand;
 
 
 const cleanJob = new cron.CronJob('00 00 00 * * *', () => {
