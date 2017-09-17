@@ -17,31 +17,34 @@
  */
 
 
-const express = require('express');
-const path = require('path');
-const favicon = require('serve-favicon');
-const logger = require('morgan');
-const cookieParser = require('cookie-parser');
-const session = require('express-session');
-const bodyParser = require('body-parser');
+import express from 'express';
+import path from 'path';
+import favicon from 'serve-favicon';
+import logger from 'morgan';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import bodyParser from 'body-parser';
 
-const MongoStore = require('connect-mongo')(session);
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const flash = require('connect-flash');
+import mongo from 'connect-mongo';
+import passport from 'passport';
+import {Strategy as LocalStrategy} from 'passport-local';
+import flash from 'connect-flash';
+import less from 'less-middleware';
 
-const db = require('./models/db');
-const User = require('./models/user');
+import db from './models/db';
+import User from './models/user';
 
-const routes = require('./routes/index');
-const user = require('./routes/user');
-const server = require('./routes/server');
-const country = require('./routes/country');
-const organization = require('./routes/organization');
-const channel = require('./routes/channel');
-const api = require('./routes/api');
+import routes from './routes/index';
+import user from './routes/user';
+import server from './routes/server';
+import country from './routes/country';
+import organization from './routes/organization';
+import channel from './routes/channel';
+import api from './routes/api';
 
 const secret = process.env.SECRET_KEY || 'secret';
+
+const MongoStore = mongo(session);
 
 
 passport.use(new LocalStrategy((username, password, done) => {
@@ -93,7 +96,7 @@ app.use(session({
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(require('less-middleware')(path.join(__dirname, 'public')));
+app.use(less(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
@@ -136,4 +139,4 @@ app.use((err, req, res, next) => {
 });
 
 
-module.exports = app;
+export default app;
