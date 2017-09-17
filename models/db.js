@@ -17,7 +17,7 @@
  */
 
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const dburl = process.env.DB_URL || 'mongodb://localhost/';
 const dbname = process.env.DB_NAME || 'ene';
@@ -27,5 +27,7 @@ mongoose.connect(dburl + dbname, {
   useMongoClient: true,
 });
 
-exports.url = dburl;
-exports.name = dbname;
+export {
+  dburl as url,
+  dbname as name,
+};

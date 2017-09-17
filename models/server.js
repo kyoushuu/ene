@@ -17,10 +17,10 @@
  */
 
 
-const mongoose = require('mongoose');
-const request = require('request-promise-native');
-const cheerio = require('cheerio');
-const {URLSearchParams} = require('url');
+import mongoose from 'mongoose';
+import request from 'request-promise-native';
+import cheerio from 'cheerio';
+import {URLSearchParams} from 'url';
 
 
 class Server extends mongoose.Model {
@@ -210,4 +210,4 @@ mongoose.model(Server, {
 });
 
 
-module.exports = Server;
+export default Server;

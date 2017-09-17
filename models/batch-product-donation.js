@@ -17,7 +17,7 @@
  */
 
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 
 class BatchProductDonation extends mongoose.Model {
@@ -34,4 +34,4 @@ mongoose.model(BatchProductDonation, {
 });
 
 
-module.exports = BatchProductDonation;
+export default BatchProductDonation;

@@ -17,9 +17,9 @@
  */
 
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-const {hashValue, createRandomHex, createSalt} = require('../utils/crypto');
+import {hashValue, createRandomHex, createSalt} from '../utils/crypto';
 
 
 const createConfirmCode = () => createRandomHex(16);
@@ -106,4 +106,4 @@ mongoose.model(User, {
 });
 
 
-module.exports = User;
+export default User;

@@ -17,18 +17,18 @@
  */
 
 
-const mongoose = require('mongoose');
-const request = require('request-promise-native');
-const cheerio = require('cheerio');
-const numeral = require('numeral');
-const moment = require('moment-timezone');
+import mongoose from 'mongoose';
+import request from 'request-promise-native';
+import cheerio from 'cheerio';
+import numeral from 'numeral';
+import moment from 'moment-timezone';
 
-const {cipherValue, decipherValue} = require('../utils/crypto');
+import {cipherValue, decipherValue} from '../utils/crypto';
 
-const Server = require('./server');
-const Country = require('./country');
-const ProductDonation = require('./product-donation');
-const BatchProductDonation = require('./batch-product-donation');
+import Server from './server';
+import Country from './country';
+import ProductDonation from './product-donation';
+import BatchProductDonation from './batch-product-donation';
 
 
 class Organization extends mongoose.Model {
@@ -613,4 +613,4 @@ mongoose.model(Organization, {
 });
 
 
-module.exports = Organization;
+export default Organization;

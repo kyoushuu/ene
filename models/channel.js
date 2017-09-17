@@ -17,9 +17,9 @@
  */
 
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-const {cipherValue, decipherValue} = require('../utils/crypto');
+import {cipherValue, decipherValue} from '../utils/crypto';
 
 
 class Channel extends mongoose.Model {
@@ -46,4 +46,4 @@ mongoose.model(Channel, {
 });
 
 
-module.exports = Channel;
+export default Channel;

@@ -17,8 +17,8 @@
  */
 
 
-const mongoose = require('mongoose');
-const moment = require('moment-timezone');
+import mongoose from 'mongoose';
+import moment from 'moment-timezone';
 
 
 class Country extends mongoose.Model {
@@ -102,4 +102,4 @@ mongoose.model(Country, {
 });
 
 
-module.exports = Country;
+export default Country;

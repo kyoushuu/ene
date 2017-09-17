@@ -17,7 +17,7 @@
  */
 
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 
 class MotivatedCitizen extends mongoose.Model {
@@ -33,4 +33,4 @@ mongoose.model(MotivatedCitizen, {
 });
 
 
-module.exports = MotivatedCitizen;
+export default MotivatedCitizen;
