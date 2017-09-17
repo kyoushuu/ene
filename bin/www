@@ -18,11 +18,12 @@
  */
 
 
-const debug = require('debug')('ene');
-const mongoose = require('mongoose');
+import _debug from 'debug';
+const debug = _debug('ene');
+import mongoose from 'mongoose';
 
-const app = require('../app');
-const bot = require('../irc-bot/bot');
+import app from '../app';
+import bot from '../irc-bot/bot';
 
 
 mongoose.connection.on('connected', () => {
