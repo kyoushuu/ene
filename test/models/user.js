@@ -37,7 +37,7 @@ describe('User model', () => {
 
   afterEach(() => mockgoose.reset());
 
-  describe('create', () => {
+  describe('#create', () => {
     it('should create a confirm code', async () => {
       const user = await User.create({
         username: 'test',
@@ -196,7 +196,7 @@ describe('User model', () => {
     });
   });
 
-  describe('setPassword', () => {
+  describe('#setPassword', () => {
     it('should change the password', async () => {
       const user = await User.create({
         username: 'test',
@@ -256,7 +256,7 @@ describe('User model', () => {
     });
   });
 
-  describe('isValidPassword', () => {
+  describe('#isValidPassword', () => {
     it('should return true if the password is the same', async () => {
       const user = await User.create({
         username: 'test',
@@ -280,7 +280,7 @@ describe('User model', () => {
     });
   });
 
-  describe('recover', () => {
+  describe('#recover', () => {
     let user;
 
     before(async () => {

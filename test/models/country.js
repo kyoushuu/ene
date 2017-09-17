@@ -47,7 +47,7 @@ describe('Country model', () => {
     });
   });
 
-  describe('create', () => {
+  describe('#create', () => {
     it('should fail if the server is undefined', () => {
       return Country.create({
         name: 'Philippines',
@@ -203,7 +203,7 @@ describe('Country model', () => {
     });
   });
 
-  describe('getUserAccessLevel', () => {
+  describe('#getUserAccessLevel', () => {
     let testCountry;
     let testUser1;
     let testUser2;

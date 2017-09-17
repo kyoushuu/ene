@@ -53,7 +53,7 @@ describe('Organization model', () => {
     });
   });
 
-  describe('create', () => {
+  describe('#create', () => {
     it('should fail if the country is undefined', () => {
       return Organization.create({
         username: 'Armed Forces of the Philippines',

@@ -38,7 +38,7 @@ describe('Server model', () => {
 
   afterEach(() => mockgoose.reset());
 
-  describe('create', () => {
+  describe('#create', () => {
     it('should fail if the name is empty', () => {
       return Server.create({
         name: '',
@@ -120,7 +120,7 @@ describe('Server model', () => {
     });
   });
 
-  describe('getCountryInfoByName', () => {
+  describe('#getCountryInfoByName', () => {
     let testServer;
 
     before(async () => {
@@ -169,7 +169,7 @@ describe('Server model', () => {
     });
   });
 
-  describe('getRegionInfo', () => {
+  describe('#getRegionInfo', () => {
     let testServer;
 
     before(async () => {
@@ -217,7 +217,7 @@ describe('Server model', () => {
     });
   });
 
-  describe('getRegionStatus', () => {
+  describe('#getRegionStatus', () => {
     let testServer;
 
     before(async () => {
@@ -275,7 +275,7 @@ describe('Server model', () => {
     });
   });
 
-  describe('getAttackerBonusRegion', () => {
+  describe('#getAttackerBonusRegion', () => {
     let testServer;
 
     before(async () => {
