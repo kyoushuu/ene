@@ -17,12 +17,13 @@
  */
 
 
-const mongoose = require('mongoose');
-const mockgoose = require('mockgoose');
+import mongoose from 'mongoose';
+import mockgoose from 'mockgoose';
 
-const Organization = require('../../models/organization');
-const Country = require('../../models/country');
-const Server = require('../../models/server');
+import Organization from '../../models/organization';
+import Country from '../../models/country';
+import Server from '../../models/server';
+
 
 describe('Organization model', () => {
   before(async () => {

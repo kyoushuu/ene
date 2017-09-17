@@ -17,12 +17,13 @@
  */
 
 
-const mongoose = require('mongoose');
-const mockgoose = require('mockgoose');
+import mongoose from 'mongoose';
+import mockgoose from 'mockgoose';
 
-const Country = require('../../models/country');
-const Server = require('../../models/server');
-const User = require('../../models/user');
+import Country from '../../models/country';
+import Server from '../../models/server';
+import User from '../../models/user';
+
 
 describe('Country model', () => {
   before(async () => {

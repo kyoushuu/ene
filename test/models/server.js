@@ -17,12 +17,13 @@
  */
 
 
-const should = require('should');
-const mongoose = require('mongoose');
-const mockgoose = require('mockgoose');
-const nock = require('nock');
+import should from 'should';
+import mongoose from 'mongoose';
+import mockgoose from 'mockgoose';
+import nock from 'nock';
 
-const Server = require('../../models/server');
+import Server from '../../models/server';
+
 
 describe('Server model', () => {
   before(async () => {

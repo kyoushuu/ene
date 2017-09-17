@@ -17,11 +17,12 @@
  */
 
 
-const should = require('should');
-const mongoose = require('mongoose');
-const mockgoose = require('mockgoose');
+import should from 'should';
+import mongoose from 'mongoose';
+import mockgoose from 'mockgoose';
 
-const User = require('../../models/user');
+import User from '../../models/user';
+
 
 describe('User model', () => {
   before(async () => {
