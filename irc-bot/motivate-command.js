@@ -224,7 +224,7 @@ const cleanJob = new cron.CronJob('00 00 00 * * *', () => {
     if (!error) {
       console.log('Successfully cleared cache with a cron job.');
     } else {
-      console.log(`Failed to clear cache with a cron job: ${error}`);
+      console.log(`Failed to clear cache with a cron job: ${error.message}`);
     }
   });
 }, () => {
