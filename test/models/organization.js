@@ -29,7 +29,7 @@ describe('Organization model', () => {
   before(async () => {
     mongoose.Promise = global.Promise;
     await mockgoose(mongoose);
-    return mongoose.connect('mongodb://localhost/TestingDB', {
+    await mongoose.connect('mongodb://localhost/TestingDB', {
       useMongoClient: true,
     });
   });
@@ -54,8 +54,8 @@ describe('Organization model', () => {
   });
 
   describe('#create', () => {
-    it('should fail if the country is undefined', () => {
-      return Organization.create({
+    it('should fail if the country is undefined', async () => {
+      await Organization.create({
         username: 'Armed Forces of the Philippines',
         password: 'testpass',
         shortname: 'afp',
@@ -69,8 +69,8 @@ describe('Organization model', () => {
       });
     });
 
-    it('should fail if the username is empty', () => {
-      return Organization.create({
+    it('should fail if the username is empty', async () => {
+      await Organization.create({
         country: testCountry,
         username: '',
         password: 'testpass',
@@ -85,8 +85,8 @@ describe('Organization model', () => {
       });
     });
 
-    it('should fail if the password is empty', () => {
-      return Organization.create({
+    it('should fail if the password is empty', async () => {
+      await Organization.create({
         country: testCountry,
         username: 'Armed Forces of the Philippines',
         password: '',
@@ -115,7 +115,7 @@ describe('Organization model', () => {
         shortname: 'afp',
       });
 
-      return Organization.create({
+      await Organization.create({
         country: country,
         username: 'Armed Forces of the Philippines',
         password: 'testpass',
@@ -131,7 +131,7 @@ describe('Organization model', () => {
         shortname: 'afp',
       });
 
-      return Organization.create({
+      await Organization.create({
         country: testCountry,
         username: 'Armed Forces of the Philippines',
         password: 'testpass',
@@ -146,8 +146,8 @@ describe('Organization model', () => {
       });
     });
 
-    it('should fail if the shortname is empty', () => {
-      return Organization.create({
+    it('should fail if the shortname is empty', async () => {
+      await Organization.create({
         country: testCountry,
         username: 'Armed Forces of the Philippines',
         password: 'testpass',
@@ -162,8 +162,8 @@ describe('Organization model', () => {
       });
     });
 
-    it('should fail if the shortname is too long', () => {
-      return Organization.create({
+    it('should fail if the shortname is too long', async () => {
+      await Organization.create({
         country: testCountry,
         username: 'Armed Forces of the Philippines',
         password: 'testpass',
@@ -178,8 +178,8 @@ describe('Organization model', () => {
       });
     });
 
-    it('should fail if the shortname is too short', () => {
-      return Organization.create({
+    it('should fail if the shortname is too short', async () => {
+      await Organization.create({
         country: testCountry,
         username: 'Armed Forces of the Philippines',
         password: 'testpass',
@@ -208,7 +208,7 @@ describe('Organization model', () => {
         shortname: 'afp',
       });
 
-      return Organization.create({
+      await Organization.create({
         country: country,
         username: 'Sandatahang Lakas ng Pilipinas',
         password: 'testpass',
@@ -224,7 +224,7 @@ describe('Organization model', () => {
         shortname: 'afp',
       });
 
-      return Organization.create({
+      await Organization.create({
         country: testCountry,
         username: 'Sandatahang Lakas ng Pilipinas',
         password: 'testpass',

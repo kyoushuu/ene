@@ -28,7 +28,7 @@ describe('User model', () => {
   before(async () => {
     mongoose.Promise = global.Promise;
     await mockgoose(mongoose);
-    return mongoose.connect('mongodb://localhost/TestingDB', {
+    await mongoose.connect('mongodb://localhost/TestingDB', {
       useMongoClient: true,
     });
   });
@@ -49,8 +49,8 @@ describe('User model', () => {
           'Confirm code is empty');
     });
 
-    it('should fail if the username is empty', () => {
-      return User.create({
+    it('should fail if the username is empty', async () => {
+      await User.create({
         username: '',
         password: 'secret',
         email: 'test@example.com',
@@ -71,7 +71,7 @@ describe('User model', () => {
         email: 'test@example.com',
       });
 
-      return User.create({
+      await User.create({
         username: 'test',
         password: 'secret',
         email: 'test2@example.com',
@@ -85,8 +85,8 @@ describe('User model', () => {
       });
     });
 
-    it('should fail if the password is empty', () => {
-      return User.create({
+    it('should fail if the password is empty', async () => {
+      await User.create({
         username: 'test',
         password: '',
         email: 'test@example.com',
@@ -100,8 +100,8 @@ describe('User model', () => {
       });
     });
 
-    it('should fail if the e-mail is empty', () => {
-      return User.create({
+    it('should fail if the e-mail is empty', async () => {
+      await User.create({
         username: 'test',
         password: 'secret',
         email: '',
@@ -122,7 +122,7 @@ describe('User model', () => {
         email: 'test@example.com',
       });
 
-      return User.create({
+      await User.create({
         username: 'test2',
         password: 'secret',
         email: 'test@example.com',
@@ -143,7 +143,7 @@ describe('User model', () => {
         email: 'test@example.com',
       });
 
-      return User.create({
+      await User.create({
         username: 'test2',
         password: 'secret',
         email: 'Test@example.com',
@@ -157,8 +157,8 @@ describe('User model', () => {
       });
     });
 
-    it('should fail if the e-mail is invalid', () => {
-      return User.create({
+    it('should fail if the e-mail is invalid', async () => {
+      await User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example',
@@ -180,7 +180,7 @@ describe('User model', () => {
         nicknames: ['nick1', 'nick2'],
       });
 
-      return User.create({
+      await User.create({
         username: 'test2',
         password: 'secret',
         email: 'test2@example.com',
@@ -229,7 +229,7 @@ describe('User model', () => {
     });
 
     it('should fail if the password is empty', async () => {
-      let user = await User.create({
+      const user = await User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
@@ -238,7 +238,7 @@ describe('User model', () => {
 
       user.password = '';
 
-      user.save().should.be.rejectedWith({
+      await user.save().should.be.rejectedWith({
         errors: {
           password: {
             name: 'ValidatorError',
@@ -247,10 +247,10 @@ describe('User model', () => {
         },
       });
 
-      user = await User.findOne({
+      const user2 = await User.findOne({
         username: 'test',
       });
-      user.isValidPassword('secret').should.be.equal(
+      user2.isValidPassword('secret').should.be.equal(
           true,
           'Current password is not the old password');
     });

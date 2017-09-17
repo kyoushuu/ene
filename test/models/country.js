@@ -29,7 +29,7 @@ describe('Country model', () => {
   before(async () => {
     mongoose.Promise = global.Promise;
     await mockgoose(mongoose);
-    return mongoose.connect('mongodb://localhost/TestingDB', {
+    await mongoose.connect('mongodb://localhost/TestingDB', {
       useMongoClient: true,
     });
   });
@@ -48,8 +48,8 @@ describe('Country model', () => {
   });
 
   describe('#create', () => {
-    it('should fail if the server is undefined', () => {
-      return Country.create({
+    it('should fail if the server is undefined', async () => {
+      await Country.create({
         name: 'Philippines',
         shortname: 'ph',
       }).should.be.rejectedWith({
@@ -62,8 +62,8 @@ describe('Country model', () => {
       });
     });
 
-    it('should fail if the name is empty', () => {
-      return Country.create({
+    it('should fail if the name is empty', async () => {
+      await Country.create({
         server: testServer,
         name: '',
         shortname: 'ph',
@@ -89,7 +89,7 @@ describe('Country model', () => {
         shortname: 'ph',
       });
 
-      return Country.create({
+      await Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'my',
@@ -103,7 +103,7 @@ describe('Country model', () => {
         shortname: 'ph',
       });
 
-      return Country.create({
+      await Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'my',
@@ -117,8 +117,8 @@ describe('Country model', () => {
       });
     });
 
-    it('should fail if the shortname is empty', () => {
-      return Country.create({
+    it('should fail if the shortname is empty', async () => {
+      await Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: '',
@@ -132,8 +132,8 @@ describe('Country model', () => {
       });
     });
 
-    it('should fail if the shortname is too long', () => {
-      return Country.create({
+    it('should fail if the shortname is too long', async () => {
+      await Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'php',
@@ -147,8 +147,8 @@ describe('Country model', () => {
       });
     });
 
-    it('should fail if the shortname is too short', () => {
-      return Country.create({
+    it('should fail if the shortname is too short', async () => {
+      await Country.create({
         server: testServer,
         name: 'Philippines',
         shortname: 'p',
@@ -174,7 +174,7 @@ describe('Country model', () => {
         shortname: 'ph',
       });
 
-      return Country.create({
+      await Country.create({
         server: testServer,
         name: 'Pilipinas',
         shortname: 'ph',
@@ -188,7 +188,7 @@ describe('Country model', () => {
         shortname: 'ph',
       });
 
-      return Country.create({
+      await Country.create({
         server: testServer,
         name: 'Pilipinas',
         shortname: 'ph',

@@ -29,7 +29,7 @@ describe('Server model', () => {
   before(async () => {
     mongoose.Promise = global.Promise;
     await mockgoose(mongoose);
-    return mongoose.connect('mongodb://localhost/TestingDB', {
+    await mongoose.connect('mongodb://localhost/TestingDB', {
       useMongoClient: true,
     });
   });
@@ -39,8 +39,8 @@ describe('Server model', () => {
   afterEach((done) => mockgoose.reset(done));
 
   describe('#create', () => {
-    it('should fail if the name is empty', () => {
-      return Server.create({
+    it('should fail if the name is empty', async () => {
+      await Server.create({
         name: '',
         shortname: 'p',
       }).should.be.rejectedWith({
@@ -59,7 +59,7 @@ describe('Server model', () => {
         shortname: 'a',
       });
 
-      return Server.create({
+      await Server.create({
         name: 'test',
         shortname: 'b',
       }).should.be.rejectedWith({
@@ -72,8 +72,8 @@ describe('Server model', () => {
       });
     });
 
-    it('should fail if the shortname is empty', () => {
-      return Server.create({
+    it('should fail if the shortname is empty', async () => {
+      await Server.create({
         name: 'test',
         shortname: '',
       }).should.be.rejectedWith({
@@ -86,8 +86,8 @@ describe('Server model', () => {
       });
     });
 
-    it('should fail if the shortname is too long', () => {
-      return Server.create({
+    it('should fail if the shortname is too long', async () => {
+      await Server.create({
         name: 'test',
         shortname: 'ab',
       }).should.be.rejectedWith({
@@ -106,7 +106,7 @@ describe('Server model', () => {
         shortname: 'a',
       });
 
-      return Server.create({
+      await Server.create({
         name: 'test2',
         shortname: 'a',
       }).should.be.rejectedWith({
@@ -141,8 +141,8 @@ describe('Server model', () => {
       );
     });
 
-    it('should fail if the country does not exists', () => {
-      testServer.getCountryInfoByName('Mali')
+    it('should fail if the country does not exists', async () => {
+      await testServer.getCountryInfoByName('Mali')
           .should.be.rejectedWith('Country not found');
     });
 
