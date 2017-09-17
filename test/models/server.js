@@ -190,8 +190,9 @@ describe('Server model', () => {
       );
     });
 
-    it('should fail if the region does not exists', () => {
-      testServer.getRegionInfo(1000).should.be.rejectedWith('Region not found');
+    it('should fail if the region does not exists', async () => {
+      await testServer.getRegionInfo(1000)
+          .should.be.rejectedWith('Region not found');
     });
 
     it('should work if the region exists', async () => {
@@ -238,8 +239,8 @@ describe('Server model', () => {
       );
     });
 
-    it('should fail if the region does not exists', () => {
-      testServer.getRegionStatus(1000)
+    it('should fail if the region does not exists', async () => {
+      await testServer.getRegionStatus(1000)
           .should.be.rejectedWith('Region not found');
     });
 
@@ -308,8 +309,8 @@ describe('Server model', () => {
       );
     });
 
-    it('should fail if the region does not exists', () => {
-      testServer.getAttackerBonusRegion(1000, [
+    it('should fail if the region does not exists', async () => {
+      await testServer.getAttackerBonusRegion(1000, [
         'Philippines',
       ]).should.be.rejectedWith('Region not found');
     });
