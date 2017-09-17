@@ -302,7 +302,7 @@ describe('Server model', () => {
       ).get(
           '/apiMap.html'
       ).times(
-          3
+          4
       ).replyWithFile(
           200,
           `${__dirname}/data/apiMap.html`
@@ -313,6 +313,12 @@ describe('Server model', () => {
       await testServer.getAttackerBonusRegion(1000, [
         'Philippines',
       ]).should.be.rejectedWith('Region not found');
+    });
+
+    it('should not fail if a country is invalid', async () => {
+      await testServer.getAttackerBonusRegion(121, [
+        'Philippines', 'no allies',
+      ]);
     });
 
     it('should fail if no neighbour region occuppied by ally', async () => {
