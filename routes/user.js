@@ -17,15 +17,15 @@
  */
 
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const nodemailer = require('nodemailer');
-const passport = require('passport');
+import nodemailer from 'nodemailer';
+import passport from 'passport';
 
-const {ensureSignedIn, asyncWrap} = require('./common');
+import {ensureSignedIn, asyncWrap} from './common';
 
-const User = require('../models/user');
-const Server = require('../models/server');
+import User from '../models/user';
+import Server from '../models/server';
 
 
 async function sendEmail(user, subject, body) {
@@ -305,4 +305,4 @@ router.get('/signout', (req, res) => {
 });
 
 
-module.exports = router;
+export default router;

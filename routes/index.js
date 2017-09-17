@@ -17,12 +17,12 @@
  */
 
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const {asyncWrap} = require('./common');
+import {asyncWrap} from './common';
 
-const Country = require('../models/country');
+import Country from '../models/country';
 
 /* GET home page. */
 router.get('/', asyncWrap(async (req, res) => {
@@ -42,4 +42,4 @@ router.get('/', asyncWrap(async (req, res) => {
   });
 }));
 
-module.exports = router;
+export default router;

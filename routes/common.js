@@ -32,5 +32,8 @@ function asyncWrap(fn) {
   };
 }
 
-exports.ensureSignedIn = ensureSignedIn;
-exports.asyncWrap = asyncWrap;
+
+export {
+  ensureSignedIn,
+  asyncWrap,
+};

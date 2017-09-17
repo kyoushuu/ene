@@ -17,14 +17,14 @@
  */
 
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const {ensureSignedIn, asyncWrap} = require('./common');
+import {ensureSignedIn, asyncWrap} from './common';
 
-const Organization = require('../models/organization');
-const Country = require('../models/country');
-const Server = require('../models/server');
+import Organization from '../models/organization';
+import Country from '../models/country';
+import Server from '../models/server';
 
 
 router.route('/new').get(ensureSignedIn, asyncWrap(async (req, res) => {
@@ -175,4 +175,4 @@ router.route('/edit/:organizationId').get(ensureSignedIn, asyncWrap(async (req, 
 }));
 
 
-module.exports = router;
+export default router;

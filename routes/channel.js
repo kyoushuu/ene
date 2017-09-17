@@ -17,12 +17,12 @@
  */
 
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const {ensureSignedIn, asyncWrap} = require('./common');
+import {ensureSignedIn, asyncWrap} from './common';
 
-const Channel = require('../models/channel');
+import Channel from '../models/channel';
 
 
 router.route('/new').get(ensureSignedIn, (req, res) => {
@@ -73,4 +73,4 @@ router.get('/:channelId', ensureSignedIn, asyncWrap(async (req, res) => {
 }));
 
 
-module.exports = router;
+export default router;

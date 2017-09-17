@@ -17,12 +17,12 @@
  */
 
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const {ensureSignedIn, asyncWrap} = require('./common');
+import {ensureSignedIn, asyncWrap} from './common';
 
-const Server = require('../models/server');
+import Server from '../models/server';
 
 
 router.route('/new').get(ensureSignedIn, (req, res) => {
@@ -121,4 +121,4 @@ router.route('/edit/:serverId').get(ensureSignedIn, asyncWrap(async (req, res) =
 }));
 
 
-module.exports = router;
+export default router;

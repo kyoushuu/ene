@@ -17,15 +17,15 @@
  */
 
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const {ensureSignedIn, asyncWrap} = require('./common');
+import {ensureSignedIn, asyncWrap} from './common';
 
-const Server = require('../models/server');
-const Country = require('../models/country');
-const User = require('../models/user');
-const Channel = require('../models/channel');
+import Server from '../models/server';
+import Country from '../models/country';
+import User from '../models/user';
+import Channel from '../models/channel';
 
 
 router.route('/new').get(ensureSignedIn, asyncWrap(async (req, res) => {
@@ -423,4 +423,4 @@ router.get('/:countryId/channel/remove/:channelId', ensureSignedIn, asyncWrap(as
 }));
 
 
-module.exports = router;
+export default router;

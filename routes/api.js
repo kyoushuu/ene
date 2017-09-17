@@ -17,13 +17,13 @@
  */
 
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const {asyncWrap} = require('./common');
+import {asyncWrap} from './common';
 
-const Server = require('../models/server');
-const Organization = require('../models/organization');
+import Server from '../models/server';
+import Organization from '../models/organization';
 
 
 router.get('/:server/battle/:battleId', asyncWrap(async (req, res) => {
@@ -93,4 +93,4 @@ router.get('/:server/battle/:battleId', asyncWrap(async (req, res) => {
 }));
 
 
-module.exports = router;
+export default router;
