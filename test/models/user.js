@@ -281,17 +281,13 @@ describe('User model', () => {
   });
 
   describe('#recover', () => {
-    let user;
-
-    before(async () => {
-      user = await User.create({
+    it('should create a recovery code', async () => {
+      const user = await User.create({
         username: 'test',
         password: 'secret',
         email: 'test@example.com',
       });
-    });
 
-    it('should create a recovery code', async () => {
       should.not.exist(user.recoverCode, 'Recover code exists');
       await user.recover();
       user.recoverCode.should.not.be.empty().and.have.lengthOf(
