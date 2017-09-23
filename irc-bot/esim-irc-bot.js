@@ -173,10 +173,10 @@ class EsimIRCBot extends RizonIRCBot {
 
     if (battleInfo.type === 'resistance' ||
         battleInfo.type === 'direct' && battle.side === 'defender') {
-      bonusRegion = `${battleInfo.label}, ${battleInfo.defender}`;
+      bonusRegion = `${battleInfo.label}, ${battleInfo.defender.name}`;
     } else if (battleInfo.type === 'direct' && battle.side === 'attacker') {
-      const allies = battleInfo.attackerAllies.slice();
-      allies.unshift(battleInfo.attacker);
+      const allies = battleInfo.attacker.allies.slice();
+      allies.unshift(battleInfo.attacker.name);
 
       bonusRegion = await server.getAttackerBonusRegion(battleInfo.id, allies);
     }
@@ -210,15 +210,15 @@ class EsimIRCBot extends RizonIRCBot {
     const winning = percentage > 0.5;
     const status = winning ? 'Winning' : 'Losing';
 
-    const {round, defender, defenderWins, attacker, attackerWins} = battleInfo;
+    const {round, defender, attacker} = battleInfo;
 
     const urlSection = `${server.address}/battle.html?id=${battle.battleId}`;
     const summarySection =
         `${ul}${bold}${battleInfo.label}${reset} ` +
-        `(${defenderSide ? defender : attacker}) - ` +
+        `(${defenderSide ? defender.name : attacker.name}) - ` +
         `${bold}R${round}${reset} ` +
-        `(${defenderSide ? dg : dr}${bold}${defenderWins}${reset}:` +
-        `${defenderSide ? dr : dg}${bold}${attackerWins}${reset})`;
+        `(${defenderSide ? dg : dr}${bold}${defender.wins}${reset}:` +
+        `${defenderSide ? dr : dg}${bold}${attacker.wins}${reset})`;
     const bonusSection =
         bonusRegion ? `${bold}Bonus: ${reset}${bonusRegion}` : null;
     const percentSection =

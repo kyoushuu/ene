@@ -80,8 +80,8 @@ router.get('/:server/battle/:battleId', asyncWrap(async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({
       'type': battleInfo.type,
-      'defender': battleInfo.defender,
-      'attacker': battleInfo.attacker,
+      'defender': battleInfo.defender.name,
+      'attacker': battleInfo.attacker.name,
       'label': battleInfo.label,
       'typeId': battleInfo.id,
     }));

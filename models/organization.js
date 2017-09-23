@@ -460,10 +460,6 @@ class Organization extends mongoose.Model {
     let label = null;
     let id = 0;
     let frozen = false;
-    let defender = $('div#mainFight div.alliesList').eq(0).clone()
-        .children().remove().end().text().trim();
-    const attacker = $('div#mainFight div.alliesList').eq(1).clone()
-        .children().remove().end().text().trim();
 
     const defenderScore = numeral($('#defenderScore').text().trim()).value();
     const attackerScore = numeral($('#attackerScore').text().trim()).value();
@@ -473,6 +469,23 @@ class Organization extends mongoose.Model {
       defender: defenderScore,
       attacker: attackerScore,
       total: totalScore,
+    };
+
+    const defender = {
+      name: $('div#mainFight div.alliesList').eq(0).clone()
+          .children().remove().end().text().trim(),
+      score: defenderScore,
+      wins: $('div.fightRounds img[src$="blue_ball.png"]').length,
+      allies: $('div#mainFight div.alliesPopup').eq(0).text()
+          .trim().split(/\s{2,}/g),
+    };
+    const attacker = {
+      name: $('div#mainFight div.alliesList').eq(1).clone()
+          .children().remove().end().text().trim(),
+      score: attackerScore,
+      wins: $('div.fightRounds img[src$="red_ball.png"]').length,
+      allies: $('div#mainFight div.alliesPopup').eq(1).text()
+          .trim().split(/\s{2,}/g),
     };
 
     if ($('div#newFightView div.testDivred').text().includes('frozen')) {
@@ -493,14 +506,14 @@ class Organization extends mongoose.Model {
       }
     } else if ($(linkSel('tournament')).text().trim() !== '') {
       label = `${$(linkSel('tournament')).text().trim()} ` +
-        `(${defender} vs. ${attacker})`;
+        `(${defender.name} vs. ${attacker.name})`;
       id = parseInt($(linkSel('tournament')).attr('href').split('=')[1]);
       type = 'tournament';
     } else if ($(linkSel('civilWar')).text().trim() !== '') {
-      label = `Civil War (${defender})`;
+      label = `Civil War (${defender.name})`;
       id = parseInt($(linkSel('civilWar')).attr('href').split('=')[1]);
       type = 'civil';
-      defender = 'Loyalists';
+      defender.name = 'Loyalists';
     } else {
       label = 'Practice Battle';
       type = 'practice';
@@ -515,13 +528,7 @@ class Organization extends mongoose.Model {
       roundId: parseInt($('input#battleRoundId').attr('value')),
       scores,
       defender,
-      defenderWins: $('div.fightRounds img[src$="blue_ball.png"]').length,
-      defenderAllies: $('div#mainFight div.alliesPopup').eq(0).text()
-          .trim().split(/\s{2,}/g),
       attacker,
-      attackerWins: $('div.fightRounds img[src$="red_ball.png"]').length,
-      attackerAllies: $('div#mainFight div.alliesPopup').eq(1).text()
-          .trim().split(/\s{2,}/g),
     };
   }
 

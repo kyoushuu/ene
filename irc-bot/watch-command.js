@@ -271,7 +271,7 @@ class WatchCommand extends ChannelCommand {
     const {scores} = battleRoundInfo;
 
     const winner = scores.defender >= scores.attacker ?
-      battleInfo.defender : battleInfo.attacker;
+      battleInfo.defender.name : battleInfo.attacker.name;
 
     this.bot.say(battle.channel.name, `The round has ended in favor of ${winner}`);
 
@@ -283,22 +283,21 @@ class WatchCommand extends ChannelCommand {
 
   async watchBattle(organization, battle) {
     const battleInfo = await organization.getBattleInfo(battle.battleId);
+    const {label, roundId, defender, attacker, scores} = battleInfo;
 
     if (!battle.label) {
-      const side = battle.side === 'defender' ?
-        battleInfo.defender : battleInfo.attacker;
-      battle.label = `${battleInfo.label} (${side})`;
+      const side = battle.side === 'defender' ? defender.name : attacker.name;
+      battle.label = `${label} (${side})`;
       await battle.save();
     }
 
     await battle.populate('channel').execPopulate();
 
-    if (!battleInfo.roundId) {
-      const {defender, attacker, scores} = battleInfo;
+    if (!roundId) {
+      const winner = scores.defender >= scores.attacker ?
+        defender.name : attacker.name;
 
-      const winner = scores.defender >= scores.attacker ? defender : attacker;
-
-      this.bot.say(battle.channel.name, `The battle in ${battleInfo.label} has ended in favor of ${winner}`);
+      this.bot.say(battle.channel.name, `The battle in ${label} has ended in favor of ${winner}`);
 
       await battle.remove();
       if (this.watchlist.hasOwnProperty(battle.id)) {
@@ -309,7 +308,7 @@ class WatchCommand extends ChannelCommand {
     }
 
     const battleRoundInfo =
-        await organization.getBattleRoundInfo(battleInfo.roundId);
+        await organization.getBattleRoundInfo(roundId);
 
     await this.bot.displayBattleStatus(
         battle.channel.name, organization, battle, battleInfo, battleRoundInfo);
