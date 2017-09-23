@@ -59,6 +59,7 @@ function createSalt() {
 
 
 export {
+  secret,
   cipherValue,
   decipherValue,
   hashValue,
