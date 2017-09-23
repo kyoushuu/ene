@@ -42,7 +42,7 @@ import organization from './routes/organization';
 import channel from './routes/channel';
 import api from './routes/api';
 
-const secret = process.env.SECRET_KEY || 'secret';
+import {secret} from './utils/crypto';
 
 const MongoStore = mongo(session);
 
