@@ -461,6 +461,9 @@ class Organization extends mongoose.Model {
     let id = 0;
     let frozen = false;
 
+    const round = numeral($('div#mainFight > div').eq(2).text().trim()).value();
+    const roundId = parseInt($('input#battleRoundId').attr('value'));
+
     const defenderScore = numeral($('#defenderScore').text().trim()).value();
     const attackerScore = numeral($('#attackerScore').text().trim()).value();
     const totalScore = defenderScore + attackerScore;
@@ -524,8 +527,8 @@ class Organization extends mongoose.Model {
       type,
       id,
       frozen,
-      round: numeral($('div#mainFight > div').eq(2).text().trim()).value(),
-      roundId: parseInt($('input#battleRoundId').attr('value')),
+      round,
+      roundId,
       scores,
       defender,
       attacker,
