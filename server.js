@@ -22,8 +22,8 @@ import _debug from 'debug';
 const debug = _debug('ene');
 import mongoose from 'mongoose';
 
-import app from '../app';
-import bot from '../irc-bot/bot';
+import app from './app';
+import bot from './irc-bot/bot';
 
 
 mongoose.connection.on('connected', () => {

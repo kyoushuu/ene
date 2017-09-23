@@ -5,13 +5,13 @@
   "private": true,
   "author": "Arnel A. Borja <kyoushuu@yahoo.com>",
   "license": "AGPL-3.0+",
-  "main": "./bin/www",
+  "main": "server.js",
   "scripts": {
-    "start": "node -r reify ./bin/www",
+    "start": "node -r reify ./server.js",
     "mocha": "mocha",
-    "eslint": "eslint . bin/www",
+    "eslint": "eslint .",
     "test": "npm run eslint && npm run mocha",
-    "debug": "npm run eslint && node -r reify --inspect-brk ./bin/www"
+    "debug": "npm run eslint && node -r reify --inspect-brk ./server.js"
   },
   "engines": {
     "node": ">= 8.0",
