@@ -31,7 +31,8 @@ import {Strategy as LocalStrategy} from 'passport-local';
 import flash from 'connect-flash';
 import less from 'less-middleware';
 
-import db from './models/db';
+import db from './db';
+
 import User from './models/user';
 
 import routes from './routes/index';
