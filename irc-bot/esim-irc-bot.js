@@ -182,18 +182,17 @@ class EsimIRCBot extends RizonIRCBot {
     }
 
 
-    const {defenderScore, attackerScore, totalScore} =
-      battleRoundInfo || battleInfo;
+    const {scores} = battleRoundInfo || battleInfo;
 
     let wall = 0;
     let percentage = 0;
 
     if (battle.side === 'defender') {
-      wall = defenderScore - attackerScore;
-      percentage = defenderScore / totalScore;
+      wall = scores.defender - scores.attacker;
+      percentage = scores.defender / scores.total;
     } else if (battle.side === 'attacker') {
-      wall = attackerScore - defenderScore;
-      percentage = attackerScore / totalScore;
+      wall = scores.attacker - scores.defender;
+      percentage = scores.attacker / scores.total;
     }
 
     if (!isFinite(percentage)) {

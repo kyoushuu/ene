@@ -218,14 +218,14 @@ class WatchCommand extends ChannelCommand {
             battle.channel.name,
             'T-5 --- Standby --- hit at T-2 if bar is below 52%!!!');
       } else if (watchpoint === 120) {
-        const {defenderScore, attackerScore, totalScore} = battleRoundInfo;
+        const {scores} = battleRoundInfo;
 
         let percentage = 0;
 
         if (battle.side === 'defender') {
-          percentage = defenderScore / totalScore;
+          percentage = scores.defender / scores.total;
         } else if (battle.side === 'attacker') {
-          percentage = attackerScore / totalScore;
+          percentage = scores.attacker / scores.total;
         }
 
         if (!isFinite(percentage)) {
@@ -268,9 +268,9 @@ class WatchCommand extends ChannelCommand {
       }
     }
 
-    const {defenderScore, attackerScore} = battleRoundInfo;
+    const {scores} = battleRoundInfo;
 
-    const winner = defenderScore >= attackerScore ?
+    const winner = scores.defender >= scores.attacker ?
       battleInfo.defender : battleInfo.attacker;
 
     this.bot.say(battle.channel.name, `The round has ended in favor of ${winner}`);
@@ -294,9 +294,9 @@ class WatchCommand extends ChannelCommand {
     await battle.populate('channel').execPopulate();
 
     if (!battleInfo.roundId) {
-      const {defender, defenderScore, attacker, attackerScore} = battleInfo;
+      const {defender, attacker, scores} = battleInfo;
 
-      const winner = defenderScore >= attackerScore ? defender : attacker;
+      const winner = scores.defender >= scores.attacker ? defender : attacker;
 
       this.bot.say(battle.channel.name, `The battle in ${battleInfo.label} has ended in favor of ${winner}`);
 
