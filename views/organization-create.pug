@@ -19,7 +19,7 @@ block content
             if server.countries && server.countries.length
               optgroup(label=server.name)
                 each _country in server.countries
-                  if _country.id == country
+                  if _country.id === country
                     option(value=_country.id, selected)= _country.name
                   else
                     option(value=_country.id)= _country.name

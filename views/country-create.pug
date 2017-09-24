@@ -13,7 +13,7 @@ block content
       select#server(name='server', required)
         if servers
           each _server in servers
-            if _server.id == server
+            if _server.id === server
               option(value=_server.id, selected)= _server.name
             else
               option(value=_server.id)= _server.name
