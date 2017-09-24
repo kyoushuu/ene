@@ -20,13 +20,10 @@ html
     meta(name='msapplication-TileColor', content='#2b5797')
     meta(name='msapplication-TileImage', content='/mstile-144x144.png')
   body
-    header
-      nav
-        ul
-          li
-            a(href='/') Home
-            a(href='/about') About
-            a(href='/contact') Contact
+    header: nav: ul
+      li: a(href='/') Home
+      li: a(href='/about') About
+      li: a(href='/contact') Contact
     h1= title
     if info && info != ''
       div.info #{info}

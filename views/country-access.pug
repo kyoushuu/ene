@@ -6,24 +6,17 @@ block content
       each access in country.accessList
         tr
           td #{access.account.username}
-          td
-            case access.accessLevel
-              when 1
-                | Intern
-              when 2
-                | Officer
-              when 3
-                | Administrator
+          td: case access.accessLevel
+            when 1: | Intern
+            when 2: | Officer
+            when 3: | Administrator
           td
             form(method='get', action='/country/' + country.id + '/access/remove/' + access.id)
               input#submit(type='submit', value='Delete')
     else
-      tr
-        td Access list is empty
+      tr: td Access list is empty
 
   h2 Actions
   ul
-    li
-      a(href='/country/' + country.id) Go back to country page
-    li
-      a(href='/country/' + country.id + '/access/new') Add/edit access
+    li: a(href='/country/' + country.id) Go back to country page
+    li: a(href='/country/' + country.id + '/access/new') Add/edit access
