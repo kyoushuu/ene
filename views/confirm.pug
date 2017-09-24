@@ -4,12 +4,12 @@ block content
   if !user
     p Failed to confirm your account. The confirmation code seems invalid.
   else if user.confirmCode && resent
-    p The confirmation email has been resent to your email address.
+    p The confirmation e-mail has been resent to your e-mail address.
   else if user.confirmCode
     p
       | Your account is not yet confirmed. Click the button below to resend the
-      | confirmation email.
+      | confirmation e-mail.
       form(method='post')
-        input#submit(type='submit', value='Resend Confirmation Email')
+        input#submit(type='submit', value='Resend Confirmation E-mail')
   else
     p Your account has been confirmed. You can now login.
