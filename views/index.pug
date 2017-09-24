@@ -2,7 +2,7 @@ extends layout
 
 block content
   p Welcome to #{title}
-    if !user
+    unless user
       ul
         li: a(href='/user/new') Create an account
         li: a(href='/user/signin') Sign in
@@ -14,7 +14,7 @@ block content
       ul
         li: a(href='/user/signout') Sign out
 
-      if !user.confirmCode
+      unless user.confirmCode
         h2 Countries with Access
         ul
           each country in countries
