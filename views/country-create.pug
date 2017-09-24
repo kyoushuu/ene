@@ -2,13 +2,13 @@ extends layout
 
 block content
   form(method='post')
-    div.form-item
+    .form-item
       label(for='name') Name:
       input#name(type='text', name='name', value=name, required)
-    div.form-item
+    .form-item
       label(for='shortname') Short Name:
       input#shortname(type='text', name='shortname', value=shortname, required)
-    div.form-item
+    .form-item
       label(for='server') Server:
       select#server(name='server' required)
         if servers
@@ -17,5 +17,5 @@ block content
               option(value=_server.id, selected)= _server.name
             else
               option(value=_server.id)= _server.name
-    div.form-item
+    .form-item
       input#submit(type='submit', value='Create')

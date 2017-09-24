@@ -2,11 +2,11 @@ extends layout
 
 block content
   form(method='post')
-    div.form-item
+    .form-item
       label(for='name') Name:
       input#name(type='text', name='name', value=name, required)
-    div.form-item
+    .form-item
       label(for='keyword') Keyword:
       input#keyword(type='password', name='keyword')
-    div.form-item
+    .form-item
       input#submit(type='submit', value='Create')

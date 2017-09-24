@@ -2,14 +2,14 @@ extends layout
 
 block content
   form(method='post')
-    div.form-item
+    .form-item
       label(for='username') Username:
       input#username(type='text', name='username', value=username, required)
-    div.form-item
+    .form-item
       label(for='password') Password:
       input#password(type='password', name='password', required)
-    div.form-item
+    .form-item
       label(for='email') E-mail:
       input#email(type='email', name='email', value=email, required)
-    div.form-item
+    .form-item
       input#submit(type='submit', value='Sign Up')

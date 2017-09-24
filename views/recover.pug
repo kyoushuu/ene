@@ -5,8 +5,8 @@ block content
     p The recovery e-mail has been sent to your email address.
   else
     form(method='post')
-      div.form-item
+      .form-item
         label(for='email') E-mail:
         input#email(type='email', name='email', value=email, required)
-      div.form-item
+      .form-item
         input#submit(type='submit', value='Recover')

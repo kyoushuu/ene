@@ -9,7 +9,7 @@ block content
         li: a(href='/user/recover') Recover account
     else
       if user.confirmCode
-        div.info Your account is not yet confirmed. Click #[a(href='/user/confirm') here] to resend the confirmation e-mail.
+        .info Your account is not yet confirmed. Click #[a(href='/user/confirm') here] to resend the confirmation e-mail.
 
       ul
         li: a(href='/user/signout') Sign out
