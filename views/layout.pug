@@ -26,7 +26,7 @@ html
       li: a(href='/contact') Contact
     h1= title
     if info && info != ''
-      div.info #{info}
+      div.info= info
     if error && error != ''
-      div.error Error: #{error}
+      div.error= error
     block content

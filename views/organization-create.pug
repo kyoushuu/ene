@@ -20,8 +20,8 @@ block content
               optgroup(label=server.name)
                 each _country in server.countries
                   if _country.id == country
-                    option(value=_country.id, selected) #{_country.name}
+                    option(value=_country.id, selected)= _country.name
                   else
-                    option(value=_country.id) #{_country.name}
+                    option(value=_country.id)= _country.name
     div.form-item
       input#submit(type='submit', value='Create')

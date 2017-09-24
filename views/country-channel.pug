@@ -5,7 +5,7 @@ block content
     if country.channels.length
       each channel in country.channels
         tr
-          td #{channel.channel.name}
+          td= channel.channel.name
           td
             form(method='get', action='/country/' + country.id + '/channel/remove/' + channel.id)
               input#submit(type='submit', value='Delete')

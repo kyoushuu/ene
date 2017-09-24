@@ -4,19 +4,19 @@ block content
   table
     tr
       td Name:
-      td #{country.name}
+      td= country.name
     tr
       td Short Name:
-      td #{country.shortname}
+      td= country.shortname
     tr
       td Server:
-      td #{country.server.name}
+      td= country.server.name
 
   if country.organizations && country.organizations.length
     h2 Organizations
     ul
       each organization in country.organizations
-        li: a(href='/organization/' + organization.id) #{organization.username}
+        li: a(href='/organization/' + organization.id)= organization.username
 
   h2 Actions
   ul

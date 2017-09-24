@@ -5,7 +5,7 @@ block content
     if country.accessList.length
       each access in country.accessList
         tr
-          td #{access.account.username}
+          td= access.account.username
           td: case access.accessLevel
             when 1: | Intern
             when 2: | Officer
