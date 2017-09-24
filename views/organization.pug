@@ -10,10 +10,10 @@ block content
       td= organization.shortname
     tr
       td Country:
-      - var cLink = '/country/' + organization.country.id;
-      - var cName = organization.country.name;
-      - var sLink = '/server/' + organization.country.server.id;
-      - var sName = organization.country.server.name;
+      - const cLink = '/country/' + organization.country.id;
+      - const cName = organization.country.name;
+      - const sLink = '/server/' + organization.country.server.id;
+      - const sName = organization.country.server.name;
       td #[a(href=cLink) #{cName}] (#[a(href=sLink) #{sName}])
 
   h2 Actions
