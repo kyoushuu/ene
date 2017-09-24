@@ -13,7 +13,7 @@ block content
       input#shortname(type='text', name='shortname', value=shortname, required)
     .form-item
       label(for='country') Country:
-      select#country(name='country' required)
+      select#country(name='country', required)
         if servers
           each server in servers
             if server.countries && server.countries.length
