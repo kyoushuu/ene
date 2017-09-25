@@ -10,8 +10,10 @@
     "start": "node -r reify ./server.js",
     "mocha": "mocha",
     "eslint": "eslint .",
-    "test": "npm run eslint && npm run mocha",
-    "debug": "npm run eslint && node -r reify --inspect-brk ./server.js"
+    "pug-lint": "pug-lint .",
+    "lint": "npm run eslint && npm run pug-lint",
+    "test": "npm run lint && npm run mocha",
+    "debug": "npm run lint && node -r reify --inspect-brk ./server.js"
   },
   "engines": {
     "node": ">= 8.0",
@@ -51,6 +53,8 @@
     "mocha": "^3.2.0",
     "mockgoose": "^6.0.8",
     "nock": "^9.0.2",
+    "pug-lint": "^2.5.0",
+    "pug-lint-config-clock": "^2.0.0",
     "should": "^13.0.1"
   }
 }
