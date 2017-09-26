@@ -19,6 +19,7 @@
 
 import mongoose from 'mongoose';
 import mockgoose from 'mockgoose';
+import nock from 'nock';
 
 import Organization from '../../models/organization';
 import Country from '../../models/country';
@@ -235,6 +236,133 @@ describe('Organization model', () => {
             name: 'ValidatorError',
             message: 'Organization short username with the same country already exists',
           },
+        },
+      });
+    });
+  });
+
+  describe('#getBattleInfo', () => {
+    let testOrganization;
+
+    beforeEach(async () => {
+      testOrganization = await Organization.create({
+        country: testCountry,
+        username: 'Armed Forces of the Philippines',
+        password: 'testpass',
+        shortname: 'afp',
+      });
+    });
+
+    it('should be able to parse a direct battle', async () => {
+      const battleId = 1;
+
+      nock('http://test.e-sim.org')
+          .get('/battle.html')
+          .query({
+            id: battleId,
+          })
+          .replyWithFile(200, `${__dirname}/data/battle-direct.html`);
+
+      const battleInfo = await testOrganization.getBattleInfo(battleId);
+      battleInfo.should.be.eql({
+        label: 'Northern Honshu',
+        type: 'direct',
+        id: 344,
+        frozen: false,
+        round: 9,
+        roundId: 202995,
+        scores: {
+          attacker: 7070625,
+          defender: 4215572,
+          total: 11286197,
+        },
+        defender: {
+          name: 'Japan',
+          score: 4215572,
+          wins: 1,
+          allies: ['Vietnam', 'Cambodia', 'Indonesia'],
+        },
+        attacker: {
+          name: 'USA',
+          score: 7070625,
+          wins: 8,
+          allies: ['Estonia', 'Lithuania', 'Canada', 'Bulgaria', 'France'],
+        },
+      });
+    });
+
+    it('should be able to parse a resistance battle', async () => {
+      const battleId = 1;
+
+      nock('http://test.e-sim.org')
+          .get('/battle.html')
+          .query({
+            id: battleId,
+          })
+          .replyWithFile(200, `${__dirname}/data/battle-resistance.html`);
+
+      const battleInfo = await testOrganization.getBattleInfo(battleId);
+      battleInfo.should.be.eql({
+        label: 'Sumatra',
+        type: 'resistance',
+        id: 170,
+        frozen: false,
+        round: 1,
+        roundId: 10585,
+        scores: {
+          attacker: 378980,
+          defender: 0,
+          total: 378980,
+        },
+        defender: {
+          name: 'Solomon Islands',
+          score: 0,
+          wins: 0,
+          allies: ['no allies'],
+        },
+        attacker: {
+          name: 'Indonesia',
+          score: 378980,
+          wins: 0,
+          allies: ['no allies'],
+        },
+      });
+    });
+
+    it('should be able to parse a frozen battle', async () => {
+      const battleId = 1;
+
+      nock('http://test.e-sim.org')
+          .get('/battle.html')
+          .query({
+            id: battleId,
+          })
+          .replyWithFile(200, `${__dirname}/data/battle-frozen.html`);
+
+      const battleInfo = await testOrganization.getBattleInfo(battleId);
+      battleInfo.should.be.eql({
+        label: 'Taipei',
+        type: 'resistance',
+        id: 189,
+        frozen: true,
+        round: 11,
+        roundId: 1487,
+        scores: {
+          attacker: 0,
+          defender: 225996,
+          total: 225996,
+        },
+        defender: {
+          name: 'North Korea',
+          score: 225996,
+          wins: 4,
+          allies: ['no allies'],
+        },
+        attacker: {
+          name: 'Taiwan',
+          score: 0,
+          wins: 6,
+          allies: ['no allies'],
         },
       });
     });
