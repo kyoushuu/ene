@@ -247,4 +247,8 @@ describe('Country model', () => {
           'Access level does not match');
     });
   });
+
+  describe('#getDayStart', () => {
+    it('should return start of day in Europe/Warsaw');
+  });
 });

@@ -120,6 +120,11 @@ describe('Server model', () => {
     });
   });
 
+  describe('#getCitizenInfoByName', () => {
+    it('should fail if the citizen does not exists');
+    it('should work if the citizen exists');
+  });
+
   describe('#getCountryInfoByName', () => {
     let testServer;
 
@@ -350,5 +355,17 @@ describe('Server model', () => {
           'Aland, Finland',
           'Region does not match');
     });
+  });
+
+  describe('#getNewCitizens', () => {
+    it('should return the new citizens for all countries if country is undefined');
+    it('should return the new citizens for the country if country is given');
+    it('should return the new citizens in the first page if page is undefined');
+    it('should return the new citizens in the page if page is given');
+  });
+
+  describe('#getNewCitizensLastPage', () => {
+    it('should return the last page for all countries if country is undefined');
+    it('should return the last page for the country if country is given');
   });
 });

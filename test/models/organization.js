@@ -241,6 +241,48 @@ describe('Organization model', () => {
     });
   });
 
+  describe('#createRequest', () => {
+    it('should try to login if ensureSignedIn is true');
+    it('should not try to login if ensureSignedIn is false');
+  });
+
+  describe('#login', () => {
+    it('should fail if the lock has not expired');
+    it('should set the lock if the password is wrong');
+  });
+
+  describe('#logout', () => {
+  });
+
+  describe('#donateProducts', () => {
+    it('should fail if the sender doesn\'t have enough country access level');
+    it('should throw the error message from request if available');
+  });
+
+  describe('#batchDonateProducts', () => {
+    it('should fail if the sender doesn\'t have enough country access level');
+    it('should throw the error message from request if available');
+  });
+
+  describe('#supplyProducts', () => {
+    it('should fail if the quantity list is longer than the supply format');
+    it('should fail if the recipient will exceed the daily limit');
+  });
+
+  describe('#getInventory', () => {
+  });
+
+  describe('#getCompanies', () => {
+    it('should return the military unit companies if muId is given');
+    it('should return the organization companies if muId is undefined');
+  });
+
+  describe('#getCompanyWorkResults', () => {
+  });
+
+  describe('#getMotivatePackage', () => {
+  });
+
   describe('#getBattleInfo', () => {
     let testOrganization;
 
@@ -366,5 +408,8 @@ describe('Organization model', () => {
         },
       });
     });
+  });
+
+  describe('#getBattleRoundInfo', () => {
   });
 });
